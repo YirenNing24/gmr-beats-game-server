@@ -1,0 +1,45 @@
+{
+  "name": "gmr-beats-server-bun-ts",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "scripts": {
+    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun run --watch src/index.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^5.5.2"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^0.6.0",
+    "@elysiajs/eden": "^0.8.1",
+    "@elysiajs/jwt": "^0.6.4",
+    "@simplewebauthn/server": "^11.0.0",
+    "@thirdweb-dev/chains": "^0.1.120",
+    "@thirdweb-dev/engine": "^0.0.11",
+    "@thirdweb-dev/sdk": "^4.0.99",
+    "@thirdweb-dev/storage": "^2.0.15",
+    "@thirdweb-dev/wallets": "^2.5.39",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20.17.8",
+    "@types/rethinkdb": "^2.3.21",
+    "bcrypt-ts": "^4.0.1",
+    "colyseus": "^0.15.17",
+    "crypto-random-string": "^5.0.0",
+    "elysia": "^0.7.31",
+    "elysia-ip": "^0.0.7",
+    "ethers": "^5.7.2",
+    "fast-jwt": "^4.0.6",
+    "geoip-lite2": "^2.2.1",
+    "google-auth-library": "^9.15.0",
+    "hyperimport": "^0.2.0",
+    "lucky-item": "^2.0.2",
+    "nanoid": "^4.0.2",
+    "neo4j-driver": "^5.26.0",
+    "oauth-1.0a": "^2.2.6",
+    "redis": "^4.7.0",
+    "rethinkdb": "^2.4.2",
+    "thirdweb": "^5.71.0"
+  }
+}
