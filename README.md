@@ -1,4 +1,4 @@
-# gmr-beats-server-bun-ts
+# gmr-beats-game-server
 
 To install dependencies:
 
