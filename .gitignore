@@ -9,12 +9,11 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
-src/docker.yml
 server.bash
-src/game-server.bash
-src/main-server.bash
-japan.env
+.game-server.bash
+.docker-compose.yml
 .env.me
+.bun.lock
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 
