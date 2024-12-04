@@ -10,9 +10,6 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 server.bash
-.game-server.bash
-.docker-compose.yml
-.env.me
 .bun.lock
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
@@ -176,7 +173,9 @@ dist
 # IntelliJ based IDEs
 .idea
 
-.env*
+.env
 .flaskenv*
 !.env.project
-!.env.vault
+game-server.bash
+docker-compose.yml
+.env.me
