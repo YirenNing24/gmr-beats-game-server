@@ -189,7 +189,14 @@ export interface UserData {
       smartWalletAddress: string
     };
   }
-  
+
+  export interface PasskeyUserData extends UserData {
+    properties: UserData["properties"] & {
+      id: string;
+      publicKey: Uint8Array;
+      counter: number;
+    };
+  }
   /**
    * Represents data related to a user's wallet.
    *

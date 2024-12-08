@@ -28,7 +28,7 @@ import { nanoid } from "nanoid/async";
 import { Driver, QueryResult, Session,  ManagedTransaction } from 'neo4j-driver-core'
 
 //** TYPE INTERFACES
-import { WalletData, UserData, ValidateSessionReturn, AuthenticateReturn, TokenScheme, PlayerInfo, User, Suspended, PreRegisterUser, PasskeyUser } from '../user.service.interface.js'
+import { WalletData, UserData, ValidateSessionReturn, AuthenticateReturn, TokenScheme, PlayerInfo, User, Suspended, PreRegisterUser, PasskeyUser, PasskeyUserData } from '../user.service.interface.js'
 
 //** GEO IP IMPORT
 import geoip, { GeoIp2Location } from 'geoip-lite2'
@@ -416,11 +416,37 @@ class AuthService {
       } finally {
         await session?.close();
       }
-  }
-  
+    }
 
 
+    public async getPasskeyUserData(userName: string) {
+      try {
+          const session: Session | undefined = this.driver?.session();
+          // Find the user node within a Read Transaction
+          const result: QueryResult | undefined = await session?.executeRead(tx =>
+              tx.run('MATCH (u:User {username: $userName}) RETURN u', { userName })
+          );
 
+          await session?.close();
+          // Verify the user exists
+          if (result?.records.length === 0) {
+              throw new ValidationError(`User with username '${userName}' not found.`, "");
+          }
+
+          // Compare Passwords
+          const user: PasskeyUserData = result?.records[0].get('u');
+
+          const { publicKey, counter } = user.properties
+
+          // Return User Details
+
+          return { publicKey, counter }
+      } catch (error: any) {
+          console.log(error)
+          throw error;
+      }
+    }
+    
 
     // Authenticates a user using JWT for auto-login.
     public async validateSession(token: string): Promise<ValidateSessionReturn>  {

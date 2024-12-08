@@ -1,5 +1,4 @@
 import { ArbitrumSepolia } from "@thirdweb-dev/chains";
-import { SmartWalletConfig } from "@thirdweb-dev/wallets";
 
 
 // API Configuration
@@ -23,7 +22,7 @@ export const RDB_PORT: number = Number(process.env.RDB_PORT) || 28015;
 
 // KeyDB Configuration
 export const KEYDB_PASSWORD: string | undefined = process.env.KEYDB_PASSWORD;
-export const KEYDB_PORT: number  = 6378
+export const KEYDB_PORT: number  = 6380
 export const KEYDB_HOST: string | undefined = process.env.KEYDB_HOST;
 export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmetarave.com:3005"
 

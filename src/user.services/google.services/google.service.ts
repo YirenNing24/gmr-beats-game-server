@@ -5,7 +5,8 @@ import { GetTokenResponse } from "google-auth-library/build/src/auth/oauth2clien
 //** GOOGLE PASSKEY AUTH
 import { generateAuthenticationOptions, verifyAuthenticationResponse, 
         VerifyAuthenticationResponseOpts, generateRegistrationOptions, 
-        GenerateRegistrationOptionsOpts, verifyRegistrationResponse, VerifiedRegistrationResponse } from "@simplewebauthn/server";
+        GenerateRegistrationOptionsOpts, verifyRegistrationResponse, VerifiedRegistrationResponse, 
+        VerifiedAuthenticationResponse} from "@simplewebauthn/server";
 
 //** TYPE INTERFACE IMPORT
 import { PasskeyUser, PlayerInfo, User } from "../user.service.interface";
@@ -99,7 +100,9 @@ class GoogleService {
 
     // Method to handle the passkey authentication response
     public async googlePassKeyAuthVerify(username: string, responseToken: string) {
+        const authService: AuthService = new AuthService()
         try {
+
             // Retrieve the challenge that was previously stored
             const expectedChallenge = await keydb.hGet(`passkey:challenge:${username}`, 'challenge') as string;
             
@@ -109,17 +112,18 @@ class GoogleService {
             // Extract the credential id and signature from the response token
             const credentialID = response.id;
             const signature = response.response.signature;  // This will be used for verification
+
             
             // Retrieve the credential public key and counter for this user from your storage
-            const expectedPublicKey = await this.getRegisteredPublicKey(username);  // As Uint8Array
-            const expectedCounter = await this.getCredentialCounter(username);  // Keep track of the counter
+            const passkeyUser = await authService.getPasskeyUserData(username);
+            const { counter, publicKey  } = passkeyUser
             
 
             // Create the WebAuthnCredential object
             const credential: WebAuthnCredential = {
                 id: credentialID,  // Use the credential ID from the response
-                publicKey: expectedPublicKey,  // Use the stored public key for this user
-                counter: expectedCounter,  // Use the counter value from your storage
+                publicKey,// Use the stored public key for this user
+                counter// Use the counter value from your storage
                 // transports: expectedTransports || ['usb', 'nfc'],  // Use transports or default to 'usb' and 'nfc'
             };
     
@@ -134,7 +138,7 @@ class GoogleService {
             };
     
             // Perform the verification
-            const verificationResult = await verifyAuthenticationResponse(verificationOptions);
+            const verificationResult: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(verificationOptions);
     
             // Check if the verification was successful
             if (verificationResult.verified) {

@@ -24,8 +24,6 @@ import { buyCardCypher, buyCardUpgradeCypher, getValidCardPacks, getValidCardUpg
 //** SUCCESS MESSAGE IMPORT
 import { SuccessMessage } from "../../outputs/success.message";
 import { engine } from "../../user.services/wallet.services/wallet.service";
-import { Arbitrum } from "@thirdweb-dev/chains";
-
 
 
 export default class StoreService {
@@ -164,7 +162,7 @@ export default class StoreService {
   private async cardPurchase(walletAddress: string, listingId: number) {
 
     try {
-      const chain = "421614";  // Assuming this is a constant or predefined variable
+      const chain: string = "421614";  // Assuming this is a constant or predefined variable
       const contractAddress = CARD_MARKETPLACE;  // Assuming this is a constant or predefined variable
       const xBackendWalletAddress = "0x0AfF10A2220aa27fBe83C676913aebeb3801DfB6";  // Hardcoded backend wallet address
   
@@ -172,7 +170,7 @@ export default class StoreService {
       const requestBody = {
           listingId: listingId.toString(), // Convert listingId to string
           quantity: "1", // Default quantity for ERC721 tokens
-          buyer: walletAddress, // The buyer's wallet address
+          buyer: walletAddress // The buyer's wallet address
       };
   
       // Call the buyFromListing function
@@ -184,10 +182,6 @@ export default class StoreService {
     }
 
 }
-
-
-
-
 
   // private async cardPurchase(localWallet: string, localWalletKey: string, listingId: number): Promise<void | Error> {
   //     try {
@@ -212,27 +206,50 @@ export default class StoreService {
   // }
 
 
-  private async cardPackPurchase(localWallet: string, localWalletKey: string, listingId: number): Promise<void | Error> {
-    try {
-    const walletLocal: LocalWalletNode = new LocalWalletNode({ chain: CHAIN });
-    const yes = await walletLocal.import({
-      encryptedJson: localWallet,
-      password: localWalletKey,
-    });
-    const smartWallet: SmartWallet = new SmartWallet(SMART_WALLET_CONFIG);
-    await smartWallet.connect({
-      personalWallet: walletLocal,
-    });
+//   private async cardPackPurchase(localWallet: string, localWalletKey: string, listingId: number): Promise<void | Error> {
+//     try {
+//     const walletLocal: LocalWalletNode = new LocalWalletNode({ chain: CHAIN });
+//     const yes = await walletLocal.import({
+//       encryptedJson: localWallet,
+//       password: localWalletKey,
+//     });
+//     const smartWallet: SmartWallet = new SmartWallet(SMART_WALLET_CONFIG);
+//     await smartWallet.connect({
+//       personalWallet: walletLocal,
+//     });
 
-    const sdk: ThirdwebSDK = await ThirdwebSDK.fromWallet(smartWallet, CHAIN);
-    const contract: MarketplaceV3 = await sdk.getContract(PACK_MARKETPLACE, "marketplace-v3");
-    await contract.directListings.buyFromListing(listingId, 1);
+//     const sdk: ThirdwebSDK = await ThirdwebSDK.fromWallet(smartWallet, CHAIN);
+//     const contract: MarketplaceV3 = await sdk.getContract(PACK_MARKETPLACE, "marketplace-v3");
+//     await contract.directListings.buyFromListing(listingId, 1);
 
-  } catch(error: any) {
-    console.log(error)
-    return error
+//   } catch(error: any) {
+//     console.log(error)
+//     return error
+//       }
+// }  
+
+    private async cardPackPurchase(walletAddress: string, listingId: number) {
+      try {
+        const chain: string = "421614";  // Assuming this is a constant or predefined variable
+        const contractAddress: string = PACK_MARKETPLACE;  // Assuming this is a constant or predefined variable
+        const xBackendWalletAddress: string = "0x0AfF10A2220aa27fBe83C676913aebeb3801DfB6";  // Hardcoded backend wallet address
+    
+        // Constructing the request body
+        const requestBody = {
+            listingId: listingId.toString(), // Convert listingId to string
+            quantity: "1", // Default quantity for ERC721 tokens
+            buyer: walletAddress // The buyer's wallet address
+        };
+    
+        // Call the buyFromListing function
+        await engine.marketplaceDirectListings.buyFromListing(chain, contractAddress, xBackendWalletAddress, requestBody);
+  
+      } catch(error: any) {
+        console.log(error)
+        throw error
       }
-}
+      
+    }
 
 
   public async buyCardPack(buycardData: BuyCardData, token: string): Promise<SuccessMessage> {
@@ -252,15 +269,16 @@ export default class StoreService {
       };
       
       const userData: UserData = result.records[0].get("u");
-      const { localWallet, localWalletKey } = userData.properties;
+      const { smartWalletAddress } = userData.properties;
 
-      await this.cardPackPurchase(localWallet, localWalletKey, listingId);
+      await this.cardPackPurchase(smartWalletAddress, listingId);
 
       // Create relationship using a separate Cypher query
       await this.createCardPackRelationship(username, uri);
 
       return new SuccessMessage("Purchase was successful");
     } catch (error: any) {
+      console.log(error)
       throw error
     }
   }

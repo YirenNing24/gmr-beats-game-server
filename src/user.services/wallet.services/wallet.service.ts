@@ -1,5 +1,9 @@
 //** THIRDWEB IMPORT * TYPES
 import { Engine } from "@thirdweb-dev/engine";
+import { Account, createWallet, privateKeyToAccount, smartWallet, Wallet } from "thirdweb/wallets";
+import { createThirdwebClient } from 'thirdweb'
+import { sepolia } from "thirdweb/chains";
+
 
 //** CONFIG IMPORT
 import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, CHAIN, SECRET_KEY, SMART_WALLET_CONFIG, ENGINE_URI } from "../../config/constants";
@@ -15,7 +19,7 @@ import { Driver, Session } from "neo4j-driver-core";
 //** ERROR CODES
 import ValidationError from '../../outputs/validation.error.js'
 import { LocalWalletNode } from "@thirdweb-dev/wallets/evm/wallets/local-wallet-node";
-import { SmartWallet } from "@thirdweb-dev/wallets";
+import { PrivateKeyWallet, SmartWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 
 
@@ -30,6 +34,7 @@ class WalletService {
   constructor(driver?: Driver) {
     this.driver = driver;
   }
+
 
   //** Creates a wallet and returns the wallet address.
   public async createWallet(username: string): Promise<string> {
