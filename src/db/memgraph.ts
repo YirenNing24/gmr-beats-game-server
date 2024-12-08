@@ -2,22 +2,45 @@ import neo4j, { Driver } from 'neo4j-driver';
 
 let driver: Driver;
 
-export async function initDriver(uri: string, username: string, password: string): Promise<Driver> {
-  // Modify URI to point to your Docker container (ann-memgraph) with SSL enabled
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-  
-  driver = neo4j.driver(
-    uri,
-    neo4j.auth.basic(username, password),
-    {
-      encrypted: 'ENCRYPTION_ON',  // Enable SSL
-      trust: 'TRUST_ALL_CERTIFICATES',  // Use a secure certificate trust policy in production
+export async function initDriver(uri: string, username: string, password: string, retries: number = 5, delay: number = 2000): Promise<Driver> {
+  let attempt: number = 0;
+
+  while (attempt < retries) {
+    try {
+      driver = neo4j.driver(
+        uri,
+        neo4j.auth.basic(username, password),
+        {
+          encrypted: 'ENCRYPTION_ON',  // Enable SSL
+          trust: 'TRUST_ALL_CERTIFICATES',
+        }
+      );
+
+      // Try to get server info to verify the connection
+      await driver.getServerInfo();
+
+      // If connection is successful, break out of the loop
+      console.log('Successfully connected to Memgraph');
+      return driver;
+    } catch (error: any) {
+      attempt++;
+      console.error(`Attempt ${attempt} failed: ${error.message}`);
+
+      if (attempt < retries) {
+        console.log(`Retrying in ${delay / 1000} seconds...`);
+        await sleep(delay);
+      } else {
+        throw new Error(`Failed to connect to Neo4j after ${retries} attempts.`);
+      }
     }
-  );
+  }
 
-  // Optional: Check if the driver can connect to the server
-  await driver.getServerInfo();
-  return driver;
+  // This will never be reached if the retry limit is reached and an error is thrown
+  throw new Error('Unable to initialize Neo4j driver.');
 }
 
 /**

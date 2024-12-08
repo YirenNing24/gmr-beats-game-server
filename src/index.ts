@@ -6,6 +6,6 @@ const port: number = APP_PORT;
 const hostname: string = 'localhost'
 
 app.listen({ port }, async () => {
-    console.log(`Beats web server is running on port http://${hostname}:${port}/`);
+    console.log(`Beats game HTTP server is running on port http://${hostname}:${port}/`);
     }
 );
