@@ -18,14 +18,8 @@ services:
       - ./.env
     networks:
       - ann-network
-
-
-  game-server:
-    image: 
-kaetaro13/beats-game-server
-
+      
 # Define the networks
 networks:
   ann-network:
     driver: bridge
-
