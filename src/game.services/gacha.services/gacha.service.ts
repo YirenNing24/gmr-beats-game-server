@@ -13,7 +13,7 @@ import ValidationError from "../../outputs/validation.error";
 import TokenService from "../../user.services/token.services/token.service";
 
 //** CONFIG IMPORT
-import { SECRET_KEY, CHAIN, PRIVATE_KEY, EDITION_ADDRESS } from "../../config/constants";
+import { CHAIN, EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS } from "../../config/constants";
 
 //** CYPHER IMPORT
 import { deductCardpack, openCardpackCypher } from "./gacha.cypher";
@@ -24,6 +24,8 @@ import luckyItem from 'lucky-item'
 //** TYPE INTERFACES
 import { CardNameWeight, CardPackRate, PackData } from "./gacha.interface";
 
+//** THIRDWEB IMPORT
+import { engine } from "../../user.services/wallet.services/wallet.service";
 
 
 class GachaService {
@@ -100,22 +102,39 @@ class GachaService {
   }
 
 
-  private async transferRewardCards(rewardCards: string[], walletAddress: string, username: string, packId: string): Promise<void> {
-    const session: Session = this.driver.session();
-    try {
-        // Initialize the ThirdwebSDK with your private key and chain
-        const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
-            secretKey: SECRET_KEY,
-        });
+  private async transferRewardCards(rewardCards: string[],walletAddress: string, username: string, packId: string): Promise<void> {
+	const session: Session = this.driver.session();
+	try {
+		// Retrieve card details for each reward card
+		const cardData = await this.getValidRewardCards(session, rewardCards);
 
-        const cardContract: Edition = await sdk.getContract(EDITION_ADDRESS, 'edition');
+		if (cardData.length > 0) {
+			// Transfer each card individually
+			await Promise.all(
+				cardData.map(({ id, name }) =>
+					this.transferCard(id, walletAddress).then(() =>
+						this.updateTransferredStatus(session, id)
+					)
+				)
+			);
 
-        const cardIDs: Array<string> = [];
-        const cardNames: Array<string> = [];
-        const amounts: Array<number> = [];
+			// Update inventory and burn pack
+			await this.updateInventory(username, cardData.map((c) => c.name), cardData.map((c) => c.id));
+			await this.burnPack(packId);
+		} else {
+			console.log('No valid cards were found to transfer.');
+		}
+	} catch (error) {
+		console.error(error);
+		throw error;
+	} finally {
+		await session.close();
+	}
+  }
 
+  private async getValidRewardCards(session: Session, rewardCards: string[]): Promise<Array<{ id: string; name: string }>> {
+        const cardData: Array<{ id: string; name: string }> = [];
         for (const cardName of rewardCards) {
-            // Cypher query to find one card for each name in rewardCards
             const query = `
                 MATCH (c:Card)
                 WHERE c.name = $cardName 
@@ -124,145 +143,47 @@ class GachaService {
                 LIMIT 1
             `;
 
-            // Execute the query and retrieve the matching card
-            const result: QueryResult<RecordShape> = await session.executeRead((tx: ManagedTransaction) =>
+            const result = await session.executeRead((tx) =>
                 tx.run(query, { cardName })
             );
 
-            if (result.records.length === 0) {
+            if (result.records.length > 0) {
+                const card = result.records[0].get('c').properties;
+                cardData.push({ id: card.id, name: card.name });
+            } else {
                 console.log(`No valid card found for: ${cardName}`);
-                continue;
-            }
-
-            const record = result.records[0];
-            const card = record.get('c').properties;
-            const { id, name } = card;
-            if (id) {
-                cardIDs.push(id);
-                cardNames.push(name);
-                amounts.push(1); // Add 1 to the amounts array for each card
-
-                // Set transferred = true in the database first
-                const updateQuery = `
-                    MATCH (c:Card {id: $id})
-                    SET c.transferred = true
-                `;
-                await session.run(updateQuery, { id });
             }
         }
 
-        if (cardIDs.length > 0) {
-            // Use transferBatch with the amounts array
-            await cardContract.transferBatch(walletAddress, cardIDs, amounts);
-
-            // Update inventory and burn pack if cards were transferred
-            await this.updateInventory(username, cardNames, cardIDs);
-            await cardContract.burn(packId, 1);
-        } else {
-            console.log('No valid cards were found to transfer.');
-        }
-
-    } catch (error: any) {
-        console.error(error);
-        throw error;
-    } finally {
-        await session.close();
-    }
+        return cardData;
   }
 
 
-//   private async transferRewardCards(rewardCards: string[], walletAddress: string, username: string, packId: string): Promise<void> {
-//     const session: Session = this.driver.session();
-//     try {
-//         // Initialize the ThirdwebSDK with your private key and chain
-//         const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
-//             secretKey: SECRET_KEY,
-//         });
-
-//         const client = createThirdwebClient({
-//             secretKey: SECRET_KEY,
-//           });
+  private async transferCard(tokenId: string, walletAddress: string): Promise<void> {
+        const requestBody = { from: ENGINE_ADMIN_WALLET_ADDRESS, to: walletAddress, tokenId, amount: '1'};
+        await engine.erc1155.transferFrom(CHAIN, EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS,requestBody);
+  }
 
 
-//         const contract = getContract({
-//             client,
-//             chain: defineChain(421614),
-//             address: "0xa98d398DA254Cda866acae71592ac8E12581AF19",
+  private async updateTransferredStatus(session: Session, cardId: string): Promise<void> {
+        const updateQuery = `
+            MATCH (c:Card {id: $id})
+            SET c.transferred = true
+        `;
 
-//           });
+        await session.run(updateQuery, { id: cardId });
+  }
 
 
-//           const transaction = await prepareContractCall({
-//             contract,
-//             method:
-//               "function safeBatchTransferFrom(address from, address to, uint256[] ids, uint256[] amounts, bytes data)",
-//             params: [from, to, ids, amounts, data],
-//           });
+  private async burnPack(packId: string): Promise<void> {
+	const requestBody = { tokenId: packId, amount: '1' };
 
-        
-        
-
-//         const cardContract: Edition = await sdk.getContract(EDITION_ADDRESS, 'edition');
-
-//         const cardIDs: Array<string> = [];
-//         const cardNames: Array<string> = [];
-//         const amounts: Array<number> = [];
-
-//         for (const cardName of rewardCards) {
-//             // Cypher query to find one card for each name in rewardCards
-//             const query = `
-//                 MATCH (c:Card)
-//                 WHERE c.name = $cardName 
-//                 AND (c.transferred = false OR c.transferred IS NULL)
-//                 RETURN c
-//                 LIMIT 1
-//             `;
-
-//             // Execute the query and retrieve the matching card
-//             const result: QueryResult<RecordShape> = await session.executeRead((tx: ManagedTransaction) =>
-//                 tx.run(query, { cardName })
-//             );
-
-//             if (result.records.length === 0) {
-//                 console.log(`No valid card found for: ${cardName}`);
-//                 continue;
-//             }
-
-//             const record = result.records[0];
-//             const card = record.get('c').properties;
-//             const { id, name } = card;
-//             if (id) {
-//                 cardIDs.push(id);
-//                 cardNames.push(name);
-//                 amounts.push(1); // Add 1 to the amounts array for each card
-
-//                 // Set transferred = true in the database first
-//                 const updateQuery = `
-//                     MATCH (c:Card {id: $id})
-//                     SET c.transferred = true
-//                 `;
-//                 await session.run(updateQuery, { id });
-//             }
-//         }
-
-//         if (cardIDs.length > 0) {
-//             // Use transferBatch with the amounts array
-//             await cardContract.transferBatch(walletAddress, cardIDs, amounts);
-
-//             // Update inventory and burn pack if cards were transferred
-//             await this.updateInventory(username, cardNames, cardIDs);
-//             await cardContract.burn(packId, 1);
-//         } else {
-//             console.log('No valid cards were found to transfer.');
-//         }
-
-//     } catch (error: any) {
-//         console.error(error);
-//         throw error;
-//     } finally {
-//         await session.close();
-//     }
-//   }
+	await engine.erc1155.burn(CHAIN,
+		EDITION_ADDRESS,
+		ENGINE_ADMIN_WALLET_ADDRESS,
+		requestBody
+	);
+  }
 
 
   private async updateInventory(username: string, cardNames: string[], tokenIds: string[]): Promise<void> {

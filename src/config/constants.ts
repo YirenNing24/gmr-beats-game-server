@@ -1,4 +1,5 @@
-import { ArbitrumSepolia } from "@thirdweb-dev/chains";
+import { Arbitrum } from "@thirdweb-dev/chains";
+
 
 
 // API Configuration
@@ -35,8 +36,7 @@ export const KDB: { host: string | undefined; port: string | number; password: s
 // Thirdweb SDK Configuration
 export const SECRET_KEY: string = process.env.SECRET_KEY || ""
 // Chain and Wallet Factory Configuration
-export const CHAIN: typeof ArbitrumSepolia  = ArbitrumSepolia;
-export const FACTORIES: Record<number, string> = { [ArbitrumSepolia.chainId]: "0x514f1d6B8d22911eE84f97eDececE0479e38E1b6" };
+export const CHAIN: string  = Arbitrum.chainId.toString();
 // Contract Addresses
 export const BEATS_TOKEN: string = '0xAA95DA3D6EbdAb099630b6d4Cf0fcb904a44C2ab';
 export const GMR_TOKEN: string = '0x7dce27C81b7e112018FA6C2e27f8444b5D39688B';
@@ -59,14 +59,5 @@ export const GOOGLE_CLIENT_SECRET: string = process.env.GOOGLE_CLIENT_SECRET || 
 
 export const GAME_SERVER_KEY: string = process.env.GAME_SERVER_KEY || ""
 export const ANDROID_APP_HASH: string = process.env.ANDROID_APP_HASH || ""
-
-const factoryAddress: string = FACTORIES[CHAIN.chainId];
-export const SMART_WALLET_CONFIG = {
-  chain: CHAIN,
-  factoryAddress,
-  gasless: true,
-  secretKey: SECRET_KEY,
-};
-
 
 
