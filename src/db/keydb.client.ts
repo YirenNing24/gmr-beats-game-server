@@ -2,7 +2,6 @@ import { createClient } from 'redis';
 import { KEYDB_HOST, KEYDB_PORT, KEYDB_PASSWORD } from '../config/constants';
 
 const keydbUrl = `redis://:${KEYDB_PASSWORD}@${KEYDB_HOST}:${KEYDB_PORT}`;
-
 const keydb = createClient({ url: keydbUrl });
 
 // Listen for error events
@@ -13,6 +12,21 @@ keydb.on('connect', () => {
     console.log('Successfully connected to KeyDB!');
 });
 
+// Set a ping interval
+const PING_INTERVAL_MS = 10000; // 10 seconds
+keydb.on('ready', () => {
+    console.log('KeyDB is ready. Setting up ping interval...');
+    setInterval(async () => {
+        try {
+            const response = await keydb.ping();
+            console.log(`Ping response: ${response}`);
+        } catch (error) {
+            console.error('Error during ping:', error);
+        }
+    }, PING_INTERVAL_MS);
+});
+
+// Connect to KeyDB
 await keydb.connect();
 
 export default keydb;

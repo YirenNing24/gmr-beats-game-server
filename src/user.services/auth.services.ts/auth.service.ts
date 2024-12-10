@@ -58,7 +58,6 @@ class AuthService {
     
       const geo: GeoIp2Location | null = geoip.lookup(ipAddress);
       const country: string | undefined = geo?.country || "SOKOR";
-      const locKey: string = await hash(userName, parseInt(SALT_ROUNDS));
       const smartWallet = await walletService.createWallet(userName)
     
       const smartWalletAddress: string = smartWallet;
@@ -120,7 +119,7 @@ class AuthService {
       const geo = geoip.lookup(ipAddress);
       const country: string | undefined = geo?.country || "SOKOR";
       const locKey: string = await hash(userName, parseInt(SALT_ROUNDS));
-      const smartWallet = await walletService.createWallet(userName)
+      const smartWallet: string = await walletService.createWallet(userName)
     
       const smartWalletAddress: string = smartWallet;
       const session: Session | undefined = this.driver?.session();
@@ -223,9 +222,6 @@ class AuthService {
     }
 
 
-
-
-
     public async googleRegister(body: GoogleRegister , ipAddress: string): Promise<void | ValidationError> {
       const walletService: WalletService = new WalletService();
       const googleService: GoogleService = new GoogleService();
@@ -256,7 +252,7 @@ class AuthService {
               CREATE (u:User {
                 signupDate: $signupDate,
                 accountType: "google",
-                userId: $userId,
+                userId: $playerId,
                 username: $userName,
                 password: $encrypted,
                 locKey: $locKey
@@ -268,7 +264,7 @@ class AuthService {
                 inventorySize: 200,
               })
             `,
-            { signupDate, userName, encrypted, smartWalletAddress, playerStats, suspended, country, deviceId, locKey }
+            { signupDate, userName, encrypted, smartWalletAddress, playerStats, suspended, country, deviceId, locKey, playerId }
             ) 
           )
     
@@ -295,7 +291,6 @@ class AuthService {
     }
 
 
-    // Logins a user using Google Auth
     public async googleLogin(token: string): Promise<AuthenticateReturn | ValidationError> {
       const googleService: GoogleService = new GoogleService();
       const playerInfo: PlayerInfo = await googleService.googleAuth(token);
@@ -448,7 +443,6 @@ class AuthService {
     }
     
 
-    // Authenticates a user using JWT for auto-login.
     public async validateSession(token: string): Promise<ValidateSessionReturn>  {
           try {
             // Create a new instance of the needed services class
@@ -503,8 +497,6 @@ class AuthService {
               throw error;
             }
     }
-
-
 };
 
 export default AuthService
