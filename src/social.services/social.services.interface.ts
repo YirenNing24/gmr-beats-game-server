@@ -47,8 +47,7 @@ export interface CardGiftData {
 }
 
 export interface CardGiftSending {
-  localWallet: string
-  localWalletKey: string
+
   senderWalletAddress: string
   receiverWalletAddress: string
 }

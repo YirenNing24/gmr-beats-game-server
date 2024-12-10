@@ -23,6 +23,7 @@
     "@thirdweb-dev/wallets": "^2.5.39",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.17.8",
+    "@types/ping": "^0.4.4",
     "@types/rethinkdb": "^2.3.21",
     "bcrypt-ts": "^4.0.1",
     "colyseus": "^0.15.17",
@@ -38,6 +39,7 @@
     "nanoid": "^4.0.2",
     "neo4j-driver": "^5.26.0",
     "oauth-1.0a": "^2.2.6",
+    "ping": "^0.4.4",
     "redis": "^4.7.0",
     "rethinkdb": "^2.4.2",
     "thirdweb": "^5.71.0"

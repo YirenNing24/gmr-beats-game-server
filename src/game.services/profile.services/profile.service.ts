@@ -18,7 +18,6 @@ import { PlayerStats } from "../../user.services/user.service.interface";
 
 
 //** IMPORT THIRDWEB
-import { NFTCollection, ThirdwebSDK } from '@thirdweb-dev/sdk';
 import { CHAIN, PRIVATE_KEY, SECRET_KEY, SOUL_ADDRESS } from "../../config/constants";
 import { CardMetaData } from "../inventory.services/inventory.interface";
 
@@ -382,103 +381,103 @@ class ProfileService {
       }
     }
 
-  private async createSoul(userName: string, walletAddress: string | undefined, soulMetadata: SoulMetaData) {
-      const session: Session | undefined = this.driver?.session();
+  // private async createSoul(userName: string, walletAddress: string | undefined, soulMetadata: SoulMetaData) {
+  //     const session: Session | undefined = this.driver?.session();
 
-      try {
-        const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
-          secretKey: SECRET_KEY,
-        });
+  //     try {
+  //       const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
+  //         secretKey: SECRET_KEY,
+  //       });
     
-        // Update metadata using ERC1155 contract
-        const soul: NFTCollection = await sdk.getContract(SOUL_ADDRESS, "nft-collection");
+  //       // Update metadata using ERC1155 contract
+  //       const soul: NFTCollection = await sdk.getContract(SOUL_ADDRESS, "nft-collection");
 
-        const lastUpdated: string = new Date().toISOString();
+  //       const lastUpdated: string = new Date().toISOString();
 
-        const ownership: String[] = [];
-        const horoscopeMatch: String[] = [];
-        const animalMatch: String[] = []
-        const likedGroups: String[] = [];
-        const weeklyFirst: String [] = [];
+  //       const ownership: String[] = [];
+  //       const horoscopeMatch: String[] = [];
+  //       const animalMatch: String[] = []
+  //       const likedGroups: String[] = [];
+  //       const weeklyFirst: String [] = [];
 
-        const metadata = {...soulMetadata, lastUpdated, ownership, horoscopeMatch, likedGroups, animalMatch, weeklyFirst}
-        //@ts-ignore
-        await soul.erc721.mintTo(walletAddress, metadata);
+  //       const metadata = {...soulMetadata, lastUpdated, ownership, horoscopeMatch, likedGroups, animalMatch, weeklyFirst}
+  //       //@ts-ignore
+  //       await soul.erc721.mintTo(walletAddress, metadata);
 
-        const ownedSouls = await soul.getOwned(walletAddress);
+  //       const ownedSouls = await soul.getOwned(walletAddress);
 
-        ///@ts-ignore
-        const newSoulMetadata: SoulMetaData = ownedSouls[ownedSouls.length - 1].metadata;
-        await session?.executeWrite(tx =>
-          tx.run(
-            `
-            MATCH (u:User { username: $userName })
-            CREATE (s:Soul)
-            MERGE (u)-[:SOUL]->(s)
-            SET s = $newSoulMetadata
-            `,
-            { userName, newSoulMetadata }
-          )
-        );
+  //       ///@ts-ignore
+  //       const newSoulMetadata: SoulMetaData = ownedSouls[ownedSouls.length - 1].metadata;
+  //       await session?.executeWrite(tx =>
+  //         tx.run(
+  //           `
+  //           MATCH (u:User { username: $userName })
+  //           CREATE (s:Soul)
+  //           MERGE (u)-[:SOUL]->(s)
+  //           SET s = $newSoulMetadata
+  //           `,
+  //           { userName, newSoulMetadata }
+  //         )
+  //       );
 
-        await session?.close();
+  //       await session?.close();
   
-      } catch (error: any) {
-        throw error;
-    }
-    }
+  //     } catch (error: any) {
+  //       throw error;
+  //   }
+  //   }
 
-  private async saveSoul(userName: string, soulMetadata: SoulMetaData): Promise<void> {
-      const session: Session | undefined = this.driver?.session();
-      try {
-        const result: QueryResult | undefined = await session?.executeRead(tx =>
-          tx.run(
-            `
-            MATCH (u:User {username: $userName})-[:SOUL]->(s:Soul) 
-            RETURN s.id as id`,
-            { userName }
-          )
-        );
+  // private async saveSoul(userName: string, soulMetadata: SoulMetaData): Promise<void> {
+  //     const session: Session | undefined = this.driver?.session();
+  //     try {
+  //       const result: QueryResult | undefined = await session?.executeRead(tx =>
+  //         tx.run(
+  //           `
+  //           MATCH (u:User {username: $userName})-[:SOUL]->(s:Soul) 
+  //           RETURN s.id as id`,
+  //           { userName }
+  //         )
+  //       );
     
-        if (!result || result.records.length === 0) {
-          throw new Error(`No tokenId found for user: ${userName}`);
-        }
+  //       if (!result || result.records.length === 0) {
+  //         throw new Error(`No tokenId found for user: ${userName}`);
+  //       }
     
-        const tokenId: string = result.records[0].get('id');
+  //       const tokenId: string = result.records[0].get('id');
         
-        await session?.close(); 
+  //       await session?.close(); 
     
-        const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
-          secretKey: SECRET_KEY,
-        });
-        const lastUpdated: string = new Date().toISOString();
-        const metadata = { ...soulMetadata, lastUpdated, };
+  //       const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
+  //         secretKey: SECRET_KEY,
+  //       });
+  //       const lastUpdated: string = new Date().toISOString();
+  //       const metadata = { ...soulMetadata, lastUpdated, };
 
         
-        // Update metadata using ERC1155 contract
-        const edition: NFTCollection = await sdk.getContract(SOUL_ADDRESS, "nft-collection");
-        await edition.erc721.updateMetadata(tokenId, metadata);
+  //       // Update metadata using ERC1155 contract
+  //       const edition: NFTCollection = await sdk.getContract(SOUL_ADDRESS, "nft-collection");
+  //       await edition.erc721.updateMetadata(tokenId, metadata);
 
 
-        const sessionWrite: Session | undefined = this.driver?.session(); 
-        await sessionWrite?.executeWrite(tx =>
-          tx.run(
-            `
-            MATCH (u:User {username: $userName})-[:SOUL]->(s:Soul) 
-            SET s += $metadata`,
-            { userName, metadata }
-          )
-        );
+  //       const sessionWrite: Session | undefined = this.driver?.session(); 
+  //       await sessionWrite?.executeWrite(tx =>
+  //         tx.run(
+  //           `
+  //           MATCH (u:User {username: $userName})-[:SOUL]->(s:Soul) 
+  //           SET s += $metadata`,
+  //           { userName, metadata }
+  //         )
+  //       );
     
-        await sessionWrite?.close();
+  //       await sessionWrite?.close();
     
-      } catch (error: any) {
-        throw error;
-      } finally {
-        await session?.close();
-    }
+  //     } catch (error: any) {
+  //       throw error;
+  //     } finally {
+  //       await session?.close();
+  //   }
     
-    }
+  //   }
 
   public async getSoul(token: string): Promise<SoulMetaData> {
       const tokenService: TokenService = new TokenService();

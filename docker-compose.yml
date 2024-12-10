@@ -19,7 +19,28 @@ services:
     networks:
       - ann-network
 
+
+  game-server:
+    image: 
+kaetaro13/beats-game-server
+
 # Define the networks
 networks:
   ann-network:
     driver: bridge
+
+
+docker run \
+	--name ann-engine \
+	--env ENCRYPTION_PASSWORD=${ENGINE_ENCRYPTION_PASSWORD} \
+	--env THIRDWEB_API_SECRET_KEY=${SECRET_KEY} \
+	--env ADMIN_WALLET_ADDRESS=${ENGINE_ADMIN_WALLET_ADDRESS} \
+	--env POSTGRES_CONNECTION_URL=postgresql://postgres:${POSTGRES_PASSWORD}@ann-postgres:5432/postgres?sslmode=disable \
+	--env REDIS_URL=redis://ann-redis:6379/0 \
+	--env ENABLE_HTTPS=false \
+	--env TRUST_PROXY=true \
+	--cpus="0.5" \
+	--restart always \
+	--network ann-network \
+	--publish 127.0.0.1:3005:3005 \
+	thirdweb/engine:latest

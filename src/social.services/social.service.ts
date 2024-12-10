@@ -6,9 +6,8 @@ import rt from "rethinkdb";
 import { getRethinkDB } from "../db/rethink";
 
 //**THIRDWEB IMPORT
-import { Edition, ThirdwebSDK } from "@thirdweb-dev/sdk";
-import { SmartWallet } from "@thirdweb-dev/wallets";
-import { LocalWalletNode } from "@thirdweb-dev/wallets/evm/wallets/local-wallet-node";
+import { engine } from "../user.services/wallet.services/wallet.service";
+import { Arbitrum } from "@thirdweb-dev/chains";
 
 //** ERROR CODES
 import ValidationError from "../outputs/validation.error";
@@ -29,11 +28,12 @@ import ProfileService from "../game.services/profile.services/profile.service";
 import NotificationService from "../game.services/notification.services/notification.service";
 
 //** CONFIG IMPORT
-import { CHAIN, EDITION_ADDRESS, SECRET_KEY, SMART_WALLET_CONFIG } from "../config/constants";
+import { EDITION_ADDRESS } from "../config/constants";
 
 //**NANOID IMPORT
 import { nanoid } from "nanoid/async";
 import { followCypher, getFollowersFollowingCountCypher } from "./social.cypher";
+
 
 
 
@@ -445,12 +445,11 @@ class SocialService {
         const record = result.records[0];
         const smartWalletAddress: string = record.get('smartWalletAddress');
         const receiverWalletAddress: string = record.get('receiverWalletAddress');
-        const localWallet: string = record.get('localWallet');
-        const localWalletKey: string = record.get('localWalletKey');
-  
+
+
         // Call the cardGiftSending function with the obtained addresses and cardData
 
-        const cardGiftSend: CardGiftSending = { localWallet, localWalletKey, senderWalletAddress: smartWalletAddress, receiverWalletAddress};
+        const cardGiftSend: CardGiftSending = { senderWalletAddress: smartWalletAddress, receiverWalletAddress};
         await this.cardGiftSending(cardGiftData, cardGiftSend, userName);
       } else {
         throw new Error("No matching records found or users do not follow each other");
@@ -493,29 +492,20 @@ class SocialService {
   private async sendGiftFromWallet(cardGiftSending: CardGiftSending, cardData: CardGiftData) {
     try {
 
-      const { localWalletKey, localWallet, receiverWalletAddress } = cardGiftSending;
+      const { senderWalletAddress, receiverWalletAddress } = cardGiftSending;
 
-      const wallet: LocalWalletNode = new LocalWalletNode({ chain: CHAIN });
-      await wallet.import({
-        encryptedJson: localWallet,
-        password: localWalletKey,
-      });
+      const requestBody = {operator: senderWalletAddress, approved: true};
 
-      // Connect the smart wallet
-      const smartWallet: SmartWallet = new SmartWallet(SMART_WALLET_CONFIG);
-      await smartWallet.connect({
-        personalWallet: wallet,
-      });
 
-      // Use the SDK normally
-      const sdk: ThirdwebSDK = await ThirdwebSDK.fromWallet(smartWallet, CHAIN, {
-        secretKey: SECRET_KEY,
-      });
-
-      const cardContract: Edition = await sdk.getContract(EDITION_ADDRESS, 'edition');
-      await cardContract.transfer(receiverWalletAddress, cardData.id, 1)
+      await engine.erc1155.setApprovalForAll(Arbitrum.chainId.toString(), EDITION_ADDRESS, senderWalletAddress, requestBody);
+      await engine.erc1155.transferFrom(
+        Arbitrum.chainId.toString(), 
+        EDITION_ADDRESS, senderWalletAddress, 
+        { from: senderWalletAddress, to: receiverWalletAddress, tokenId: cardData.id, amount: '1' }
+      );
 
     } catch(error: any) {
+      console.log(error)
       throw error
     }
   }

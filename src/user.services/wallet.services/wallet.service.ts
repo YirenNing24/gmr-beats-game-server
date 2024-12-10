@@ -1,12 +1,8 @@
 //** THIRDWEB IMPORT * TYPES
 import { Engine } from "@thirdweb-dev/engine";
-import { Account, createWallet, privateKeyToAccount, smartWallet, Wallet } from "thirdweb/wallets";
-import { createThirdwebClient } from 'thirdweb'
-import { sepolia } from "thirdweb/chains";
-
 
 //** CONFIG IMPORT
-import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, CHAIN, SECRET_KEY, SMART_WALLET_CONFIG, ENGINE_URI } from "../../config/constants";
+import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, ENGINE_URI } from "../../config/constants";
 
 //**  TYPE INTERFACE
 import { WalletData } from "../user.service.interface";
@@ -18,10 +14,6 @@ import { Driver, Session } from "neo4j-driver-core";
 
 //** ERROR CODES
 import ValidationError from '../../outputs/validation.error.js'
-import { LocalWalletNode } from "@thirdweb-dev/wallets/evm/wallets/local-wallet-node";
-import { PrivateKeyWallet, SmartWallet } from "@thirdweb-dev/wallets";
-import { ThirdwebSDK } from "@thirdweb-dev/sdk";
-
 
 export const engine: Engine = new Engine({
   url: ENGINE_URI,
@@ -51,30 +43,6 @@ class WalletService {
          throw error;
      }
    }
-
-  // public async createWallet(password: string): Promise<{ smartWalletAddress: string , localWallet: string}> {
-  //   try {
-  //     // Local signer
-  //     const newWallet: LocalWalletNode = new LocalWalletNode({ chain: CHAIN });
-  //     await newWallet.generate();
-  //     const localWallet: string = await newWallet.export({
-  //       strategy: "encryptedJson",
-  //       password: password,
-  //     });
-
-  //     const smartWalletAddress = await this.getWalletAddress(localWallet, password);
-      
-  //     return { smartWalletAddress, localWallet };
-  //   } catch (error: any) {
-  //     console.error("Something went wrong: ", error);
-  //     throw error;
-  //   }
-  // }
-
-
-
-
-
 
   public async getWalletBalance(walletAddress: string) {
     try {
@@ -123,37 +91,6 @@ class WalletService {
     }
   }
 
-  
-  public async getWalletAddress(walletData: string, password: string): Promise<string> {
-    try {
-      const localWallet: LocalWalletNode = new LocalWalletNode({ chain: CHAIN });
-      await localWallet.import({
-        encryptedJson: walletData,
-        password: password,
-      });
-
-      // Connect the smart wallet
-      const smartWallet: SmartWallet = new SmartWallet(SMART_WALLET_CONFIG);
-      await smartWallet.connect({
-        personalWallet: localWallet,
-      });
-
-      // Use the SDK normally
-      const sdk: ThirdwebSDK = await ThirdwebSDK.fromWallet(smartWallet, CHAIN, {
-        secretKey: SECRET_KEY,
-      });
-
-      // Fetch token balances using the SDK
-      const [smartWalletAddress] = await Promise.all([
-        sdk.wallet.getAddress()
-      ])
-
-      // Return an object containing the wallet's 0x
-      return smartWalletAddress as string
-    } catch (error: any) {
-      throw error;
-    }
-  }
 }
 
 

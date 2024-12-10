@@ -173,6 +173,100 @@ class GachaService {
   }
 
 
+//   private async transferRewardCards(rewardCards: string[], walletAddress: string, username: string, packId: string): Promise<void> {
+//     const session: Session = this.driver.session();
+//     try {
+//         // Initialize the ThirdwebSDK with your private key and chain
+//         const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
+//             secretKey: SECRET_KEY,
+//         });
+
+//         const client = createThirdwebClient({
+//             secretKey: SECRET_KEY,
+//           });
+
+
+//         const contract = getContract({
+//             client,
+//             chain: defineChain(421614),
+//             address: "0xa98d398DA254Cda866acae71592ac8E12581AF19",
+
+//           });
+
+
+//           const transaction = await prepareContractCall({
+//             contract,
+//             method:
+//               "function safeBatchTransferFrom(address from, address to, uint256[] ids, uint256[] amounts, bytes data)",
+//             params: [from, to, ids, amounts, data],
+//           });
+
+        
+        
+
+//         const cardContract: Edition = await sdk.getContract(EDITION_ADDRESS, 'edition');
+
+//         const cardIDs: Array<string> = [];
+//         const cardNames: Array<string> = [];
+//         const amounts: Array<number> = [];
+
+//         for (const cardName of rewardCards) {
+//             // Cypher query to find one card for each name in rewardCards
+//             const query = `
+//                 MATCH (c:Card)
+//                 WHERE c.name = $cardName 
+//                 AND (c.transferred = false OR c.transferred IS NULL)
+//                 RETURN c
+//                 LIMIT 1
+//             `;
+
+//             // Execute the query and retrieve the matching card
+//             const result: QueryResult<RecordShape> = await session.executeRead((tx: ManagedTransaction) =>
+//                 tx.run(query, { cardName })
+//             );
+
+//             if (result.records.length === 0) {
+//                 console.log(`No valid card found for: ${cardName}`);
+//                 continue;
+//             }
+
+//             const record = result.records[0];
+//             const card = record.get('c').properties;
+//             const { id, name } = card;
+//             if (id) {
+//                 cardIDs.push(id);
+//                 cardNames.push(name);
+//                 amounts.push(1); // Add 1 to the amounts array for each card
+
+//                 // Set transferred = true in the database first
+//                 const updateQuery = `
+//                     MATCH (c:Card {id: $id})
+//                     SET c.transferred = true
+//                 `;
+//                 await session.run(updateQuery, { id });
+//             }
+//         }
+
+//         if (cardIDs.length > 0) {
+//             // Use transferBatch with the amounts array
+//             await cardContract.transferBatch(walletAddress, cardIDs, amounts);
+
+//             // Update inventory and burn pack if cards were transferred
+//             await this.updateInventory(username, cardNames, cardIDs);
+//             await cardContract.burn(packId, 1);
+//         } else {
+//             console.log('No valid cards were found to transfer.');
+//         }
+
+//     } catch (error: any) {
+//         console.error(error);
+//         throw error;
+//     } finally {
+//         await session.close();
+//     }
+//   }
+
+
   private async updateInventory(username: string, cardNames: string[], tokenIds: string[]): Promise<void> {
     const session: Session = this.driver.session();
     try {
