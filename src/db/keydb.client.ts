@@ -18,8 +18,7 @@ keydb.on('ready', () => {
     console.log('KeyDB is ready. Setting up ping interval...');
     setInterval(async () => {
         try {
-            const response = await keydb.ping();
-            console.log(`Ping response: ${response}`);
+            await keydb.ping();
         } catch (error) {
             console.error('Error during ping:', error);
         }

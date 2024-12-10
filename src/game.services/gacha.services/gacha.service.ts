@@ -5,8 +5,6 @@ import { Driver, ManagedTransaction, QueryResult, RecordShape, Session } from "n
 import rt from "rethinkdb";
 import { getRethinkDB } from "../../db/rethink";
 
-//** THIRDWEB IMPORTS
-import { Edition, ThirdwebSDK } from "@thirdweb-dev/sdk";
 
 //** VALIDATION ERROR
 import ValidationError from "../../outputs/validation.error";
