@@ -102,6 +102,8 @@ class GoogleService {
         const authService: AuthService = new AuthService()
         try {
 
+            console.log(authVerify)
+
             // Retrieve the challenge that was previously stored
             const expectedChallenge = await keydb.hGet(`passkey:challenge:${authVerify.username}`, 'challenge') as string;
             
@@ -138,7 +140,9 @@ class GoogleService {
     
             // Perform the verification
             const verificationResult: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(verificationOptions);
-    
+            
+
+            console.log("resultsss: ", verificationResult)
             // Check if the verification was successful
             if (verificationResult.verified) {
                 console.log("Authentication successful!");
