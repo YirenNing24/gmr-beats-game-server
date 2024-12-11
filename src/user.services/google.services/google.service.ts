@@ -68,10 +68,10 @@ class GoogleService {
     }
 
 
-    public async googlePassKeyAuth(username: string) {
+    public async googlePassKeyAuth(username: {username: string}) {
         try {
             // Convert username to Base64URL format
-            const base64UrlUsername: string = toBase64Url(username);
+            const base64UrlUsername: string = toBase64Url(username.username);
 
             // Generate authentication options with parameters specific to your app
             const options = await generateAuthenticationOptions({
@@ -99,15 +99,15 @@ class GoogleService {
 
 
     // Method to handle the passkey authentication response
-    public async googlePassKeyAuthVerify(username: string, responseToken: string) {
+    public async googlePassKeyAuthVerify(authVerify: {username: string, responseToken: string}) {
         const authService: AuthService = new AuthService()
         try {
 
             // Retrieve the challenge that was previously stored
-            const expectedChallenge = await keydb.hGet(`passkey:challenge:${username}`, 'challenge') as string;
+            const expectedChallenge = await keydb.hGet(`passkey:challenge:${authVerify.username}`, 'challenge') as string;
             
             // Parse the response token (it should be the JSON object from the client)
-            const response = JSON.parse(responseToken);
+            const response = JSON.parse(authVerify.responseToken);
     
             // Extract the credential id and signature from the response token
             const credentialID = response.id;
@@ -115,7 +115,7 @@ class GoogleService {
 
             
             // Retrieve the credential public key and counter for this user from your storage
-            const passkeyUser = await authService.getPasskeyUserData(username);
+            const passkeyUser = await authService.getPasskeyUserData(authVerify.username);
             const { counter, publicKey  } = passkeyUser
             
 
@@ -157,12 +157,12 @@ class GoogleService {
     }
     
 
-    public async googleRegisterPassKey(username: string) {
+    public async googleRegisterPassKey(username: { username: string }) {
         try {
             const registrationOptions: GenerateRegistrationOptionsOpts = {
                 rpName: "beats.game", // The name of your application
                 rpID: "beats.gmetarave.com", // Your domain (this should match the domain in the origin)
-                userName: username, // The unique username of the user
+                userName: username.username, // The unique username of the user
     
                 // Generate a unique user ID as a Uint8Array for secure registration; this might come from your database
                 userID: new TextEncoder().encode("unique-user-id"), 
@@ -171,7 +171,7 @@ class GoogleService {
                 challenge: new TextEncoder().encode("secure-challenge-string"), 
     
                 // Display name to show in the authenticator UI
-                userDisplayName: username, 
+                userDisplayName: username.username, 
     
                 // Timeout for the registration process (e.g., 30 seconds)
                 timeout: 30000, 
@@ -203,7 +203,7 @@ class GoogleService {
             const options = await generateRegistrationOptions(registrationOptions);
             // await keydb.HSET(`passkey:challenge:${username}`, { challenge: options.challenge });
 
-            keydb.SET(`challenge:${username}`, options.challenge)
+            keydb.SET(`challenge:${username.username}`, options.challenge)
 
             return options;
         } catch (error: any) {

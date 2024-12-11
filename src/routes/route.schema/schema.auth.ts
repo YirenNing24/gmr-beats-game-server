@@ -82,9 +82,13 @@ export const googleServerTokenSchema = {
  * @property {string} body.serverToken - The server token for Google authentication.
  */
 export const passkeySchema = { 
-    body: t.String()
+    body: t.Object({ username: t.String()})
 }
 
+
+export const passkeyAuthVerifySchema = { 
+    body: t.Object({ username: t.String(), responseToken: t.String()})
+}
 
 export const passkeyRegistrationResponseSchema = {
     body: t.Object({

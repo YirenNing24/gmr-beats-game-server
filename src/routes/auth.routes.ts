@@ -16,7 +16,7 @@ import { VerifiedRegistrationResponse, VerifyRegistrationResponseOpts } from '@s
 import ValidationError from '../outputs/validation.error';
 
 //** VALIDATION SCHEMA IMPORT
-import { authorizationBearerSchema, beatsLoginSchema, googleServerTokenSchema, passkeyRegistrationResponseSchema, passkeySchema, preRegistrationSchema, registrationSchema } from './route.schema/schema.auth';
+import { authorizationBearerSchema, beatsLoginSchema, googleServerTokenSchema, passkeyAuthVerifySchema, passkeyRegistrationResponseSchema, passkeySchema, preRegistrationSchema, registrationSchema } from './route.schema/schema.auth';
 import { ip } from 'elysia-ip';
 import TokenService from '../user.services/token.services/token.service';
 import { SuccessMessage } from '../outputs/success.message';
@@ -152,6 +152,38 @@ const auth = (app: Elysia): void => {
         throw error
       }
         }, passkeySchema,
+      )
+
+
+  .post('/api/login/passkey', async ({ body, ip }): Promise<any> => {
+        try {
+    
+          const googleService = new GoogleService()
+          const ipAddress = ip as string
+          const result = await googleService.googlePassKeyAuth(body)
+          return result
+    
+        } catch (error: any) {
+          console.log(error)
+          throw error
+        }
+          }, passkeySchema
+      )
+
+
+  .post('/api/login/passkey/verify-auth', async ({ body, ip }): Promise<any> => {
+          try {
+      
+            const googleService = new GoogleService()
+            const ipAddress = ip as string
+            const result = await googleService.googlePassKeyAuthVerify(body)
+            return result
+      
+          } catch (error: any) {
+            console.log(error)
+            throw error
+          }
+            }, passkeyAuthVerifySchema
       )
 
 
