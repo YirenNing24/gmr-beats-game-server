@@ -70,17 +70,14 @@ class GoogleService {
 
     public async googlePassKeyAuth(username: {username: string}) {
         try {
-            // Convert username to Base64URL format
-            const base64UrlUsername: string = toBase64Url(username.username);
 
             // Generate authentication options with parameters specific to your app
             const options = await generateAuthenticationOptions({
+                challenge: undefined,
                 rpID: "beats.gmetarave.com",  // The domain without "https://"
-                userVerification: "preferred",
-                allowCredentials: [{
-                    id: base64UrlUsername,  // Use Base64URL username as id
-                    transports: ["usb", "ble", "nfc", "internal"],  // optional, specify transports if known
-                }],
+                userVerification: "required",
+                timeout: 1800000,
+                allowCredentials: [],
             });
 
             // Store the expected challenge in keydb temporarily for later verification
