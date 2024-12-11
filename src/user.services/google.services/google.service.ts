@@ -125,8 +125,8 @@ class GoogleService {
             console.log(passkeyAuthVerify)
 
             // Retrieve the challenge that was previously stored
-            const expectedChallenge = await keydb.hGet(`passkey:challenge:${passkeyAuthVerify.username}`, 'challenge') as string;
-            
+            const expectedChallenge: string = await keydb.hGet(`passkey:challenge:${passkeyAuthVerify.username}`, 'challenge') as string;
+            console.log("expected challenge: ", expectedChallenge)
     
             // Extract the credential id and signature from the response token
             const credentialID = passkeyAuthVerify.id;
@@ -163,8 +163,6 @@ class GoogleService {
             // Perform the verification
             const verificationResult: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(verificationOptions);
             
-
-            console.log("resultsss: ", verificationResult)
             // Check if the verification was successful
             if (verificationResult.verified) {
                 console.log("Authentication successful!");
@@ -307,10 +305,3 @@ class GoogleService {
 }
 
 export default GoogleService
-
-
-// Helper function to convert a string to Base64URL
-function toBase64Url(str: string): string {
-    const base64 = Buffer.from(str, 'utf-8').toString('base64');  // Convert string to base64
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');  // Base64 to Base64URL
-}
