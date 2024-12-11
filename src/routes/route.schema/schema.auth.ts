@@ -89,17 +89,24 @@ export const passkeySchema = {
 
 
 
-export const passkeyAuthVerifySchema = { 
+export const passkeyAuthVerifySchema = {
 	body: t.Object({
-		username: t.String(),
-		allowCredentials: t.Array(t.Any()), // An empty array can be represented by a generic type
-		challenge: t.String(),
+		authenticatorAttachment: t.String(),
+		clientExtensionResults: t.Object({}, { additionalProperties: true }), // Allows any structure inside the object
 		deviceId: t.String(),
-		rpId: t.String(),
-		timeout: t.Number(),
-		userVerification: t.String()
-	})
+		id: t.String(),
+		rawId: t.String(),
+		response: t.Object({
+			authenticatorData: t.String(),
+			clientDataJSON: t.String(),
+			signature: t.String(),
+			userHandle: t.String(),
+		}),
+		type: t.String(),
+		username: t.String(),
+	}),
 };
+
 
 
 export const passkeyRegistrationResponseSchema = {

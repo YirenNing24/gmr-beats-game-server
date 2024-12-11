@@ -175,15 +175,15 @@ const auth = (app: Elysia): void => {
             const googleService = new GoogleService()
             const ipAddress = ip as string
 
-            const authVerify = body as any
-            const result = await googleService.googlePassKeyAuthVerify(authVerify)
+
+            const result = await googleService.googlePassKeyAuthVerify(body)
             return result
       
           } catch (error: any) {
             console.log(error)
             throw error
           }
-            }
+            }, passkeyAuthVerifySchema
       )
 
 

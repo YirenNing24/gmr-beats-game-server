@@ -25,6 +25,24 @@ import { getDriver } from "../../db/memgraph";
 import { Driver } from "neo4j-driver";
 
 
+interface PasskeyAuthVerify {
+	authenticatorAttachment: string | undefined;
+	clientExtensionResults: Record<string, unknown>; // Generic object to allow flexibility
+	deviceId: string;
+	id: string;
+	rawId: string;
+	response: {
+		authenticatorData: string;
+		clientDataJSON: string;
+		signature: string;
+		userHandle: string;
+	};
+	type: string;
+	username: string;
+}
+
+
+
 class GoogleService {
 
     // Authenticates the user with Google using the provided token.
@@ -98,25 +116,22 @@ class GoogleService {
 
 
     // Method to handle the passkey authentication response
-    public async googlePassKeyAuthVerify(authVerify: {username: string, responseToken: string}) {
+    public async googlePassKeyAuthVerify(passkeyAuthVerify: PasskeyAuthVerify) {
         const authService: AuthService = new AuthService()
         try {
 
-            console.log(authVerify)
 
             // Retrieve the challenge that was previously stored
-            const expectedChallenge = await keydb.hGet(`passkey:challenge:${authVerify.username}`, 'challenge') as string;
+            const expectedChallenge = await keydb.hGet(`passkey:challenge:${passkeyAuthVerify.username}`, 'challenge') as string;
             
-            // Parse the response token (it should be the JSON object from the client)
-            const response = JSON.parse(authVerify.responseToken);
     
             // Extract the credential id and signature from the response token
-            const credentialID = response.id;
-            const signature = response.response.signature;  // This will be used for verification
+            const credentialID = passkeyAuthVerify.id;
+            const signature = passkeyAuthVerify.response.signature;  // This will be used for verification
 
             
             // Retrieve the credential public key and counter for this user from your storage
-            const passkeyUser = await authService.getPasskeyUserData(authVerify.username);
+            const passkeyUser = await authService.getPasskeyUserData(passkeyAuthVerify.username);
             const { counter, publicKey  } = passkeyUser
             
 
@@ -129,8 +144,12 @@ class GoogleService {
             };
     
             // Define the verification options
+
+            const { username, ...properties } = passkeyAuthVerify
+            
             const verificationOptions: VerifyAuthenticationResponseOpts = {
-                response,
+                //@ts-ignore
+                response: properties,
                 expectedChallenge,  // The challenge you stored earlier
                 expectedOrigin: 'https://beats.gmetarave.com',  // Your registered RP origin (domain)
                 expectedRPID: 'beats.gmetarave.com',  // The RP ID (domain)
