@@ -157,12 +157,12 @@ class GoogleService {
     }
     
 
-    public async googleRegisterPassKey(username: { username: string }) {
+    public async googleRegisterPassKey(username: string) {
         try {
             const registrationOptions: GenerateRegistrationOptionsOpts = {
                 rpName: "beats.game", // The name of your application
                 rpID: "beats.gmetarave.com", // Your domain (this should match the domain in the origin)
-                userName: username.username, // The unique username of the user
+                userName: username, // The unique username of the user
     
                 // Generate a unique user ID as a Uint8Array for secure registration; this might come from your database
                 userID: new TextEncoder().encode("unique-user-id"), 
@@ -171,7 +171,7 @@ class GoogleService {
                 challenge: new TextEncoder().encode("secure-challenge-string"), 
     
                 // Display name to show in the authenticator UI
-                userDisplayName: username.username, 
+                userDisplayName: username, 
     
                 // Timeout for the registration process (e.g., 30 seconds)
                 timeout: 30000, 
@@ -203,7 +203,7 @@ class GoogleService {
             const options = await generateRegistrationOptions(registrationOptions);
             // await keydb.HSET(`passkey:challenge:${username}`, { challenge: options.challenge });
 
-            keydb.SET(`challenge:${username.username}`, options.challenge)
+            keydb.SET(`challenge:${username}`, options.challenge)
 
             return options;
         } catch (error: any) {
