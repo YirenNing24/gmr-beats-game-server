@@ -117,7 +117,8 @@ class GoogleService {
 
     // Method to handle the passkey authentication response
     public async googlePassKeyAuthVerify(passkeyAuthVerify: PasskeyAuthVerify) {
-        const authService: AuthService = new AuthService()
+        const driver: Driver = getDriver()
+        const authService: AuthService = new AuthService(driver)
         try {
             
 
