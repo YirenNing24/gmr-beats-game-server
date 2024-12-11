@@ -121,12 +121,10 @@ class GoogleService {
         const authService: AuthService = new AuthService(driver)
         try {
             
-
-            console.log(passkeyAuthVerify)
-
             // Retrieve the challenge that was previously stored
-            const expectedChallenge: string = await keydb.hGet(`passkey:challenge:${passkeyAuthVerify.username}`, 'challenge') as string;
-            console.log("expected challenge: ", expectedChallenge)
+            const expectedChallenge: string = await keydb.GET(`passkey:challenge:${passkeyAuthVerify.username}`) as string;
+
+            console.log(expectedChallenge)
     
             // Extract the credential id and signature from the response token
             const credentialID = passkeyAuthVerify.id;
@@ -210,8 +208,6 @@ class GoogleService {
                     }
                 ],
 
-
-    
                 // Authenticator selection criteria, setting platform authenticator as an example
                 authenticatorSelection: {
                     authenticatorAttachment: "platform", // 'platform' for passkeys on device
@@ -220,13 +216,8 @@ class GoogleService {
                 },
             };
 
-
-    
             // Call the function to generate registration options
             const options = await generateRegistrationOptions(registrationOptions);
-            // await keydb.HSET(`passkey:challenge:${username}`, { challenge: options.challenge });
-
-            keydb.SET(`challenge:${username.username}`, options.challenge)
 
             return options;
         } catch (error: any) {
@@ -237,8 +228,6 @@ class GoogleService {
 
 
     public async googleVerifyPassKeyRegistration(response: RegistrationResponseJSON, ipAddress: string): Promise<SuccessMessage> {
-        console.log(response)
-
         const driver: Driver = getDriver()
         const authService: AuthService = new AuthService(driver)
         try {
