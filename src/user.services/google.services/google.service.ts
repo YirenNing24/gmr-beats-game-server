@@ -81,7 +81,7 @@ class GoogleService {
             });
 
 
-            console.log(options)
+
             // Store the expected challenge in keydb temporarily for later verification
             // In production, use a secure session store or database with TTL if needed
             keydb.SET(`passkey:challenge:${username}`, options.challenge)
@@ -102,7 +102,7 @@ class GoogleService {
         const authService: AuthService = new AuthService()
         try {
 
-            console.log("atuhverif: ", authVerify)
+            console.log(authVerify)
 
             // Retrieve the challenge that was previously stored
             const expectedChallenge = await keydb.hGet(`passkey:challenge:${authVerify.username}`, 'challenge') as string;
