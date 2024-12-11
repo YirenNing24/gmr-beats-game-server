@@ -59,7 +59,7 @@ const auth = (app: Elysia): void => {
     }
   }, beatsLoginSchema)
 
-  .post('/api/validate_session/beats', async ({ headers }): Promise<AuthenticateReturn> => {
+  .post('/api/validate-session/beats', async ({ headers }): Promise<AuthenticateReturn> => {
     try {
       const authorizationHeader: string | null = headers.authorization;
       if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -168,7 +168,7 @@ const auth = (app: Elysia): void => {
           throw error
         }
           }, passkeySchema
-      )
+    )
 
 
   .post('/api/login/passkey/verify-auth', async ({ body, ip }): Promise<any> => {
