@@ -80,6 +80,8 @@ class GoogleService {
                 allowCredentials: [],
             });
 
+
+            console.log(options)
             // Store the expected challenge in keydb temporarily for later verification
             // In production, use a secure session store or database with TTL if needed
             keydb.SET(`passkey:challenge:${username}`, options.challenge)
