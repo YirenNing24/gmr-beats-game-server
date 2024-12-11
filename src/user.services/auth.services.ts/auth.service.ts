@@ -428,8 +428,8 @@ class AuthService {
               throw new ValidationError(`User with username '${userName}' not found.`, "");
           }
 
-          // Compare Passwords
-          const user: PasskeyUserData = result?.records[0].get('u');
+          const user: PasskeyUserData = result?.records[0].get('u').properties;
+          console.log(user)
 
           const { publicKey, counter } = user.properties
 
