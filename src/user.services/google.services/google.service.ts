@@ -102,7 +102,7 @@ class GoogleService {
         const authService: AuthService = new AuthService()
         try {
 
-            console.log(authVerify)
+            console.log("atuhverif: ", authVerify)
 
             // Retrieve the challenge that was previously stored
             const expectedChallenge = await keydb.hGet(`passkey:challenge:${authVerify.username}`, 'challenge') as string;
