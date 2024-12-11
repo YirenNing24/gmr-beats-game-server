@@ -214,7 +214,7 @@ class GoogleService {
 
 
     public async googleVerifyPassKeyRegistration(response: RegistrationResponseJSON, ipAddress: string): Promise<SuccessMessage> {
-
+        console.log(response)
 
         const driver: Driver = getDriver()
         const authService: AuthService = new AuthService(driver)
@@ -254,6 +254,8 @@ class GoogleService {
             const userData: PasskeyUser = { userName: username, deviceId, id, publicKey, counter }
             await authService.passkeyRegister(userData, ipAddress);
 
+
+            console.log("real :",  result)
             return new SuccessMessage("Registration successful")
         } catch (error: any) {
             console.error('Error in googleVerifyPassKeyRegistration:', error);
