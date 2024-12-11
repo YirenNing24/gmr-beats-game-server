@@ -86,6 +86,9 @@ export const passkeySchema = {
 }
 
 
+
+
+
 export const passkeyAuthVerifySchema = { 
     body: t.Object({ username: t.String(), responseToken: t.String()})
 }

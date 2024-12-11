@@ -141,7 +141,6 @@ const auth = (app: Elysia): void => {
 
   .post('/api/register/passkey', async ({ body, ip }): Promise<any> => {
       try {
-  
         const googleService = new GoogleService()
         const ipAddress = ip as string
         const result = await googleService.googleRegisterPassKey(body);
@@ -157,18 +156,17 @@ const auth = (app: Elysia): void => {
 
   .post('/api/login/passkey', async ({ body, ip }): Promise<any> => {
         try {
-    
+
           const googleService = new GoogleService()
           const ipAddress = ip as string
           const result = await googleService.googlePassKeyAuth(body)
           return result
-    
         } catch (error: any) {
           console.log(error)
           throw error
         }
           }, passkeySchema
-    )
+     )
 
 
   .post('/api/login/passkey/verify-auth', async ({ body, ip }): Promise<any> => {
