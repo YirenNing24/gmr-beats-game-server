@@ -149,7 +149,7 @@ class GoogleService {
                 //@ts-ignore
                 response: properties,
                 expectedChallenge,  // The challenge you stored earlier
-                expectedOrigin: 'https://beats.gmetarave.com',  // Your registered RP origin (domain)
+                expectedOrigin: ANDROID_APP_HASH,  // Your registered RP origin (domain)
                 expectedRPID: 'beats.gmetarave.com',  // The RP ID (domain)
                 credential,  // The WebAuthnCredential object
                 requireUserVerification: true, // Optionally enforce user verification
@@ -215,7 +215,7 @@ class GoogleService {
                     userVerification: "required", // Enforce user verification
                 },
             };
-
+            
             // Call the function to generate registration options
             const options = await generateRegistrationOptions(registrationOptions);
             await keydb.SET(`registerChallenge:${username.username}`, options.challenge)
