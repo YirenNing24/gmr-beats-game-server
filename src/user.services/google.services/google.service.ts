@@ -217,6 +217,8 @@ class GoogleService {
 
             // Call the function to generate registration options
             const options = await generateRegistrationOptions(registrationOptions);
+            await keydb.SET(`registerChallenge:${username}`, options.challenge)
+
 
             return options;
         } catch (error: any) {
@@ -279,7 +281,7 @@ class GoogleService {
     private async getStoredChallenge(username: string): Promise<string> {
         try {
             // Retrieve the stored challenge data from KeyDB
-            const data = await keydb.get(`challenge:${username}`) as string;
+            const data = await keydb.get(`registerChallenge:${username}`) as string;
             if (!data) {
                 throw new Error(`No challenge found for user: ${username}`);
             }
