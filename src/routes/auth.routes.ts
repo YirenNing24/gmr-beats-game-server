@@ -187,14 +187,14 @@ const auth = (app: Elysia): void => {
       )
 
 
-  .post('/api/register/passkey/verify-registration', async ({ body, ip }): Promise<SuccessMessage> => {
+  .post('/api/register/passkey/verify-registration', async ({ body, ip }): Promise<AuthenticateReturn> => {
         try {
     
           const googleService = new GoogleService()
           const ipAddress = ip as string
 
           const response = body as RegistrationResponseJSON
-          const result: SuccessMessage = await googleService.googleVerifyPassKeyRegistration(response, ipAddress)
+          const result: AuthenticateReturn = await googleService.googleVerifyPassKeyRegistration(response, ipAddress)
           return result
     
         } catch (error: any) {

@@ -22,10 +22,11 @@ import keydb from "../../db/keydb.client";
 import AuthService from "../auth.services.ts/auth.service";
 import { SuccessMessage } from "../../outputs/success.message";
 import { getDriver } from "../../db/memgraph";
-import { Driver } from "neo4j-driver";
+import { Driver, ManagedTransaction, QueryResult, Session } from "neo4j-driver";
 import TokenService from "../token.services/token.service";
 import WalletService from "../wallet.services/wallet.service";
 import EnergyService from "../../game.services/energy.services/energy.service";
+import ValidationError from "../../outputs/validation.error";
 
 
 interface PasskeyAuthVerify {
@@ -121,9 +122,8 @@ class GoogleService {
     public async googlePassKeyAuthVerify(passkeyAuthVerify: PasskeyAuthVerify) {
         const driver: Driver = getDriver();
         const authService: AuthService = new AuthService(driver);
-        const walletService: WalletService = new WalletService();
-        const energyService: EnergyService = new EnergyService();
-
+        const walletService: WalletService = new WalletService(driver);
+        const energyService: EnergyService = new EnergyService(driver);
         const tokenService: TokenService = new TokenService();
         try {
             
@@ -204,6 +204,21 @@ class GoogleService {
     
 
     public async googleRegisterPassKey(username: { username: string }) {
+
+        const driver: Driver = getDriver();
+        const session: Session | undefined = driver?.session();
+        const playerName = username.username
+        const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
+            tx.run(
+                `MATCH (u:User {username: $playerName})
+                 RETURN u.username`,
+                { playerName }
+            )
+        );
+        if (!result || result.records.length > 0) {
+            throw new ValidationError(`An account already exists with the username ${playerName}.`, "");
+        }
+
         try {
             const registrationOptions: GenerateRegistrationOptionsOpts = {
                 rpName: "beats.game", // The name of your application
@@ -254,9 +269,12 @@ class GoogleService {
     }
 
 
-    public async googleVerifyPassKeyRegistration(response: RegistrationResponseJSON, ipAddress: string): Promise<SuccessMessage> {
+    public async googleVerifyPassKeyRegistration(response: RegistrationResponseJSON, ipAddress: string) {
         const driver: Driver = getDriver()
-        const authService: AuthService = new AuthService(driver)
+        const authService: AuthService = new AuthService(driver);
+        const walletService: WalletService = new WalletService(driver);
+        const energyService: EnergyService = new EnergyService(driver);
+        const tokenService: TokenService = new TokenService();
         try {
 
             const { username, deviceId } = response
@@ -293,9 +311,28 @@ class GoogleService {
             const userData: PasskeyUser = { userName: username, deviceId, id, publicKey, counter }
             await authService.passkeyRegister(userData, ipAddress);
 
+            const passkeyUser = await authService.getPasskeyUserData(username);
+            const { playerStats, smartWalletAddress, userId, ...safeProperties  } = passkeyUser.safeProperties;
+            const tokens: TokenScheme = await tokenService.generateTokens(username);
+            const { refreshToken, accessToken } = tokens as TokenScheme
 
-            console.log("real :",  result)
-            return new SuccessMessage("Registration successful")
+            const energy = await energyService.getPlayerEnergyBeats(username);
+            const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
+            const [ wallet ] = await Promise.all([walletPromise ]);
+
+            return { 
+                username, 
+                wallet, 
+                safeProperties, 
+                playerStats, 
+                energy, 
+                uuid: userId, 
+                refreshToken, 
+                accessToken, 
+                message: "You are now logged in", 
+                success: 'OK', 
+                loginType: 'passkey' } as AuthenticateReturn; 
+
         } catch (error: any) {
             console.error('Error in googleVerifyPassKeyRegistration:', error);
             throw error;
