@@ -430,12 +430,12 @@ class AuthService {
 
           // Compare Passwords
           const user: PasskeyUserData = result?.records[0].get('u');
-
-          const { publicKey, counter } = user.properties
+          const {  ...safeProperties } = user.properties
+          const { publicKey, counter,  } = user.properties
 
           // Return User Details
 
-          return { publicKey, counter }
+          return { publicKey, counter, safeProperties }
       } catch (error: any) {
           console.log(error)
           throw error;

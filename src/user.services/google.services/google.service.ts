@@ -9,7 +9,7 @@ import { generateAuthenticationOptions, verifyAuthenticationResponse,
         VerifiedAuthenticationResponse} from "@simplewebauthn/server";
 
 //** TYPE INTERFACE IMPORT
-import { PasskeyUser, PlayerInfo, User } from "../user.service.interface";
+import { AuthenticateReturn, PasskeyUser, PlayerInfo, TokenScheme, User, WalletData } from "../user.service.interface";
 import { RegistrationResponseJSON, WebAuthnCredential } from "../auth.services.ts/auth.interface";
 
 //** CONFIG IMPORT
@@ -23,6 +23,9 @@ import AuthService from "../auth.services.ts/auth.service";
 import { SuccessMessage } from "../../outputs/success.message";
 import { getDriver } from "../../db/memgraph";
 import { Driver } from "neo4j-driver";
+import TokenService from "../token.services/token.service";
+import WalletService from "../wallet.services/wallet.service";
+import EnergyService from "../../game.services/energy.services/energy.service";
 
 
 interface PasskeyAuthVerify {
@@ -116,8 +119,12 @@ class GoogleService {
 
     // Method to handle the passkey authentication response
     public async googlePassKeyAuthVerify(passkeyAuthVerify: PasskeyAuthVerify) {
-        const driver: Driver = getDriver()
-        const authService: AuthService = new AuthService(driver)
+        const driver: Driver = getDriver();
+        const authService: AuthService = new AuthService(driver);
+        const walletService: WalletService = new WalletService();
+        const energyService: EnergyService = new EnergyService();
+
+        const tokenService: TokenService = new TokenService();
         try {
             
             // Retrieve the challenge that was previously stored
@@ -156,14 +163,32 @@ class GoogleService {
             };
 
 
-            console.log(verificationOptions)
-    
             // Perform the verification
             const verificationResult: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(verificationOptions);
             
             // Check if the verification was successful
             if (verificationResult.verified) {
-                console.log("Authentication successful!");
+                const { playerStats, smartWalletAddress, userId, ...safeProperties  } = passkeyUser.safeProperties
+                const tokens: TokenScheme = await tokenService.generateTokens(username);
+                const { refreshToken, accessToken } = tokens as TokenScheme
+
+                const energy = await energyService.getPlayerEnergyBeats(username);
+
+                const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
+                const [ wallet ] = await Promise.all([walletPromise ]);
+
+                return { 
+                    username, 
+                    wallet, 
+                    safeProperties, 
+                    playerStats, 
+                    energy, 
+                    uuid: userId, 
+                    refreshToken, 
+                    accessToken, message: "You are now logged in", 
+                    success: 'OK', 
+                    loginType: 'passkey' } as AuthenticateReturn; 
+
                 // Proceed with post-authentication actions (e.g., logging in the user)
             } else {
                 console.log("Authentication failed.");
