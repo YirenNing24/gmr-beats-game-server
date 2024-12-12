@@ -123,11 +123,9 @@ class GoogleService {
             // Retrieve the challenge that was previously stored
             const expectedChallenge: string = await keydb.GET(`passkey:challenge:${passkeyAuthVerify.username}`) as string;
 
-            console.log(expectedChallenge)
-    
             // Extract the credential id and signature from the response token
             const credentialID = passkeyAuthVerify.id;
-            const signature = passkeyAuthVerify.response.signature;  // This will be used for verification
+            // const signature = passkeyAuthVerify.response.signature;  // This will be used for verification
 
             
             // Retrieve the credential public key and counter for this user from your storage
@@ -156,6 +154,9 @@ class GoogleService {
                 credential,  // The WebAuthnCredential object
                 requireUserVerification: true, // Optionally enforce user verification
             };
+
+
+            console.log(verificationOptions)
     
             // Perform the verification
             const verificationResult: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(verificationOptions);
