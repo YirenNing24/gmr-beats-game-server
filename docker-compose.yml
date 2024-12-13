@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend-server:
     image: kaetaro13/beats-game-server
