@@ -1,24 +1,26 @@
 version: '3.8'
 
 services:
-  app1:
+  backend-server:
     image: kaetaro13/beats-game-server
+    container_name: backend-server
     ports:
-      - "8081:8085"
+      - "127.0.0.1:8081:8085"
     env_file:
       - ./.env
     networks:
       - ann-network
-  
-  app2:
-    image: kaetaro13/beats-game-server
+    restart: always
+
+  game-server:
+    image: kaetaro13/godot-server:latest
+    container_name: game-server
     ports:
-      - "8082:8085"
-    env_file:
-      - ./.env
+      - "127.0.0.1:9087:8087" # Mapping 127.0.0.1:9087 to container's 8087
     networks:
       - ann-network
-      
+    restart: always # Optional: Restarts the container if it stops unexpectedly
+
 # Define the networks
 networks:
   ann-network:
