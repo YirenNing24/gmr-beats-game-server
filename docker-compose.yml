@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend-server:
     image: kaetaro13/beats-game-server
@@ -12,15 +14,27 @@ services:
 
   game-server:
     image: kaetaro13/godot-server:latest
+    container_name: game-server
+    ports:
+      - "127.0.0.1:9087:8087"
     networks:
       - ann-network
-    deploy:
-      replicas: 2
-    ports:
-      - "127.0.0.1:9087-9088:8087" # Mapping ports for two instances (9087 and 9088)
-    restart: always # Ensures game-server instances restart if stopped
+    restart: always
 
-# Define the networks
+  edgedb:
+    image: edgedb/edgedb
+    container_name: edgedb
+    environment:
+      - EDGEDB_SERVER_PASSWORD=${EDGE_DB_PASSWORD}
+      - EDGEDB_SERVER_TLS_CERT_MODE=generate_self_signed
+    volumes:
+      - /my/data/directory:/var/lib/edgedb/data
+    networks:
+      - ann-network
+    ports:
+      - "5656:5656"
+    restart: always
+
 networks:
   ann-network:
     driver: bridge
