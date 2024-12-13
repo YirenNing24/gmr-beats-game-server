@@ -14,12 +14,13 @@ services:
 
   game-server:
     image: kaetaro13/godot-server:latest
-    container_name: game-server
-    ports:
-      - "127.0.0.1:9087:8087" # Mapping 127.0.0.1:9087 to container's 8087
     networks:
       - ann-network
-    restart: always # Optional: Restarts the container if it stops unexpectedly
+    deploy:
+      replicas: 2
+    ports:
+      - "127.0.0.1:9087-9088:8087" # Mapping ports for two instances (9087 and 9088)
+    restart: always # Ensures game-server instances restart if stopped
 
 # Define the networks
 networks:
