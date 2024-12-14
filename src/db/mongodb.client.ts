@@ -1,7 +1,7 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 
 // Connection URI with environment variables
-const uri = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@96.9.211.82:27018?ssl=true`; 
+const uri = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@96.9.211.82:27018?tls=true`; 
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 export const mongoDBClient = new MongoClient(uri,  {

@@ -2,9 +2,8 @@
 import { Driver } from "neo4j-driver";
 import { ClassicScoreStats, ScorePeerId } from "../leaderboard.services/leaderboard.interface";
 
-//** RETHINK DB IMPORT
-import rt from "rethinkdb";
-import { getRethinkDB } from "../../db/rethink";
+//** MONGODB IMPORT
+import { mongoDBClient } from "../../db/mongodb.client";
 
 
 //** IMPORTED SERVICES
@@ -25,70 +24,83 @@ class ScoreService {
 
     //** BEATS SERVER EXCLUSIVE SERVICE */
     public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
-        try {
-            const tokenService: TokenService = new TokenService();
-            const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
+		try {
+			const tokenService: TokenService = new TokenService();
+			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
 
-            if (!isAuthorized) {
-                throw new Error("Unauthorized");
-            }
+			if (!isAuthorized) {
+				throw new Error("Unauthorized");
+			}
 
-            const scoreWithTime = { ...score, timestamp: Date.now() };
-            const connection: rt.Connection = await getRethinkDB();
+			// Add timestamp to score
+			const scoreWithTime = { ...score, timestamp: Date.now() };
 
-            const rewardService: RewardService = new RewardService();
+			// Establish MongoDB connection
+			const client = await mongoDBClient.connect();
+			const db = client.db("beats");
+			const collection = db.collection("classicScores");
 
-            const rewardData: RewardData = { songName: score.songName, songRewardType: 'first', type: 'song' };
-            const isFirstSongComplete: boolean = await rewardService.checkSongReward(score.username, rewardData);
+			const rewardService: RewardService = new RewardService();
 
-            if (!isFirstSongComplete) {
+			// Check for song reward
+			const rewardData: RewardData = { songName: score.songName, songRewardType: "first", type: "song" };
+			const isFirstSongComplete: boolean = await rewardService.checkSongReward(score.username, rewardData);
 
-                const dataReward = {
-                    username: score.username,
-                    type: rewardData.type,
-    
-                    songName: score.songName,
-                    songRewardType: rewardData.songRewardType,
-    
-                    rewardName: 'First time completing ' + score.songName,
-                };
-                rewardService.setMissionReward(score.username, dataReward)
-            }
+			if (!isFirstSongComplete) {
+				const dataReward = {
+					username: score.username,
+					type: rewardData.type,
+					songName: score.songName,
+					songRewardType: rewardData.songRewardType,
+					rewardName: `First time completing ${score.songName}`,
+				};
+				rewardService.setMissionReward(score.username, dataReward);
+			}
 
-            await rt.db('beats').table('classicScores').insert(scoreWithTime).run(connection);
+			// Insert score into the collection
+			await collection.insertOne(scoreWithTime);
 
-            const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
+			// Calculate experience gain
+			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
 
-            return experienceGain
-        } catch (error: any) {
-            console.log(error)
-            throw error;
-        }
-    }
+			return experienceGain;
+		} catch (error: any) {
+			console.error("Error saving classic score:", error);
+			throw error;
+		} finally {
+			await mongoDBClient.close();
+		}
+	}
     
 
     //* CLASSIC GAME MODE RETRIEVE SCORE FUNCTION
-    public async getHighScoreClassic(peerId: ScorePeerId, token: string): Promise<ClassicScoreStats[]> {
-        try {
-            const tokenService: TokenService = new TokenService();
-            await tokenService.verifyAccessToken(token);
-    
-            const connection: rt.Connection = await getRethinkDB();
-            const idPeer: number = parseInt(peerId.peerId)
+	public async getHighScoreClassic(peerId: ScorePeerId, token: string): Promise<ClassicScoreStats[]> {
+		try {
+			const tokenService: TokenService = new TokenService();
+			await tokenService.verifyAccessToken(token);
 
-            const result: rt.Cursor = await rt
-                .db('beats')
-                .table('classicScores')
-                .filter({ peerId: idPeer })
-                .run(connection);
-    
-            const classicScoreStats: ClassicScoreStats[] = await result.toArray();
-    
-            return classicScoreStats;
-        } catch (error: any) {
-            throw error;
-        }
-    }
+			// Establish MongoDB connection
+			const client = await mongoDBClient.connect();
+			const db = client.db("beats");
+			const collection = db.collection<ClassicScoreStats>("classicScores");
+
+			// Convert peerId to number
+			const idPeer: number = parseInt(peerId.peerId);
+
+			// Query the collection for scores
+			const classicScoreStats: ClassicScoreStats[] = await collection
+				.find({ peerId: idPeer })
+				.toArray();
+
+			return classicScoreStats;
+		} catch (error: any) {
+			console.error("Error fetching high scores:", error);
+			throw error;
+		} finally {
+			await mongoDBClient.close();
+		}
+	}
+
     
 
     public async getAllHighScoreClassic(token: string): Promise<ClassicScoreStats[]> {

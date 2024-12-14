@@ -7,9 +7,9 @@ import { ClassicScoreStats, LeaderboardQuery } from "./leaderboard.interface";
 //** SERVICE IMPORT
 import TokenService from "../../user.services/token.services/token.service";
 
-//** RETHINK DB IMPORT
-import rt from "rethinkdb";
-import { getRethinkDB } from "../../db/rethink";
+//** MONGO DB CLIENT
+import { mongoDBClient } from "../../db/mongodb.client";
+import { Collection, Db } from "mongodb";
 
 
 
@@ -83,15 +83,21 @@ class LeaderboardService {
 
 	
 	private async fetchScores(songName: string, difficulty: string): Promise<ClassicScoreStats[]> {
-		const connection: rt.Connection = await getRethinkDB();
-		const result: rt.Cursor = await rt.db('beats')
-			.table('classicScores')
-			.filter(rt.row('songName').eq(songName).and(rt.row('difficulty').eq(difficulty)))
-			.run(connection);
+		try {
+			// Connect to the database using the shared client
+			const db: Db = mongoDBClient.db("beats");
+			const collection = db.collection<ClassicScoreStats>("classicScores");
 
-		const scores: ClassicScoreStats[] = await result.toArray();
+			// Query the collection
+			const scores = await collection
+				.find({ songName: songName, difficulty: difficulty })
+				.toArray();
 
-		return scores;
+			return scores;
+		} catch (error) {
+			console.error("Error fetching scores:", error);
+			throw error;
+		}
 	}
 
 	private filterScoresByPeriod(scores: ClassicScoreStats[], startOfPeriod: Date, endOfPeriod: Date): ClassicScoreStats[] {
