@@ -1,5 +1,3 @@
-import { Time } from "rethinkdb";
-
 
 export interface CardOwned {
     name: string;

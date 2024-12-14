@@ -101,30 +101,6 @@ class ScoreService {
 		}
 	}
 
-    
-
-    public async getAllHighScoreClassic(token: string): Promise<ClassicScoreStats[]> {
-        try {
-            const tokenService: TokenService = new TokenService();
-            await tokenService.verifyAccessToken(token);
-    
-            const connection: rt.Connection = await getRethinkDB();
-    
-            const result: rt.Cursor = await rt.db('beats')
-                .table('classicScores')
-                .orderBy(rt.desc('score'))
-                .run(connection);
-    
-            const classicScoreStats: ClassicScoreStats[] = await result.toArray();
-    
-            await connection.close();
-    
-            return classicScoreStats;
-        } catch (error: any) {
-            throw error;
-        }
-    }
-
 
     private async calculateExperience(username: string, accuracy: number): Promise<LevelUpResult> {
         try {
