@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend-server:
     image: kaetaro13/beats-game-server
@@ -28,17 +26,17 @@ networks:
 
 
 
- docker run \
-         --name edgedb \
-         -e EDGEDB_SERVER_PASSWORD=edgedb12345678\
-         -e EDGEDB_SERVER_TLS_CERT_MODE=generate_self_signed \
-         -e EDGEDB_SERVER_USER=gmetarave \
-         -e EDGEDB_SERVER_SECURITY=insecure_dev_mode \
-         -e EDGEDB_SERVER_HTTP_ENDPOINT_SECURITY=1 \
-         -v edgedb-data:/var/lib/edgedb/data \
-         --network ann-network \
-         -p 127.0.0.1:5656:5656 \
-         -d \
-         --restart always \
-         edgedb/edgedb
+#  docker run \
+#          --name edgedb \
+#          -e EDGEDB_SERVER_PASSWORD=edgedb12345678\
+#          -e EDGEDB_SERVER_TLS_CERT_MODE=generate_self_signed \
+#          -e EDGEDB_SERVER_USER=gmetarave \
+#          -e EDGEDB_SERVER_SECURITY=insecure_dev_mode \
+#          -e EDGEDB_SERVER_HTTP_ENDPOINT_SECURITY=1 \
+#          -v edgedb-data:/var/lib/edgedb/data \
+#          --network ann-network \
+#          -p 127.0.0.1:5656:5656 \
+#          -d \
+#          --restart always \
+#          edgedb/edgedb
 
