@@ -26,6 +26,10 @@ services:
     ports:
       - "127.0.0.1:8090:8087/tcp"  # Accessible only from the host
       - "127.0.0.1:8090:8087/udp"
+    environment:
+      KEYDB_PASSWORD: "${KEYDB_PASSWORD}"
+      JWT_SECRET: "${JWT_SECRET}"
+      
     networks:
       - ann-network
     restart: always
