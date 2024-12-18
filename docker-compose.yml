@@ -24,7 +24,8 @@ services:
     image: kaetaro13/godot-server:latest
     container_name: game-server
     ports:
-      - "127.0.0.1:8090:8087"  # Accessible only from the host
+      - "127.0.0.1:8090:8087/tcp"  # Accessible only from the host
+      - "127.0.0.1:8090:8087/udp"
     networks:
       - ann-network
     restart: always
