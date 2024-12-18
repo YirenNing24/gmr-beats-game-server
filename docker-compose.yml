@@ -1,20 +1,30 @@
 services:
+  keydb:
+    image: eqalpha/keydb:latest
+    container_name: keydb
+    command: keydb-server /etc/keydb/keydb.conf --requirepass ${KEYDB_PASSWORD} --server-threads 1
+    ports:
+      - "127.0.0.1:6379:6379"  # Accessible only from the host
+    networks:
+      - ann-network
+    restart: always
+
   backend-server:
     image: kaetaro13/beats-game-server
     container_name: backend-server
     ports:
-      - "127.0.0.1:8081:8085"
+      - "127.0.0.1:8081:8085"  # Accessible only from the host
     env_file:
       - ./.env
     networks:
       - ann-network
     restart: always
-
+    
   game-server:
     image: kaetaro13/godot-server:latest
     container_name: game-server
     ports:
-      - "127.0.0.1:9087:8087"
+      - "127.0.0.1:8090:8087"  # Accessible only from the host
     networks:
       - ann-network
     restart: always
@@ -22,6 +32,7 @@ services:
 networks:
   ann-network:
     driver: bridge
+
 
 
 
