@@ -13,40 +13,9 @@ class EnergyService {
 		this.driver = driver;
 	}
 
-	// Public function to get player's current energy and time until next recharge
-	// Public function to get player's current energy and time until next recharge
-	// public async getPlayerEnergy(token: string): Promise<{ energy: number; timeUntilNextRecharge: number | null }> {
-	// 	const tokenService = new TokenService();
-	// 	const username = await tokenService.verifyAccessToken(token);
-
-	// 	// Ensure player energy data exists
-	// 	await this.initializePlayerEnergyData(username);
-
-	// 	const { lastEnergyUpdate, currentEnergy } = await this.getPlayerEnergyData(username);
-	// 	const currentTime = Date.now();
-
-	// 	const ENERGY_GAIN_PER_HOUR = 2;
-	// 	const MS_PER_HOUR = 1000 * 60 * 60;
-	// 	const BASE_MAX_ENERGY = 15;
-
-	// 	const playerLevel = await this.getMaxEnergy(username);
-	// 	const MAX_ENERGY = BASE_MAX_ENERGY + playerLevel;
-
-	// 	const hoursPassed = Math.floor((currentTime - lastEnergyUpdate) / MS_PER_HOUR);
-	// 	const energyToAdd = Math.min(ENERGY_GAIN_PER_HOUR * hoursPassed, MAX_ENERGY - currentEnergy);
-	// 	const newEnergy = Math.min(currentEnergy + energyToAdd, MAX_ENERGY);
-
-	// 	let timeUntilNextRecharge: number | null = null;
-	// 	if (newEnergy < MAX_ENERGY) {
-	// 		const nextRechargeTime = lastEnergyUpdate + (hoursPassed + 1) * MS_PER_HOUR;
-	// 		timeUntilNextRecharge = nextRechargeTime - currentTime;
-	// 	}
-
-	// 	return { energy: newEnergy, timeUntilNextRecharge };
-	// }
-
 
 	public async getPlayerEnergyBeats(username: string): Promise<{ energy: number; timeUntilNextRecharge: number | null; maxEnergy: number }> {
+		try {
 		// Ensure player energy data exists
 		await this.initializePlayerEnergyData(username);	
 		const { lastEnergyUpdate, currentEnergy } = await this.getPlayerEnergyData(username);
@@ -70,28 +39,40 @@ class EnergyService {
 		}
 	
 		return { energy: newEnergy, timeUntilNextRecharge, maxEnergy: MAX_ENERGY };
+	} catch(error: any) {
+		console.log(error)
+		throw error
+
+	  }
 	}
 	
 
 	// Public function to use player energy
 	public async usePlayerEnergy(username: string, apiKey: string, amount: number = 1): Promise<boolean> {
+		try {
+			const tokenService: TokenService = new TokenService();
+			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
+			if (!isAuthorized) {
+				throw new Error("Unauthorized");
+			}
+			
+			const { energy: currentEnergy } = await this.getPlayerEnergyBeats(username);
+	
+			if (currentEnergy >= amount) {
+				await this.updatePlayerEnergy(username, {
+					currentEnergy: currentEnergy - amount,
+					lastEnergyUpdate: Date.now()
+				});
+				return true;
+			}
+			return false;
+		} catch(error: any) {
+		  console.log(error)
+		  throw error
 
-		const tokenService: TokenService = new TokenService();
-		const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
-		if (!isAuthorized) {
-			throw new Error("Unauthorized");
 		}
-		
-		const { energy: currentEnergy } = await this.getPlayerEnergyBeats(username);
 
-		if (currentEnergy >= amount) {
-			await this.updatePlayerEnergy(username, {
-				currentEnergy: currentEnergy - amount,
-				lastEnergyUpdate: Date.now()
-			});
-			return true;
-		}
-		return false;
+
 	}
 
 	// Private helper function to get player data from Redis
