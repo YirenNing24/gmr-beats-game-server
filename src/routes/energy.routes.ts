@@ -23,6 +23,7 @@ const energy = (app: Elysia): void => {
 
             return result
         } catch (error: any) {
+          console.log(error)
           throw error
         }
       }, useEnergySchema
