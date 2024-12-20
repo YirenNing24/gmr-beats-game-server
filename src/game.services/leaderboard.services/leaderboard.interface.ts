@@ -35,7 +35,6 @@ export interface ClassicScoreStats {
     miss: number;
     username: string;
     peerId: number;
-    timestamp: Date;
 }
 
 /**

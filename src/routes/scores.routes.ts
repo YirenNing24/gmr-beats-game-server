@@ -46,7 +46,7 @@ const scores = (app: Elysia): void => {
             const driver: Driver = getDriver();
             const scoreService: ScoreService = new ScoreService(driver);
             const output: ClassicScoreStats[] = await scoreService.getAllHighScoreClassic(jwtToken);
-
+            
           return output as ClassicScoreStats[];
         } catch (error: any) {
           throw error
