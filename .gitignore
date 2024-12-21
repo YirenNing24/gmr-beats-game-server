@@ -177,7 +177,7 @@ dist
 .flaskenv*
 !.env.project
 game-server.bash
-docker-compose.yml
+
 .env.me
 .env*
 !.env.vault
