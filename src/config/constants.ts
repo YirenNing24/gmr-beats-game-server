@@ -21,6 +21,9 @@ export const NEO4J_PASSWORD: string = process.env.NEO4J_PASSWORD || ""
 export const RDB_DATABASE: string = process.env.RDB_DATABASE || ""
 export const RDB_PORT: number = Number(process.env.RDB_PORT) || 28015;
 
+export const MONGO_HOST: string = process.env.MONGO_HOST || "";
+
+
 // KeyDB Configuration
 export const KEYDB_PASSWORD: string | undefined = process.env.KEYDB_PASSWORD;
 export const KEYDB_PORT: number  = 6380
