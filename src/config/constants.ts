@@ -26,7 +26,7 @@ export const MONGO_HOST: string = process.env.MONGO_HOST || "";
 
 // KeyDB Configuration
 export const KEYDB_PASSWORD: string | undefined = process.env.KEYDB_PASSWORD;
-export const KEYDB_PORT: number  = 6380
+export const KEYDB_PORT: number  = process.env.KEYDB_PORT
 export const KEYDB_HOST: string | undefined = process.env.KEYDB_HOST;
 export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmetarave.com:3005"
 

@@ -1,7 +1,7 @@
 services:
   keydb:
     image: eqalpha/keydb:latest
-    container_name: keydb
+    container_name: ann-keydb
     command: keydb-server /etc/keydb/keydb.conf --requirepass ${KEYDB_PASSWORD} --server-threads 1
     ports:
       - "127.0.0.1:6379:6379"  # Accessible only from the host
