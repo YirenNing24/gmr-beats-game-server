@@ -2,6 +2,8 @@ import { createClient } from 'redis';
 import { KEYDB_HOST, KEYDB_PORT, KEYDB_PASSWORD } from '../config/constants';
 
 const keydbUrl = `redis://:${KEYDB_PASSWORD}@${KEYDB_HOST}:${KEYDB_PORT}`;
+
+console.log(keydbUrl)
 const keydb = createClient({ url: keydbUrl });
 
 // Listen for error events
