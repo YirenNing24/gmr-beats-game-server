@@ -1,4 +1,5 @@
 import neo4j, { Driver } from 'neo4j-driver';
+import { NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME }  from '../config/constants';
 
 let driver: Driver;
 
@@ -14,10 +15,10 @@ export async function initDriver(uri: string, username: string, password: string
       driver = neo4j.driver(
         uri,
         neo4j.auth.basic(username, password),
-        {
-          encrypted: 'ENCRYPTION_ON',  // Enable SSL
-          trust: 'TRUST_ALL_CERTIFICATES',
-        }
+        // {
+        //   encrypted: 'ENCRYPTION_ON',  // Enable SSL
+        //   trust: 'TRUST_ALL_CERTIFICATES',
+        // }
       );
 
       // Try to get server info to verify the connection
@@ -60,3 +61,4 @@ export async function closeDriver(): Promise<void> {
     await driver.close();
   }
 }
+

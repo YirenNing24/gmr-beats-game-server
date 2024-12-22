@@ -3,7 +3,7 @@ import { MONGO_HOST } from "../config/constants";
 
 // Connection URI with environment variables
 const uri = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOST}?tls=true`; 
-
+console.log(uri )
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 export const mongoDBClient = new MongoClient(uri,  {
     serverApi: {
