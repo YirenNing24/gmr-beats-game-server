@@ -3,7 +3,7 @@ services:
     image: kaetaro13/beats-game-server
     container_name: backend-server
     ports:
-      - "127.0.0.1:8081:8085"  # Accessible only from the host
+      - "127.0.0.1:8081:8085"
     env_file:
       - ./.env
     networks:
@@ -14,14 +14,15 @@ services:
     image: kaetaro13/godot-server:latest
     container_name: game-server
     ports:
-      - "127.0.0.1:8090:8087/tcp"  # Accessible only from the host
+      - "127.0.0.1:8090:8087/tcp"
       - "127.0.0.1:8090:8087/udp"
     environment:
       KEYDB_PASSWORD: "${KEYDB_PASSWORD}"
       JWT_SECRET: "${JWT_SECRET}"
     networks:
-      - gmr-beats-server-bun-ts_ann-network  # Use the existing network
+      - gmr-beats-server-bun-ts_ann-network  
     restart: always
+    pull_policy: always
 
 
 networks:
