@@ -25,9 +25,9 @@ const rdbConnect = async (): Promise<rt.Connection> => {
   }
 };
 
-// export const getRethinkDB = async (): Promise<rt.Connection> => {
-//   if (rdbConn !== null) {
-//     return rdbConn;
-//   }
-//   return await rdbConnect();
-// };
+export const getRethinkDB = async (): Promise<rt.Connection> => {
+  if (rdbConn !== null) {
+    return rdbConn;
+  }
+  return await rdbConnect();
+};
