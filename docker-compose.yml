@@ -19,7 +19,7 @@ services:
     networks:
       - ann-network
     restart: always
-    
+
   game-server:
     image: kaetaro13/godot-server:latest
     container_name: game-server

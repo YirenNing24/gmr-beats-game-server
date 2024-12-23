@@ -1,7 +1,7 @@
 import { mongoDBClient } from "./mongodb.client";
 
 
-const dbName = "beats";  // The database name
+const dbName: string = "beats";  // The database name
 const collectionNames: string[] = ['chats', 'private', 'group', 'profilePic', 'status', 'myNotes', 'fanZone', 'missions', 'classicScores', 'notifications'];
 
 const createDatabaseAndCollections = async (): Promise<void> => {
