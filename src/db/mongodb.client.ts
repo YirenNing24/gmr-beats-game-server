@@ -5,8 +5,8 @@ import { MONGO_HOST, MONGO_SOCKET_TIMEOUT_MS, MONGO_TIMEOUT_MS, MONGO_TLS } from
 const tlsEnabled: boolean = MONGO_TLS === "true"; // Explicit conversion
 
 // Connection URI with environment variables
-const uri: string = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOST}`;
-// const uri = "mongodb://localhost:27017";
+// const uri: string = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOST}`;
+const uri = "mongodb://localhost:27017";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 export const mongoDBClient = new MongoClient(uri, {
@@ -16,7 +16,7 @@ export const mongoDBClient = new MongoClient(uri, {
 		deprecationErrors: true,
 	},
 	tlsAllowInvalidCertificates: tlsEnabled, // Use the converted boolean
-	tls: tlsEnabled, // Use the converted boolean
+	tls: false, // Use the converted boolean
 	timeoutMS: MONGO_TIMEOUT_MS, // Ensure MONGO_TIMEOUT_MS is a number
 	socketTimeoutMS: MONGO_SOCKET_TIMEOUT_MS, // Ensure MONGO_SOCKET_TIMEOUT_MS is a number
 });
