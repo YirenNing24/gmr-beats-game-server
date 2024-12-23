@@ -22,13 +22,14 @@ export const RDB_DATABASE: string = process.env.RDB_DATABASE || ""
 export const RDB_PORT: number = Number(process.env.RDB_PORT) || 28015;
 
 export const MONGO_HOST: string = process.env.MONGO_HOST || "";
-
-
+export const MONGO_TIMEOUT_MS: number = Number(process.env.MONGO_TIMEOUT_MS) || 20000;
+export const MONGO_SOCKET_TIMEOUT_MS: number = Number(process.env.MONGO_SOCKET_TIMEOUT_MS) || 20000;
+export const MONGO_TLS: string = process.env.MONGO_TLS || "true"
 // KeyDB Configuration
 export const KEYDB_PASSWORD: string | undefined = process.env.KEYDB_PASSWORD;
-export const KEYDB_PORT: number  = Number(process.env.KEYDB_PORT) || 6379
+export const KEYDB_PORT: number  = Number(process.env.KEYDB_PORT) || 6379;
 export const KEYDB_HOST: string | undefined = process.env.KEYDB_HOST;
-export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmetarave.com:3005"
+export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmetarave.com:3005";
 
 export const KDB: { host: string | undefined; port: string | number; password: string | undefined } = {
   host: process.env.KEYDB_HOST,
