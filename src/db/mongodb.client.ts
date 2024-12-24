@@ -6,6 +6,7 @@ const tlsEnabled: boolean = MONGO_TLS === "true"; // Explicit conversion
 
 // Connection URI with environment variables
 const uri: string = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOST}`;
+
 // const uri = "mongodb://localhost:27017";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
