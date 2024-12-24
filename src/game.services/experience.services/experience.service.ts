@@ -96,8 +96,7 @@ constructor(driver?: Driver) {
             if (!result || result.records.length === 0) {
                 throw new ValidationError(`User with username '${username}' not found.`, "");
             }
-
-
+dd
             return result.records[0].get('u');
         } catch(error: any) {
           console.log(error)
@@ -126,8 +125,6 @@ constructor(driver?: Driver) {
                     { username, playerStats }
                 )
             );
-    
-            console.log("User details updated successfully:", result.records[0]);
         } catch (error: any) {
             console.error("Error saving user details:", error);
             throw error;
