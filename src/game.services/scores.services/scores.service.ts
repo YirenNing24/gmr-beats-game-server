@@ -40,22 +40,22 @@ class ScoreService {
 			const db = client.db("beats");
 			const collection = db.collection("classicScores");
 
-			const rewardService: RewardService = new RewardService();
+			// const rewardService: RewardService = new RewardService();
 
-			// Check for song reward
-			const rewardData: RewardData = { songName: score.songName, songRewardType: "first", type: "song" };
-			const isFirstSongComplete: boolean = await rewardService.checkSongReward(score.username, rewardData);
+			// // Check for song reward
+			// const rewardData: RewardData = { songName: score.songName, songRewardType: "first", type: "song" };
+			// const isFirstSongComplete: boolean = await rewardService.checkSongReward(score.username, rewardData);
 
-			if (!isFirstSongComplete) {
-				const dataReward = {
-					username: score.username,
-					type: rewardData.type,
-					songName: score.songName,
-					songRewardType: rewardData.songRewardType,
-					rewardName: `First time completing ${score.songName}`,
-				};
-				rewardService.setMissionReward(score.username, dataReward);
-			}
+			// if (!isFirstSongComplete) {
+			// 	const dataReward = {
+			// 		username: score.username,
+			// 		type: rewardData.type,
+			// 		songName: score.songName,
+			// 		songRewardType: rewardData.songRewardType,
+			// 		rewardName: `First time completing ${score.songName}`,
+			// 	};
+			// 	rewardService.setMissionReward(score.username, dataReward);
+			// }
 
 			// Insert score into the collection
 			await collection.insertOne(scoreWithTime);
