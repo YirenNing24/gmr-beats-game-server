@@ -37,6 +37,10 @@ export interface ClassicScoreStats {
     peerId: number;
 }
 
+export interface savedClassicScoreStats extends ClassicScoreStats {
+    timestamp: string
+}
+
 /**
  * Represents the request parameters for retrieving classic mode leaderboard.
  *

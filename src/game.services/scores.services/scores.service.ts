@@ -37,8 +37,15 @@ class ScoreService {
 
 			// Establish MongoDB connection
 			const client = await mongoDBClient.connect();
-			const db = client.db("beats");
-			const collection = db.collection("classicScores");
+			const collection = client.db("beats").collection("classicScores")
+
+			// Insert score into the collection
+			await collection.insertOne(scoreWithTime);
+
+			// Calculate experience gain
+			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
+
+			return experienceGain;
 
 			// const rewardService: RewardService = new RewardService();
 
@@ -57,13 +64,7 @@ class ScoreService {
 			// 	rewardService.setMissionReward(score.username, dataReward);
 			// }
 
-			// Insert score into the collection
-			await collection.insertOne(scoreWithTime);
 
-			// Calculate experience gain
-			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
-
-			return experienceGain;
 		} catch (error: any) {
 			console.error("Error saving classic score:", error);
 			throw error;

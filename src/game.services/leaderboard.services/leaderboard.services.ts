@@ -2,7 +2,7 @@
 import { Driver } from "neo4j-driver";
 
 //** VALIDATION ERROR
-import { ClassicScoreStats, LeaderboardQuery } from "./leaderboard.interface";
+import { ClassicScoreStats, LeaderboardQuery, savedClassicScoreStats } from "./leaderboard.interface";
 
 //** SERVICE IMPORT
 import TokenService from "../../user.services/token.services/token.service";
@@ -19,7 +19,7 @@ class LeaderboardService {
 		this.driver = driver;
 	}
 
-	public async leaderboard(token: string, query: LeaderboardQuery): Promise<ClassicScoreStats[]> {
+	public async leaderboard(token: string, query: LeaderboardQuery): Promise<savedClassicScoreStats[]> {
 		try {
 
 			const tokenService: TokenService = new TokenService();
@@ -29,8 +29,8 @@ class LeaderboardService {
 			const songTitle: string = this.correctSongName(songName)
 
 			const { startOfPeriod, endOfPeriod } = this.getPeriodDates(period);
-			const scores: ClassicScoreStats[] = await this.fetchScores(songTitle, difficulty.toLowerCase());
-			const filteredScores: ClassicScoreStats[] = this.filterScoresByPeriod(scores, startOfPeriod, endOfPeriod);
+			const scores: savedClassicScoreStats[] = await this.fetchScores(songTitle, difficulty.toLowerCase());
+			const filteredScores = this.filterScoresByPeriod(scores, startOfPeriod, endOfPeriod) as savedClassicScoreStats[];
 
 			return filteredScores;
 		} catch (error: any) {
@@ -82,25 +82,25 @@ class LeaderboardService {
 	}
 
 	
-	private async fetchScores(songName: string, difficulty: string): Promise<ClassicScoreStats[]> {
+	private async fetchScores(songName: string, difficulty: string): Promise<savedClassicScoreStats[]> {
 		try {
 			// Connect to the database using the shared client
 			const db: Db = mongoDBClient.db("beats");
-			const collection = db.collection<ClassicScoreStats>("classicScores");
+			const collection = db.collection<savedClassicScoreStats[]>("classicScores");
 
 			// Query the collection
 			const scores = await collection
 				.find({ songName: songName, difficulty: difficulty })
 				.toArray();
 
-			return scores;
+			return scores as unknown as savedClassicScoreStats[];
 		} catch (error) {
 			console.error("Error fetching scores:", error);
 			throw error;
 		}
 	}
 
-	private filterScoresByPeriod(scores: ClassicScoreStats[], startOfPeriod: Date, endOfPeriod: Date): ClassicScoreStats[] {
+	private filterScoresByPeriod(scores: savedClassicScoreStats[], startOfPeriod: Date, endOfPeriod: Date): ClassicScoreStats[] {
 		return scores.filter(score => {
 			const scoreDate = new Date(score.timestamp);
 			return scoreDate >= startOfPeriod && scoreDate < endOfPeriod;
