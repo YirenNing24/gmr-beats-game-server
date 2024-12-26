@@ -181,21 +181,20 @@ export default class StoreService {
 
 }
 
-    private async cardPackPurchase(walletAddress: string, listingId: number) {
+    private async cardPackPurchase(buyerWalletAddress: string, listingId: number) {
       try {
         const chain: string = "421614";  // Assuming this is a constant or predefined variable
         const contractAddress: string = PACK_MARKETPLACE;  // Assuming this is a constant or predefined variable
-        const xBackendWalletAddress: string = "0x0AfF10A2220aa27fBe83C676913aebeb3801DfB6";  // Hardcoded backend wallet address
-    
+
         // Constructing the request body
         const requestBody = {
             listingId: listingId.toString(), // Convert listingId to string
             quantity: "1", // Default quantity for ERC721 tokens
-            buyer: walletAddress // The buyer's wallet address
+            buyer: buyerWalletAddress // The buyer's wallet address
         };
     
         // Call the buyFromListing function
-        await engine.marketplaceDirectListings.buyFromListing(chain, contractAddress, xBackendWalletAddress, requestBody);
+        await engine.marketplaceDirectListings.buyFromListing(chain, contractAddress, buyerWalletAddress, requestBody);
   
       } catch(error: any) {
         console.log(error)

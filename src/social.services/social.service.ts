@@ -494,7 +494,7 @@ class SocialService {
 
       const { senderWalletAddress, receiverWalletAddress } = cardGiftSending;
 
-      const requestBody = {operator: senderWalletAddress, approved: true};
+      const requestBody = { operator: senderWalletAddress, approved: true};
 
 
       await engine.erc1155.setApprovalForAll(Arbitrum.chainId.toString(), EDITION_ADDRESS, senderWalletAddress, requestBody);
