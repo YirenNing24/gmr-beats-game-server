@@ -13,6 +13,7 @@ import RewardService from "../rewards.services/rewards.service";
 import { RewardData } from "../rewards.services/reward.interface";
 import ExperienceService from "../experience.services/experience.service";
 import { LevelUpResult } from "../experience.services/experience.interface";
+import { MongoClient, MongoClient } from "mongodb";
 
 
 class ScoreService {
@@ -36,7 +37,7 @@ class ScoreService {
 			const scoreWithTime = { ...score, timestamp: Date.now() };
 
 			// Establish MongoDB connection
-			const client = await mongoDBClient.connect();
+			const client: MongoClient = await mongoDBClient.connect();
 			const collection = client.db("beats").collection("classicScores")
 
 			// Insert score into the collection
@@ -45,26 +46,7 @@ class ScoreService {
 			// Calculate experience gain
 			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
 
-			return experienceGain;
-
-			// const rewardService: RewardService = new RewardService();
-
-			// // Check for song reward
-			// const rewardData: RewardData = { songName: score.songName, songRewardType: "first", type: "song" };
-			// const isFirstSongComplete: boolean = await rewardService.checkSongReward(score.username, rewardData);
-
-			// if (!isFirstSongComplete) {
-			// 	const dataReward = {
-			// 		username: score.username,
-			// 		type: rewardData.type,
-			// 		songName: score.songName,
-			// 		songRewardType: rewardData.songRewardType,
-			// 		rewardName: `First time completing ${score.songName}`,
-			// 	};
-			// 	rewardService.setMissionReward(score.username, dataReward);
-			// }
-
-
+			return experienceGain;	
 		} catch (error: any) {
 			console.error("Error saving classic score:", error);
 			throw error;
@@ -81,7 +63,7 @@ class ScoreService {
 			await tokenService.verifyAccessToken(token);
 
 			// Establish MongoDB connection
-			const client = await mongoDBClient.connect();
+			const client: MongoClient = await mongoDBClient.connect();
 			const db = client.db("beats");
 			const collection = db.collection<ClassicScoreStats>("classicScores");
 
