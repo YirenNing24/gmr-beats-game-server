@@ -11,220 +11,114 @@ import { PrivateMessage, NewMessage, Result, GroupResult, GroupChatData } from "
 import TokenService from "../user.services/token.services/token.service";
 import { SuccessMessage } from "../outputs/success.message";
 import { ManagedTransaction, QueryResult } from "neo4j-driver";
+import { MongoClient } from "mongodb";
+import { mongoDBClient } from "../db/mongodb.client";
 
 
 const watchedRooms: Record<string, boolean> = {};
 const watchedGroupRooms: Record<string, boolean> = {};
 
 class ChatService {
+	websocket?: ElysiaWS<any>;
 
-  websocket?: ElysiaWS<any>;
+	constructor(websocket?: ElysiaWS<any>) {
+		this.websocket = websocket;
+	}
 
-  constructor(websocket?: ElysiaWS<any>) {
-    this.websocket = websocket;
-  }
+	public async chatRoom(room: string, token: string): Promise<void> {
+		try {
+			const tokenService = new TokenService();
+			const username: string = await tokenService.verifyAccessToken(token);
 
-  public async chatRoom(room: string, token: string): Promise<void> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const username: string = await tokenService.verifyAccessToken(token);
-      
-      const ws = this.websocket;
-      const connection: rt.Connection = await getRethinkDB();
+			const ws = this.websocket;
 
-      let query: rt.Sequence = rt.db('beats').table("chats").filter({ roomId: room });  
-      if (!watchedRooms[room]) {
-        query.changes().run(connection, (error, cursor) => {
-          if (error) {
-            console.error("Error running change feed query:", error);
-            return;
-          }
-      
-          cursor.each((error, row) => {
-            if (error) {
-              console.error("Error processing change feed row:", error);
-              return;
-            }
-            if (row.new_val) {
-              const roomNewVal: Result = row.new_val;
-              const roomData: string = JSON.stringify(roomNewVal);
-              app.server?.publish('all', roomData);
-            }
-          });
-        });
-      
-        watchedRooms[room] = true;
-      }
-      let orderedQuery: rt.Sequence = query.orderBy(rt.desc("ts")).limit(4);
-      orderedQuery.run(connection, async (error, cursor) => {
-        if (error) {
-          console.error(error);
-          return;
-        }
+			// Connect to MongoDB
+			const client = await mongoDBClient.connect()
+			const db = client.db("beats");
 
-        try {
-          const result: Result[] = await cursor.toArray();
-          const room_data = {
-            chat: result,
-            handle: room,
-          };
-          const roomData: string = JSON.stringify(room_data);
+			// Watch public room
+			if (!watchedRooms[room]) {
+				const roomCollection = db.collection("chats");
+				const roomCursor = roomCollection.watch([
+					{ $match: { "fullDocument.roomId": room } },
+				]);
 
+				roomCursor.on("change", (change) => {
+					if (change.operationType === "insert") {
+						const roomData = JSON.stringify(change.fullDocument);
+						app.server?.publish("all", roomData);
+					}
+				});
+				watchedRooms[room] = true;
+			}
 
-          ws?.send(roomData);
-        } catch (error: any) {
-          throw error
-        }
-      });
-      let query2: rt.Sequence = rt.db('beats').table("private").filter({ roomId: username });
-      if (!watchedRooms[username]) {
-        query2.changes().run(connection, (error, cursor) => {
-          if (error) throw error;
-          cursor.each((error, row)  => {
-            if (error) throw error;
-            if (row.new_val) {
-              const room_data: Result = row.new_val;
-              const roomData: string = JSON.stringify(room_data);
-              ws?.send(roomData)
-              
-            }
-          })
-        });
-        watchedRooms[room] = true;
-      }
+			// Initial fetch of room data (latest 4 messages)
+			const roomCollection = db.collection("chats");
+			const recentMessages = await roomCollection
+				.find({ roomId: room })
+				.sort({ ts: -1 })
+				.limit(4)
+				.toArray();
+			ws?.send(JSON.stringify({ chat: recentMessages, handle: room }));
 
-      let query3: rt.Sequence = rt.db('beats').table("private").filter({ receiver: username });
-      if (!watchedRooms[username]) {
-        query3.changes().run(connection, (error, cursor) => {
-          if (error) throw error;
-          cursor.each((error, row)  => {
-            if (error) throw error;
-            if (row.new_val) {
-              const room_data: Result = row.new_val;
-              const roomData: string = JSON.stringify(room_data);
-              ws?.send(roomData)
-            }
-          })
-        });
-        watchedRooms[room] = true;
-      }
+			// Watch private messages for the user (by roomId and receiver)
+			if (!watchedRooms[username]) {
+				const privateCollection = db.collection("private");
 
-      let groupChat: rt.Sequence = rt.db('beats').table("group").filter(rt.row('members').contains(username));
-        groupChat.changes().run(connection, (error, cursor) => {
-          if (error) throw error;
-          cursor.each((error, row)  => {
-            if (error) throw error;
-            if (row.new_val) {
-              const room_data: GroupResult = row.new_val;
-              const roomData: string = JSON.stringify(room_data);
-              console.log(roomData)
-              ws?.send(roomData)
-            }
-          })
-        });
+				const privateCursor = privateCollection.watch([
+					{
+						$match: {
+							$or: [
+								{ "fullDocument.roomId": username },
+								{ "fullDocument.receiver": username },
+							],
+						},
+					},
+				]);
 
-    
-    } catch (error: any) {
-      throw error
-    }
-  }
+				privateCursor.on("change", (change) => {
+					if (change.operationType === "insert") {
+						const roomData = JSON.stringify(change.fullDocument);
+						ws?.send(roomData);
+					}
+				});
+
+				watchedRooms[username] = true;
+			}
+
+			// Watch group messages where the user is a member
+			if (!watchedGroupRooms[username]) {
+				const groupCollection = db.collection("group");
+
+				const groupCursor = groupCollection.watch([
+					{
+						$match: {
+							"fullDocument.members": username,
+						},
+					},
+				]);
+
+				groupCursor.on("change", (change) => {
+					if (change.operationType === "insert") {
+						const groupData = JSON.stringify(change.fullDocument);
+						ws?.send(groupData);
+					}
+				});
+
+				watchedGroupRooms[username] = true;
+			}
+		} catch (error: any) {
+			console.error("Error in chatRoom:", error);
+			throw error;
+		}
+	}
+}
+
+export default ChatService;
 
 
-  public async privateInboxData(token: string, conversingUsername: string): Promise<PrivateMessage[]> {
-    try {
-
-      const tokenService:  TokenService = new TokenService();
-      const clientUsername: string = await tokenService.verifyAccessToken(token);
-
-      const connection: rt.Connection = await getRethinkDB();
-      
-      const query: rt.Cursor = await rt
-        .db('beats')
-        .table('private')
-        .filter({ roomId: clientUsername, receiver: conversingUsername })
-        .orderBy(rt.desc('ts'))
-        .limit(10)
-        .union(
-          rt
-            .db('beats')
-            .table('private')
-            .filter({ roomId: conversingUsername, receiver: clientUsername })
-            .orderBy(rt.desc('ts'))
-            .limit(10)
-        )
-        .run(connection);
-  
-      const messageData = await query.toArray() as PrivateMessage[]
-
-      return messageData as PrivateMessage[]
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-
-  public async createGroupChat(token: string, groupChatData: GroupChatData) {
-    try {
-      const tokenService:  TokenService = new TokenService();
-      const username: string = await tokenService.verifyAccessToken(token);
-
-      const { name, members } = groupChatData
-
-      const newGroupChat = { 
-        message: `Welcome!`, 
-        group: true,
-        members,
-        roomId: name,
-        seen: false,
-        sender: username,
-        ts: Date.now(),
-      }
-
-      const connection: rt.Connection = await getRethinkDB();
-      await rt
-        .db('beats')
-        .table('group')
-        .insert(newGroupChat)
-        .run(connection);
-    
-      return new SuccessMessage("Group chat created successfully")
-    } catch(error: any) {
-      throw error
-    }
-  }
-
-
-  public async getGroupChats(token: string): Promise<GroupResult[]> {
-    try {
-        const tokenService: TokenService = new TokenService();
-        const username: string = await tokenService.verifyAccessToken(token);
-
-        const connection: rt.Connection = await getRethinkDB();
-
-        // Query to find all group chats where the user's username is in the members array
-        const groupChat: rt.Cursor = await rt.db('beats')
-            .table("group")
-            .filter(rt.row('members').contains(username))
-            .run(connection);
-
-        // Convert the results to an array
-        const groupChatData: GroupResult[] = await groupChat.toArray();
-
-        // Return the group chat data
-        return groupChatData;
-    } catch (error: any) {
-        console.error("Error retrieving group chats:", error);
-        throw error;
-    }
-  }
-
-
-};
-
-export default ChatService
 
 const sanitise = async (message: NewMessage): Promise<boolean> => {
-
   return !!message && message.message !== null && message.message !== "";
 };
 
