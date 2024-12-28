@@ -13,7 +13,7 @@ import RewardService from "../rewards.services/rewards.service";
 import { RewardData } from "../rewards.services/reward.interface";
 import ExperienceService from "../experience.services/experience.service";
 import { LevelUpResult } from "../experience.services/experience.interface";
-import { MongoClient, MongoClient } from "mongodb";
+import { MongoClient } from "mongodb";
 
 
 class ScoreService {
