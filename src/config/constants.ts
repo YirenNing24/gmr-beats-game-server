@@ -25,6 +25,8 @@ export const MONGO_HOST: string = process.env.MONGO_HOST || "";
 export const MONGO_TIMEOUT_MS: number = Number(process.env.MONGO_TIMEOUT_MS) || 20000;
 export const MONGO_SOCKET_TIMEOUT_MS: number = Number(process.env.MONGO_SOCKET_TIMEOUT_MS) || 20000;
 export const MONGO_TLS: string = process.env.MONGO_TLS || "true"
+
+
 // KeyDB Configuration
 export const KEYDB_PASSWORD: string | undefined = process.env.KEYDB_PASSWORD;
 export const KEYDB_PORT: number  = Number(process.env.KEYDB_PORT) || 6379;
@@ -40,7 +42,7 @@ export const KDB: { host: string | undefined; port: string | number; password: s
 // Thirdweb SDK Configuration
 export const SECRET_KEY: string = process.env.SECRET_KEY || ""
 // Chain and Wallet Factory Configuration
-export const CHAIN: string  = Arbitrum.chainId.toString();
+export const CHAIN: string  = process.env.CHAIN || "33139";
 // Contract Addresses
 export const BEATS_TOKEN: string = '0xAA95DA3D6EbdAb099630b6d4Cf0fcb904a44C2ab';
 export const GMR_TOKEN: string = '0x7dce27C81b7e112018FA6C2e27f8444b5D39688B';
