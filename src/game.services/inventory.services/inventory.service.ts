@@ -9,6 +9,8 @@ import { CardMetaData, CardPackData, InventoryCardData , InventoryCards, UpdateI
 import { checkInventorySizeCypher, equipItemCypher, inventoryOpenCardCypher, openCardUpgradeCypher, unequipItemCypher } from "./inventory.cypher";
 import { SuccessMessage } from "../../outputs/success.message";
 import { StoreCardUpgradeData } from "../store.services/store.interface";
+import { engine } from "../../user.services/wallet.services/wallet.service";
+import { CHAIN, EDITION_ADDRESS } from "../../config/constants";
 
 
 class InventoryService {
@@ -27,7 +29,8 @@ this.driver = driver;
           const session: Session | undefined = this.driver?.session();
 
           const result: QueryResult | undefined = await session?.executeRead(tx =>
-            tx.run('MATCH (u:User {username: $userName}) RETURN u.smartWalletAddress AS smartWalletAddress', { userName })
+            tx.run('MATCH (u:User {username: $userName}) RETURN u.smartWalletAddress AS smartWalletAddress RETURN u.equipped as equipped'
+                , { userName })
         );
   
           // Use a Read Transaction and only return the necessary properties
@@ -42,6 +45,12 @@ this.driver = driver;
           if (!result || result.records.length === 0) {
               return [[], []];
           }
+          const smartWalletAddress: string = result.records[0].get("smartWalletAddress");
+          const equipped: string[] = result.records[0].get("equipped");
+
+          const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS)).result;
+
+
   
           // Initialize arrays to store cards with different relationships
           const ownedAndInventory: InventoryCardData[] = [];
