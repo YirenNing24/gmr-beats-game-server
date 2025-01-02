@@ -2,22 +2,22 @@
 
 
 //** MEMGRAPH IMPORTS
-import { CARD_MARKETPLACE, CARD_UPGRADE_MARKETPLACE, ENGINE_ADMIN_WALLET_ADDRESS, PACK_MARKETPLACE } from "../../config/constants";
+import { CARD_MARKETPLACE, EDITION_ADDRESS, PACK_MARKETPLACE } from "../../config/constants";
 import { Driver, Session, ManagedTransaction, QueryResult, RecordShape } from "neo4j-driver-core";
 
 //** CONFIG IMPORTs
-import { CHAIN, SMART_WALLET_CONFIG } from "../../config/constants";
+import { CHAIN } from "../../config/constants";
 
 //** VALIDATION IMPORT
 import ValidationError from "../../outputs/validation.error";
 
 //** SERVICE IMPORTS
 import TokenService from "../../user.services/token.services/token.service";
-import { BuyCardData, BuyCardUpgradeData, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
+import { BuyCardData, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
 import { UserData } from "../../user.services/user.service.interface";
 
 //** CYPHER IMPORTS
-import { buyCardCypher, buyCardUpgradeCypher, getValidCardPacks, getValidCardUpgrades, getValidCards } from "./store.cypher";
+import { buyCardCypher, getValidCardPacks, getValidCardUpgrades, getValidCards } from "./store.cypher";
 
 //** SUCCESS MESSAGE IMPORT
 import { SuccessMessage } from "../../outputs/success.message";
@@ -37,22 +37,47 @@ export default class StoreService {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
 
-        const session: Session = this.driver.session();
-        const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-            tx.run(getValidCards)
-        );
-        await session.close();
+        // const session: Session = this.driver.session();
+        // const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+        //     tx.run(getValidCards)
+        // );
+        // await session.close();
+        // const currentDate = new Date();
+        // const cards: StoreCardData[] = result.records
+        //     .map(record => record.get("c").properties)
+        //     .filter(card => {
+        //         const [month, day, year] = card.endTime.split('/');
+        //         const endTime: Date = new Date(`20${year}-${month}-${day}`);
+        //         return endTime >= currentDate;
+        //     });
 
-        const currentDate = new Date();
-        const cards: StoreCardData[] = result.records
-            .map(record => record.get("c").properties)
-            .filter(card => {
-                const [month, day, year] = card.endTime.split('/');
-                const endTime = new Date(`20${year}-${month}-${day}`);
-                return endTime >= currentDate;
-            });
+        const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
+                    // Prepare the final array of card data
+        const finalCardData: StoreCardData[] = [];
 
-        return cards as StoreCardData[];
+            // Iterate through listed tokenIds and fetch their metadata
+            for (const listing of listed) {
+              const tokenId: string = listing.tokenId;
+  
+              // Fetch metadata for the current tokenId
+              const cardData = (await engine.erc1155.get(tokenId, CHAIN, EDITION_ADDRESS)).result;
+  
+              // Combine tokenId and spread the metadata and cardData into a single object
+              //@ts-ignore
+              const card: CardData = {
+                  ...cardData.metadata, // Spread metadata key-value pairs
+                  tokenId, // Add tokenId
+                  owner: cardData.owner, // Add owner property
+                  type: cardData.type, // Add type property
+                  supply: cardData.supply, // Add supply property
+                  quantityOwned: cardData.quantityOwned, // Add quantityOwned property
+              };
+  
+              // Push the combined object to the final array
+              finalCardData.push(card);
+          }
+
+        return finalCardData as StoreCardData[];
     } catch (error: any) {
         console.error("Error fetching items:", error);
         throw error
@@ -344,11 +369,6 @@ export default class StoreService {
 }
 
 
-
-
-
-
-  
   public async getvalidCardUpgrade(token: string): Promise<StoreCardUpgradeData[]> {
     try {
       const tokenService: TokenService = new TokenService();

@@ -9,7 +9,7 @@ import { generateAuthenticationOptions, verifyAuthenticationResponse,
         VerifiedAuthenticationResponse} from "@simplewebauthn/server";
 
 //** TYPE INTERFACE IMPORT
-import { AuthenticateReturn, PasskeyUser, PlayerInfo, TokenScheme, User, WalletData } from "../user.service.interface";
+import { AuthenticateReturn, PasskeyUser, PlayerInfo, TokenScheme, WalletData } from "../user.service.interface";
 import { RegistrationResponseJSON, WebAuthnCredential } from "../auth.services.ts/auth.interface";
 
 //** CONFIG IMPORT
@@ -18,14 +18,17 @@ import { ANDROID_APP_HASH, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from "../../
 //** CLIENT IMPORT
 import keydb from "../../db/keydb.client";
 
-//** SERVICE IMPORT
-import AuthService from "../auth.services.ts/auth.service";
-import { SuccessMessage } from "../../outputs/success.message";
+//** MEMGRAPH IMPORT
 import { getDriver } from "../../db/memgraph";
 import { Driver, ManagedTransaction, QueryResult, Session } from "neo4j-driver";
+
+//** SERVICE IMPORT
+import AuthService from "../auth.services.ts/auth.service";
 import TokenService from "../token.services/token.service";
 import WalletService from "../wallet.services/wallet.service";
 import EnergyService from "../../game.services/energy.services/energy.service";
+
+//** ERROR IMPORT
 import ValidationError from "../../outputs/validation.error";
 
 

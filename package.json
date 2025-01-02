@@ -22,7 +22,7 @@
     "@thirdweb-dev/storage": "^2.0.15",
     "@thirdweb-dev/wallets": "^2.5.39",
     "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^20.17.10",
+    "@types/node": "^20.17.11",
     "@types/ping": "^0.4.4",
     "@types/rethinkdb": "^2.3.21",
     "bcrypt-ts": "^4.0.1",
