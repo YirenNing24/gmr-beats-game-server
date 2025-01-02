@@ -80,6 +80,7 @@ class AuthService {
                  suspended: $suspended,
                  country: $country,
                  deviceId: $deviceId,
+                 equipped: [],
                  inventorySize: 200
               })
             `,
