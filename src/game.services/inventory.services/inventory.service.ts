@@ -9,7 +9,6 @@ import { CardMetaData, CardPackData, InventoryCardData , InventoryCards, UpdateI
 import { checkInventorySizeCypher, equipItemCypher, inventoryOpenCardCypher, openCardUpgradeCypher, unequipItemCypher } from "./inventory.cypher";
 import { SuccessMessage } from "../../outputs/success.message";
 import { StoreCardUpgradeData } from "../store.services/store.interface";
-import { Console } from "console";
 
 
 class InventoryService {
@@ -26,12 +25,16 @@ this.driver = driver;
           const userName: string = await tokenService.verifyAccessToken(token);
   
           const session: Session | undefined = this.driver?.session();
+
+          const result: QueryResult | undefined = await session?.executeRead(tx =>
+            tx.run('MATCH (u:User {username: $userName}) RETURN u.smartWalletAddress AS smartWalletAddress', { userName })
+        );
   
           // Use a Read Transaction and only return the necessary properties
-          const result: QueryResult<RecordShape> | undefined = await session?.executeRead(
-              (tx: ManagedTransaction) =>
-                  tx.run(inventoryOpenCardCypher, { userName })
-          );
+        //   const result: QueryResult<RecordShape> | undefined = await session?.executeRead(
+        //       (tx: ManagedTransaction) =>
+        //           tx.run(inventoryOpenCardCypher, { userName })
+        //   );
   
           await session?.close();
   

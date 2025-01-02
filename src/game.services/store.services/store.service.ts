@@ -172,7 +172,7 @@ export default class StoreService {
       const inventoryCurrentSize: number = result.records[0].get("inventoryCurrentSize").toNumber()
 
       // Create relationship using a separate Cypher query
-      await this.createCardRelationship(username, uri, inventoryCurrentSize, inventorySize );
+      // await this.createCardRelationship(username, uri, inventoryCurrentSize, inventorySize );
 
       return new SuccessMessage("Purchase was successful");
     } catch (error: any) {
@@ -186,7 +186,6 @@ export default class StoreService {
   private async cardPurchase(buyerWalletAddress: string, listingId: number) {
 
     try {
-      const chain: string = "42161";  // ARBITRUM ONE
       const contractAddress: string = CARD_MARKETPLACE; 
 
       // Constructing the request body
@@ -197,18 +196,17 @@ export default class StoreService {
       };
   
       // Call the buyFromListing function
-      await engine.marketplaceDirectListings.buyFromListing(chain, contractAddress, buyerWalletAddress, requestBody);
+      await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, buyerWalletAddress, requestBody);
 
     } catch(error: any) {
-      console.log(error)
-      throw error
+      console.log(error);
+      throw error;
     }
 
 }
 
     private async cardPackPurchase(buyerWalletAddress: string, listingId: number) {
       try {
-        const chain: string = "421614";  // Assuming this is a constant or predefined variable
         const contractAddress: string = PACK_MARKETPLACE;  // Assuming this is a constant or predefined variable
 
         // Constructing the request body
@@ -219,7 +217,7 @@ export default class StoreService {
         };
     
         // Call the buyFromListing function
-        await engine.marketplaceDirectListings.buyFromListing(chain, contractAddress, buyerWalletAddress, requestBody);
+        await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, buyerWalletAddress, requestBody);
   
       } catch(error: any) {
         console.log(error)
@@ -250,8 +248,8 @@ export default class StoreService {
 
       await this.cardPackPurchase(smartWalletAddress, listingId);
 
-      // Create relationship using a separate Cypher query
-      await this.createCardPackRelationship(username, uri);
+      // // Create relationship using a separate Cypher query
+      // await this.createCardPackRelationship(username, uri);
 
       return new SuccessMessage("Purchase was successful");
     } catch (error: any) {
@@ -262,111 +260,111 @@ export default class StoreService {
   
 
   //Creates a relationship between a user and a card based on provided parameters.
-  private async createCardRelationship(username: string, uri: string, inventoryCurrentSize: number, inventorySize: number): Promise<void> {
-    try {
+  // private async createCardRelationship(username: string, uri: string, inventoryCurrentSize: number, inventorySize: number): Promise<void> {
+  //   try {
 
-      // const rewardService: RewardService = new RewardService()
-      // Determine the relationship type based on bag and inventory size
-      let relationship: string[];
-      if (inventorySize < inventoryCurrentSize + 1) {
-        relationship = ["BAGGED"];
-      } else {
-        relationship = ["INVENTORY"];
-      }
+  //     // const rewardService: RewardService = new RewardService()
+  //     // Determine the relationship type based on bag and inventory size
+  //     let relationship: string[];
+  //     if (inventorySize < inventoryCurrentSize + 1) {
+  //       relationship = ["BAGGED"];
+  //     } else {
+  //       relationship = ["INVENTORY"];
+  //     }
       
-      // Get the card's name
-      const session: Session = this.driver.session();
-      for (const rel of relationship) {
-        await session.run(`
-          MATCH (u:User {username: $username}), (c:Card {uri: $uri})
-          MATCH (c)-[l:LISTED]->(cs:CardStore)
-          DELETE l
-          CREATE (u)-[:${rel}]->(c)
-          CREATE (c)-[:SOLD]->(cs)
-        `, { username, uri });
-      }
-      await session.close();
-    } catch (error: any) {
-      console.error("Error creating relationship:", error);
-      throw error;
-    }
-  }
+  //     // Get the card's name
+  //     const session: Session = this.driver.session();
+  //     for (const rel of relationship) {
+  //       await session.run(`
+  //         MATCH (u:User {username: $username}), (c:Card {uri: $uri})
+  //         MATCH (c)-[l:LISTED]->(cs:CardStore)
+  //         DELETE l
+  //         CREATE (u)-[:${rel}]->(c)
+  //         CREATE (c)-[:SOLD]->(cs)
+  //       `, { username, uri });
+  //     }
+  //     await session.close();
+  //   } catch (error: any) {
+  //     console.error("Error creating relationship:", error);
+  //     throw error;
+  //   }
+  // }
   
 
-  private async createCardPackRelationship(username: string, uri: string): Promise<void> {
-    const session: Session = this.driver.session();
+//   private async createCardPackRelationship(username: string, uri: string): Promise<void> {
+//     const session: Session = this.driver.session();
 
-    try {
-        // Step 1: Get the parent pack's properties
-        const packNameResult = await session.run(`
-            MATCH (p:Pack {uri: $uri})
-            RETURN p.name AS name, p.quantity AS quantity, properties(p) AS props
-        `, { uri });
+//     try {
+//         // Step 1: Get the parent pack's properties
+//         const packNameResult = await session.run(`
+//             MATCH (p:Pack {uri: $uri})
+//             RETURN p.name AS name, p.quantity AS quantity, properties(p) AS props
+//         `, { uri });
 
-        if (packNameResult.records.length === 0) {
-            throw new Error(`Pack with URI ${uri} not found`);
-        }
+//         if (packNameResult.records.length === 0) {
+//             throw new Error(`Pack with URI ${uri} not found`);
+//         }
 
-        const parentPackName: string = packNameResult.records[0].get("name");
-        const parentPackProps: StorePackData = packNameResult.records[0].get("props");
+//         const parentPackName: string = packNameResult.records[0].get("name");
+//         const parentPackProps: StorePackData = packNameResult.records[0].get("props");
 
-        // Remove the quantity property from the parent pack's properties
-        //@ts-ignore
-        delete parentPackProps.quantity;
+//         // Remove the quantity property from the parent pack's properties
+//         //@ts-ignore
+//         delete parentPackProps.quantity;
 
-        // Step 2: Check if the user exists and already owns this pack
-        const userOwnsPack = await session.run(`
-            MATCH (u:User {username: $username})-[:OWNED]->(p:Pack {name: $name})
-            RETURN p AS pack
-        `, { username, name: parentPackName });
+//         // Step 2: Check if the user exists and already owns this pack
+//         const userOwnsPack = await session.run(`
+//             MATCH (u:User {username: $username})-[:OWNED]->(p:Pack {name: $name})
+//             RETURN p AS pack
+//         `, { username, name: parentPackName });
 
-        if (userOwnsPack.records.length > 0) {
-            // Update quantity of the owned pack
-            await session.run(`
-                MATCH (u:User {username: $username})-[:OWNED]->(p:Pack {name: $name})
-                SET p.quantity = p.quantity + 1
-            `, { username, name: parentPackName });
+//         if (userOwnsPack.records.length > 0) {
+//             // Update quantity of the owned pack
+//             await session.run(`
+//                 MATCH (u:User {username: $username})-[:OWNED]->(p:Pack {name: $name})
+//                 SET p.quantity = p.quantity + 1
+//             `, { username, name: parentPackName });
 
-            // Decrease quantity of the parent pack
-            await session.run(`
-                MATCH (p:Pack {name: $name})
-                WHERE p.child IS NULL OR p.child = false
-                SET p.quantity = p.quantity - 1
-            `, { name: parentPackName });
+//             // Decrease quantity of the parent pack
+//             await session.run(`
+//                 MATCH (p:Pack {name: $name})
+//                 WHERE p.child IS NULL OR p.child = false
+//                 SET p.quantity = p.quantity - 1
+//             `, { name: parentPackName });
 
-        } else {
-            // Step 3: Ensure the user exists before creating a new pack
-            const userExists = await session.run(`
-                MATCH (u:User {username: $username})
-                RETURN u
-            `, { username });
+//         } else {
+//             // Step 3: Ensure the user exists before creating a new pack
+//             const userExists = await session.run(`
+//                 MATCH (u:User {username: $username})
+//                 RETURN u
+//             `, { username });
 
-            if (userExists.records.length === 0) {
-                throw new Error(`User with username ${username} not found`);
-            }
+//             if (userExists.records.length === 0) {
+//                 throw new Error(`User with username ${username} not found`);
+//             }
 
-            // Create a new pack and associate it with the user
-            await session.run(`
-                MATCH (u:User {username: $username})
-                CREATE (u)-[:OWNED]->(newPack:Pack)
-                SET newPack = $props, newPack.quantity = 1, newPack.child = true
-            `, { username, props: parentPackProps });
+//             // Create a new pack and associate it with the user
+//             await session.run(`
+//                 MATCH (u:User {username: $username})
+//                 CREATE (u)-[:OWNED]->(newPack:Pack)
+//                 SET newPack = $props, newPack.quantity = 1, newPack.child = true
+//             `, { username, props: parentPackProps });
 
-            // Decrease quantity of the parent pack
-            await session.run(`
-                MATCH (p:Pack {name: $name})
-                WHERE p.child IS NULL OR p.child = false
-                SET p.quantity = p.quantity - 1
-            `, { name: parentPackName });
-        }
+//             // Decrease quantity of the parent pack
+//             await session.run(`
+//                 MATCH (p:Pack {name: $name})
+//                 WHERE p.child IS NULL OR p.child = false
+//                 SET p.quantity = p.quantity - 1
+//             `, { name: parentPackName });
+//         }
 
-    } catch (error: any) {
-        console.error("Error creating relationship:", error);
-        throw error;
-    } finally {
-        await session.close();
-    }
-}
+//     } catch (error: any) {
+//         console.error("Error creating relationship:", error);
+//         throw error;
+//     } finally {
+//         await session.close();
+//     }
+// }
 
 
   public async getvalidCardUpgrade(token: string): Promise<StoreCardUpgradeData[]> {

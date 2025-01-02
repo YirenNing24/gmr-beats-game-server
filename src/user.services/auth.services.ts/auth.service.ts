@@ -31,7 +31,7 @@ import { Driver, QueryResult, Session,  ManagedTransaction } from 'neo4j-driver-
 import { WalletData, UserData, ValidateSessionReturn, AuthenticateReturn, TokenScheme, PlayerInfo, User, Suspended, PreRegisterUser, PasskeyUser, PasskeyUserData } from '../user.service.interface.js'
 
 //** GEO IP IMPORT
-import geoip, { GeoIp2Location } from 'geoip-lite2'
+import geoip from 'geoip-lite2'
 import { GoogleRegister } from './auth.interface.js'
 import EnergyService from '../../game.services/energy.services/energy.service.js'
 
@@ -56,7 +56,7 @@ class AuthService {
       const signupDate: number = Date.now();
       const suspended: Suspended = { until: null, reason: "" };
     
-      const geo: GeoIp2Location | null = geoip.lookup(ipAddress);
+      const geo = geoip.lookup(ipAddress);
       const country: string | undefined = geo?.country || "SOKOR";
       const smartWallet = await walletService.createWallet(userName)
     
@@ -140,6 +140,7 @@ class AuthService {
                 suspended: $suspended,
                 country: $country,
                 deviceId: $deviceId,
+                equipped: [],
                 inventorySize: 200
               })
             `,
@@ -261,6 +262,7 @@ class AuthService {
                 suspended: $suspended,
                 country: "SOKOR",
                 deviceId: $deviceId,
+                equipped: [],
                 inventorySize: 200,
               })
             `,
@@ -389,6 +391,7 @@ class AuthService {
                 inventorySize: 200,
                 passKeyId: $id,
                 publicKey: $publicKey,
+                equipped: [],
                 counter: $counter
               })
             `,
