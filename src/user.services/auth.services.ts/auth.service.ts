@@ -34,6 +34,7 @@ import { WalletData, UserData, ValidateSessionReturn, AuthenticateReturn, TokenS
 import geoip from 'geoip-lite2'
 import { GoogleRegister } from './auth.interface.js'
 import EnergyService from '../../game.services/energy.services/energy.service.js'
+import { inventoryCypher } from './auth.cypher.js'
 
 
 class AuthService {
@@ -82,7 +83,9 @@ class AuthService {
                  deviceId: $deviceId,
                  inventorySize: 200
               })
-            `,
+
+              ${inventoryCypher}
+              `,
               { signupDate, userId, userName, encrypted, smartWalletAddress, playerStats, suspended, country, email }
             )
         );
@@ -143,6 +146,8 @@ class AuthService {
                 inventorySize: 200
 
               })
+
+              ${inventoryCypher}
             `,
               { signupDate, userId, userName, encrypted, locKey, smartWalletAddress, playerStats, suspended, country, deviceId }
             )
@@ -264,6 +269,8 @@ class AuthService {
                 deviceId: $deviceId,
                 inventorySize: 200
               })
+
+              ${inventoryCypher}
             `,
             { signupDate, userName, encrypted, smartWalletAddress, playerStats, suspended, country, deviceId, locKey, playerId }
             ) 
@@ -392,6 +399,9 @@ class AuthService {
                 counter: $counter,
                 inventorySize: 200
               })
+
+
+              ${inventoryCypher}
             `,
               { signupDate, userId, userName, locKey, smartWalletAddress, playerStats, suspended, country, deviceIdToUse, id, publicKey, counter }
             )
