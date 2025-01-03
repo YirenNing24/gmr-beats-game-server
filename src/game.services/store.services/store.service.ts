@@ -22,6 +22,7 @@ import { buyCardCypher, getValidCardPacks, getValidCardUpgrades, getValidCards }
 //** SUCCESS MESSAGE IMPORT
 import { SuccessMessage } from "../../outputs/success.message";
 import { engine } from "../../user.services/wallet.services/wallet.service";
+import { CardNFT } from "../inventory.services/inventory.interface";
 
 
 
@@ -60,17 +61,23 @@ export default class StoreService {
               const tokenId: string = listing.tokenId;
   
               // Fetch metadata for the current tokenId
-              const cardData = (await engine.erc1155.get(tokenId, CHAIN, EDITION_ADDRESS)).result;
+              const cardData = (await engine.erc1155.get(tokenId, CHAIN, EDITION_ADDRESS)).result as CardNFT;
   
               // Combine tokenId and spread the metadata and cardData into a single object
-              //@ts-ignore
-              const card: CardData = {
+
+              const card: StoreCardData = {
                   ...cardData.metadata, // Spread metadata key-value pairs
                   tokenId, // Add tokenId
                   owner: cardData.owner, // Add owner property
                   type: cardData.type, // Add type property
                   supply: cardData.supply, // Add supply property
-                  quantityOwned: cardData.quantityOwned, // Add quantityOwned property
+                  quantityOwned: cardData.quantityOwned || "" , // Add quantityOwned property
+                  pricePerToken: parseInt(listing.pricePerToken), // Add pricePerToken property
+                  currencyName: listing.currencyValuePerToken?.name || "", // Add currencyName property
+                  startTime: listing.startTimeInSeconds?.toString() || "", // Add startTime property
+                  endTime: listing.endTimeInSeconds?.toString() || "", // Add endTime property
+                  imageByte: cardData.metadata.imageByte || "", // Add imageByte property
+                  lister: "beats", // Add lister property with default value
               };
   
               // Push the combined object to the final array

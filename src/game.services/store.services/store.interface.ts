@@ -59,6 +59,7 @@ export interface StoreCardData {
     rarity: string;
     level: string;
     experience: string;
+    type: "ERC1155" | "ERC721" | "metaplex";
     image: string;
     imageByte: string;
     uri: string;
@@ -71,11 +72,11 @@ export interface StoreCardData {
     supply: string;
     quantity: 1
     quantityOwned: string
-    startTime?: string;
+    startTime: string;
     endTime?: string;
-    lister?: string;
-    pricePerToken?: number
-    currencyName?: string
+    lister: string;
+    pricePerToken: number
+    currencyName: string
 }
 
 /**
