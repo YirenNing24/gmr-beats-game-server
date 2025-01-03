@@ -3,25 +3,29 @@ import { Driver, ManagedTransaction, QueryResult, RecordShape, Session } from "n
 
 //** IMPORTED SERVICES
 import TokenService from "../../user.services/token.services/token.service";
+import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
 
 //** TYPE INTERFACES
 import { CardMetaData, InventoryCardData , InventoryCards, UpdateInventoryData } from "./inventory.interface";
 import { checkInventorySizeCypher, openCardUpgradeCypher, unequipItemCypher } from "./inventory.cypher";
-import { SuccessMessage } from "../../outputs/success.message";
 import { StoreCardUpgradeData } from "../store.services/store.interface";
-import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
+
+//** IMPORTED OUTPUTS
+import { SuccessMessage } from "../../outputs/success.message";
+
+//** CONFIG IMPORTS
 import { CHAIN, EDITION_ADDRESS } from "../../config/constants";
 
 
-
+//** INVENTORY SERVICE CLASS
 class InventoryService {
-driver?: Driver;
-constructor(driver?: Driver) {
-this.driver = driver;
+    driver?: Driver;
+    constructor(driver?: Driver) {
+    this.driver = driver;
     }
 
     
-    //** CARD INVENTORY */
+
     // Retrieves inventory card data for a user based on the provided access token.
     public async cardInventoryOpen(token: string): Promise<InventoryCards> {
         try {
@@ -32,7 +36,10 @@ this.driver = driver;
     
             const result: QueryResult | undefined = await session?.executeRead(tx =>
                 tx.run(
-                    'MATCH (u:User {username: $userName}) RETURN u.smartWalletAddress AS smartWalletAddress, u.equipped AS equipped',
+                    `MATCH (u:User {username: $userName})-[:INVENTORY]->(x:X_IN)
+                     MATCH (u)-[:INVENTORY]->(g:GREATGUYS)
+                     MATCH (u)-[:INVENTORY]->(i:ICU)
+                     MATCH (u)-[:INVENTORY]->(r:IROHM)`,
                     { userName }
                 )
             );
@@ -144,19 +151,24 @@ this.driver = driver;
         }
     }
 
+
     // Updates the inventory database with the provided update data.
     private async updateInventoryDB(groupName: string, username: string, slot: string, updateData: UpdateInventoryData): Promise<void> {
         try {
             const session: Session | undefined = this.driver?.session();
+
+            // Handle the case where the group name is X:IN
+            let group: string = groupName;
+            if (groupName === "X:IN") {
+                group = "X_IN";
+            }
     
             // Fetch the inventory node for the group
             const result: QueryResult | undefined = await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
-                    `
-                    MATCH (u:User {username: $username})-[:INVENTORY]->(i:${groupName})
-                    RETURN i
-                    `,
-                    { username }
+                    `MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
+                     RETURN i
+                    `, { username }
                 )
             );
     
@@ -187,7 +199,53 @@ this.driver = driver;
             await session?.close();
         }
     }
+
+
+    public async unequipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
+        try {
+            const tokenService: TokenService = new TokenService();
+            const userName: string = await tokenService.verifyAccessToken(token);
     
+            const session: Session | undefined = this.driver?.session();
+    
+            // Get the remaining inventory size
+            const remainingSize: number | undefined = await this.checkInventorySize(userName);
+    
+            if (remainingSize === undefined) {
+                throw new Error("Failed to retrieve remaining inventory size.");
+            }
+    
+            // Calculate the number of items to be removed
+            const itemsToRemove: number = updateInventoryData.length;
+    
+            // Check if the number of items to be removed exceeds the remaining inventory size
+            if (itemsToRemove > remainingSize) {
+                throw new Error("Insufficient inventory space to remove equipped items.");
+            }
+  
+            // Iterate over each item in the updateInventoryData array
+            for (const item of updateInventoryData) {
+                const { uri } = item;
+    
+                // Use a Write Transaction to remove the equipped status of the item and reinstate it in the inventory
+                const result: QueryResult<RecordShape> | undefined = await session?.executeWrite(
+                    async (tx: ManagedTransaction) => {
+                        return tx.run(unequipItemCypher, { userName, uri });
+                    }
+                );
+            }
+    
+            await session?.close();
+    
+            // Return success message
+            return new SuccessMessage("Equip removed");
+        } catch (error: any) {
+            console.error("Error removing equipped items:", error);
+            throw error;
+        }
+      }
+    
+
 
 
 
@@ -222,50 +280,10 @@ this.driver = driver;
       }
     }
     
-    // Updates inventory data for a user based on the provided access token and update information.
-    public async unequipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
-      try {
-          const tokenService: TokenService = new TokenService();
-          const userName: string = await tokenService.verifyAccessToken(token);
-  
-          const session: Session | undefined = this.driver?.session();
-  
-          // Get the remaining inventory size
-          const remainingSize: number | undefined = await this.checkInventorySize(userName);
-  
-          if (remainingSize === undefined) {
-              throw new Error("Failed to retrieve remaining inventory size.");
-          }
-  
-          // Calculate the number of items to be removed
-          const itemsToRemove: number = updateInventoryData.length;
-  
-          // Check if the number of items to be removed exceeds the remaining inventory size
-          if (itemsToRemove > remainingSize) {
-              throw new Error("Insufficient inventory space to remove equipped items.");
-          }
 
-          // Iterate over each item in the updateInventoryData array
-          for (const item of updateInventoryData) {
-              const { uri } = item;
-  
-              // Use a Write Transaction to remove the equipped status of the item and reinstate it in the inventory
-              const result: QueryResult<RecordShape> | undefined = await session?.executeWrite(
-                  async (tx: ManagedTransaction) => {
-                      return tx.run(unequipItemCypher, { userName, uri });
-                  }
-              );
-          }
-  
-          await session?.close();
-  
-          // Return success message
-          return new SuccessMessage("Equip removed");
-      } catch (error: any) {
-          console.error("Error removing equipped items:", error);
-          throw error;
-      }
-    }
+    // Updates inventory data for a user based on the provided access token and update information.
+
+
 
     // Check the remaining inventory size for a user based on the provided username.
     public async checkInventorySize(userName: string): Promise<number | undefined> {
@@ -297,7 +315,10 @@ this.driver = driver;
       }
     }
 
-    //
+
+
+
+    // Retrieves inventory card data for a user based on the provided access token.
     public async packInventoryOpen(token: string) {
         try {
             const tokenService: TokenService = new TokenService();
@@ -349,6 +370,7 @@ this.driver = driver;
         }
     }
 
+
     // Updates inventory data for a user based on the provided access token and update information.
     public async getChatItems(token: string): Promise<{ loudspeaker: { quantity: number } }> {
         let session: Session | undefined;
@@ -388,7 +410,8 @@ this.driver = driver;
         }
     }
     
-    
+
+    // Updates inventory data for a user based on the provided access token and update information.
     public async openGroupCardEquipped(apiKey: string, groupName: string, username: string) {
         try {
 
@@ -428,11 +451,6 @@ this.driver = driver;
     }
     
     
-    
-
-
-
-
 
   }
   
