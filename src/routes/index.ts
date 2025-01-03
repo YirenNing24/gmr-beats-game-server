@@ -25,7 +25,6 @@ const routes = (app: any): void => {
         scores,
         social,
         store,
-        inventory,
         leaderboards,
         chat,
         upgrade,
