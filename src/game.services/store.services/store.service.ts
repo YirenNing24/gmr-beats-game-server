@@ -38,23 +38,9 @@ export default class StoreService {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
 
-        // const session: Session = this.driver.session();
-        // const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-        //     tx.run(getValidCards)
-        // );
-        // await session.close();
-        // const currentDate = new Date();
-        // const cards: StoreCardData[] = result.records
-        //     .map(record => record.get("c").properties)
-        //     .filter(card => {
-        //         const [month, day, year] = card.endTime.split('/');
-        //         const endTime: Date = new Date(`20${year}-${month}-${day}`);
-        //         return endTime >= currentDate;
-        //     });
-
         const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
                     // Prepare the final array of card data
-        const finalCardData: StoreCardData[] = [];
+        let finalCardData: StoreCardData[] = [];
 
             // Iterate through listed tokenIds and fetch their metadata
             for (const listing of listed) {
