@@ -36,10 +36,13 @@ class InventoryService {
     
             const result: QueryResult | undefined = await session?.executeRead(tx =>
                 tx.run(
-                    `MATCH (u:User {username: $userName})-[:INVENTORY]->(x:X_IN)
-                     MATCH (u)-[:INVENTORY]->(g:GREATGUYS)
-                     MATCH (u)-[:INVENTORY]->(i:ICU)
-                     MATCH (u)-[:INVENTORY]->(r:IROHM)`,
+                    `
+                    MATCH (u:User {username: $userName})-[:INVENTORY]->(x:X_IN)
+                    MATCH (u)-[:INVENTORY]->(g:GREATGUYS)
+                    MATCH (u)-[:INVENTORY]->(i:ICU)
+                    MATCH (u)-[:INVENTORY]->(r:IROHM)
+                    RETURN x, g, i, r
+                    `,
                     { userName }
                 )
             );
@@ -51,8 +54,17 @@ class InventoryService {
                 return [[], []];
             }
     
-            const smartWalletAddress: string = result.records[0].get("smartWalletAddress");
-            const equipped: string[] = result.records[0].get("equipped") || [];
+            const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
+            const inventoryData: Record<string, any> = {
+                ...result.records[0].get("x"),
+                ...result.records[0].get("g"),
+                ...result.records[0].get("i"),
+                ...result.records[0].get("r"),
+            };
+    
+            const equipped: string[] = Object.values(inventoryData)
+                .filter((item: any) => item.slot && item.slot !== "")
+                .map((item: any) => item.tokenId);
     
             const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS)).result;
     
@@ -62,12 +74,12 @@ class InventoryService {
     
             // Iterate over ownedCards and check against equipped
             ownedCards.forEach(card => {
-                const tokenId: string = card.metadata.uri; // Assuming metadata.id is a string
+                const tokenId: string = card.metadata.id; // Ensure correct property
     
                 if (equipped.includes(tokenId)) {
-                    ownedAndEquipped.push(card.metadata);
+                    ownedAndEquipped.push({ ...card.metadata,  });
                 } else {
-                    ownedAndInventory.push(card.metadata);
+                    ownedAndInventory.push({ ...card.metadata });
                 }
             });
     
@@ -77,6 +89,8 @@ class InventoryService {
             throw error;
         }
     }
+    
+    
     
 
     // Updates inventory data for a user based on the provided access token and update information.
@@ -208,42 +222,36 @@ class InventoryService {
     
             const session: Session | undefined = this.driver?.session();
     
-            // Get the remaining inventory size
-            const remainingSize: number | undefined = await this.checkInventorySize(userName);
-    
-            if (remainingSize === undefined) {
-                throw new Error("Failed to retrieve remaining inventory size.");
-            }
-    
-            // Calculate the number of items to be removed
-            const itemsToRemove: number = updateInventoryData.length;
-    
-            // Check if the number of items to be removed exceeds the remaining inventory size
-            if (itemsToRemove > remainingSize) {
-                throw new Error("Insufficient inventory space to remove equipped items.");
-            }
-  
-            // Iterate over each item in the updateInventoryData array
             for (const item of updateInventoryData) {
-                const { uri } = item;
+                const { group, slot } = item;
+
+                let groupName: string = group;
+                if (group === "X:IN") {
+                    groupName = "X_IN";
+                }
     
-                // Use a Write Transaction to remove the equipped status of the item and reinstate it in the inventory
-                const result: QueryResult<RecordShape> | undefined = await session?.executeWrite(
-                    async (tx: ManagedTransaction) => {
-                        return tx.run(unequipItemCypher, { userName, uri });
-                    }
+                // Update the inventory node to unequip the specified slot
+                await session?.executeWrite(tx =>
+                    tx.run(
+                        `
+                        MATCH (u:User {username: $userName})-[:INVENTORY]->(i:${groupName})
+                        SET i.${slot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
+                        RETURN i
+                        `,
+                        { userName }
+                    )
                 );
             }
     
             await session?.close();
     
-            // Return success message
             return new SuccessMessage("Equip removed");
         } catch (error: any) {
             console.error("Error removing equipped items:", error);
             throw error;
         }
-      }
+    }
+    
     
 
 
