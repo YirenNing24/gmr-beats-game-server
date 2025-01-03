@@ -50,7 +50,9 @@ export default class StoreService {
               const cardData = (await engine.erc1155.get(tokenId, CHAIN, EDITION_ADDRESS)).result as CardNFT;
   
               // Combine tokenId and spread the metadata and cardData into a single object
-
+              const priceString = listing.pricePerToken;
+              const scaledPrice = Number(BigInt(priceString) / BigInt(10 ** 18)); 
+              
               const card: StoreCardData = {
                   ...cardData.metadata, // Spread metadata key-value pairs
                   tokenId, // Add tokenId
@@ -58,7 +60,7 @@ export default class StoreService {
                   type: cardData.type, // Add type property
                   supply: cardData.supply, // Add supply property
                   quantityOwned: cardData.quantityOwned || "" , // Add quantityOwned property
-                  pricePerToken: parseInt(listing.pricePerToken), // Add pricePerToken property
+                  pricePerToken: scaledPrice, // Add pricePerToken property
                   currencyName: listing.currencyValuePerToken?.name || "", // Add currencyName property
                   startTime: listing.startTimeInSeconds?.toString() || "", // Add startTime property
                   endTime: listing.endTimeInSeconds?.toString() || "", // Add endTime property

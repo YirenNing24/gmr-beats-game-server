@@ -25,7 +25,7 @@ const store = (app: Elysia) => {
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
           throw new Error('Bearer token not found in Authorization header');
         }
-        console.log(headers)
+
         const jwtToken: string = authorizationHeader.substring(7);
 
         const driver: Driver = getDriver();
