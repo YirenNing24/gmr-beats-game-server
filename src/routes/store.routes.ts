@@ -35,7 +35,8 @@ const store = (app: Elysia) => {
 
         return output as StoreCardData[] 
       } catch (error: any) {
-        throw error
+        console.log(error);
+        throw error;
       }
     }, authorizationBearerSchema
   )
