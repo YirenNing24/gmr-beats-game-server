@@ -85,9 +85,7 @@ class AuthService {
                  xinInventroy: [],
                  icuInventory: [],
                  greatGuysInventory: [],
-                 iRohmInventory: [],
-
-
+                 iRohmInventory: []
               })
             `,
               { signupDate, userId, userName, encrypted, smartWalletAddress, playerStats, suspended, country, email }
@@ -147,8 +145,13 @@ class AuthService {
                 suspended: $suspended,
                 country: $country,
                 deviceId: $deviceId,
-                equipped: [],
-                inventorySize: 200
+                inventorySize: 200,
+
+                xinInventroy: [],
+                icuInventory: [],
+                greatGuysInventory: [],
+                iRohmInventory: []
+
               })
             `,
               { signupDate, userId, userName, encrypted, locKey, smartWalletAddress, playerStats, suspended, country, deviceId }
@@ -269,8 +272,12 @@ class AuthService {
                 suspended: $suspended,
                 country: "SOKOR",
                 deviceId: $deviceId,
-                equipped: [],
                 inventorySize: 200,
+
+                xinInventroy: [],
+                icuInventory: [],
+                greatGuysInventory: [],
+                iRohmInventory: []
               })
             `,
             { signupDate, userName, encrypted, smartWalletAddress, playerStats, suspended, country, deviceId, locKey, playerId }
@@ -395,11 +402,15 @@ class AuthService {
                 suspended: $suspended,
                 country: $country,
                 deviceId: $deviceIdToUse,
-                inventorySize: 200,
                 passKeyId: $id,
                 publicKey: $publicKey,
-                equipped: [],
-                counter: $counter
+                counter: $counter,
+                inventorySize: 200,
+
+                xinInventroy: [],
+                icuInventory: [],
+                greatGuysInventory: [],
+                iRohmInventory: []
               })
             `,
               { signupDate, userId, userName, locKey, smartWalletAddress, playerStats, suspended, country, deviceIdToUse, id, publicKey, counter }
