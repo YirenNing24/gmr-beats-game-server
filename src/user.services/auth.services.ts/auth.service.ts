@@ -81,11 +81,6 @@ class AuthService {
                  country: $country,
                  deviceId: $deviceId,
                  inventorySize: 200
-
-                 xinInventroy: [],
-                 icuInventory: [],
-                 greatGuysInventory: [],
-                 iRohmInventory: []
               })
             `,
               { signupDate, userId, userName, encrypted, smartWalletAddress, playerStats, suspended, country, email }
@@ -145,12 +140,7 @@ class AuthService {
                 suspended: $suspended,
                 country: $country,
                 deviceId: $deviceId,
-                inventorySize: 200,
-
-                xinInventroy: [],
-                icuInventory: [],
-                greatGuysInventory: [],
-                iRohmInventory: []
+                inventorySize: 200
 
               })
             `,
@@ -272,12 +262,7 @@ class AuthService {
                 suspended: $suspended,
                 country: "SOKOR",
                 deviceId: $deviceId,
-                inventorySize: 200,
-
-                xinInventroy: [],
-                icuInventory: [],
-                greatGuysInventory: [],
-                iRohmInventory: []
+                inventorySize: 200
               })
             `,
             { signupDate, userName, encrypted, smartWalletAddress, playerStats, suspended, country, deviceId, locKey, playerId }
@@ -405,12 +390,7 @@ class AuthService {
                 passKeyId: $id,
                 publicKey: $publicKey,
                 counter: $counter,
-                inventorySize: 200,
-
-                xinInventroy: [],
-                icuInventory: [],
-                greatGuysInventory: [],
-                iRohmInventory: []
+                inventorySize: 200
               })
             `,
               { signupDate, userId, userName, locKey, smartWalletAddress, playerStats, suspended, country, deviceIdToUse, id, publicKey, counter }

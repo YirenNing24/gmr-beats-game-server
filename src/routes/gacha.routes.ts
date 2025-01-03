@@ -11,6 +11,7 @@ import GachaService from '../game.services/gacha.services/gacha.service';
 
 //**  TYPE INTERFACE IMPORT
 import { packDataSchema } from '../game.services/gacha.services/gacha.schema';
+import { authorizationBearerSchema } from './route.schema/schema.auth';
 
 
 
@@ -32,7 +33,7 @@ const gacha = (app: Elysia): void => {
         } catch (error: any) {
             throw error
         } 
-     }, packDataSchema
+     }, packDataSchema,
     
     );
 
