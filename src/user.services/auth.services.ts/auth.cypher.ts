@@ -1,5 +1,9 @@
+
+
+const inventorySchema: string = ''
+
 export const inventoryCypher: string = `
- CREATE (x:XIN {
+ CREATE (x:X_IN {
     Esha: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
     Nizz: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
     Nova: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},

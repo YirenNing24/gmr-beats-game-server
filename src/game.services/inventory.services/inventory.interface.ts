@@ -91,6 +91,11 @@ export interface CardMetaData {
 
 /**
  * Interface for updating inventory data.
+ * @property {uri} the uri of the card saved on IPFS which contains the cards metadata
+ * @property {tokenId} the token ID of the card
+ * @property {contractAddress} the contract address of the card
+ * @property {group} the group of the card
+ * @property {slot} the slot of the card
  */
 export interface UpdateInventoryData {
   uri: string;
@@ -133,3 +138,12 @@ export interface CardPackData {
   uri: string;
 }
 
+
+
+export interface UpdateData {
+  uri: string;
+  tokenId: string;
+  contractAddress: string;
+  group: string;
+  slot: string;
+}

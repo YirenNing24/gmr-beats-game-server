@@ -5,11 +5,11 @@ import { Driver, ManagedTransaction, QueryResult, RecordShape, Session } from "n
 import TokenService from "../../user.services/token.services/token.service";
 
 //** TYPE INTERFACES
-import { CardMetaData, CardPackData, InventoryCardData , InventoryCards, UpdateInventoryData } from "./inventory.interface";
-import { checkInventorySizeCypher, equipItemCypher, inventoryOpenCardCypher, openCardUpgradeCypher, unequipItemCypher } from "./inventory.cypher";
+import { CardMetaData, InventoryCardData , InventoryCards, UpdateInventoryData } from "./inventory.interface";
+import { checkInventorySizeCypher, openCardUpgradeCypher, unequipItemCypher } from "./inventory.cypher";
 import { SuccessMessage } from "../../outputs/success.message";
 import { StoreCardUpgradeData } from "../store.services/store.interface";
-import { engine } from "../../user.services/wallet.services/wallet.service";
+import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
 import { CHAIN, EDITION_ADDRESS } from "../../config/constants";
 
 
@@ -74,33 +74,124 @@ this.driver = driver;
 
     // Updates inventory data for a user based on the provided access token and update information.
     public async equipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
-      try {
-          const tokenService: TokenService = new TokenService();
-          const userName: string = await tokenService.verifyAccessToken(token);
-        
-          const session: Session | undefined = this.driver?.session();
+        try {
+            const walletService: WalletService = new WalletService();
+            const tokenService: TokenService = new TokenService();
+            const userName: string = await tokenService.verifyAccessToken(token);
+    
+            const smartWalletAddress: string = await walletService.getSmartWalletAddress(userName);
+    
+            // Iterate over each item in the updateInventoryData array
+            for (const item of updateInventoryData) {
+                const { group, contractAddress, tokenId, slot, uri } = item;
+                const nftInventory = await this.getInventoryNFT(smartWalletAddress, contractAddress);
+    
+                // Check if the item is in inventory using the utility function
+                //@ts-ignore
+                const isInInventory = await this.isItemInInventory(nftInventory, tokenId, group, uri, slot);
+    
+                // If a match is not found, throw an error
+                if (!isInInventory) {
+                    throw new Error(`Item with tokenId ${tokenId}, group ${group}, and uri ${uri} is not in the inventory`);
+                }
+    
+                await this.updateInventoryDB(group, userName, slot, {
+                    uri,
+                    tokenId,
+                    contractAddress,
+                    group,
+                    slot,
+                });
 
-          // Iterate over each item in the updateInventoryData array
-          for (const item of updateInventoryData) {
-              const { uri, equipped } = item;
-
-              // Use a Write Transaction to update the equipped status of the item
-              await session?.executeWrite(async (tx: ManagedTransaction) => {
-                  await tx.run(equipItemCypher, { userName, uri, equipped });
-              });
-          };
-
-          await session?.close();
-
-          // Return success message
-          return new SuccessMessage("Inventory update successful");
-      } catch (error: any) {
-          console.error("Error updating inventory:", error);
-          throw error;
-      }
+            }
+    
+            // Return success message
+            return new SuccessMessage("Inventory update successful");
+        } catch (error: any) {
+            console.error("Error updating inventory:", error);
+            throw error;
+        }
     }
 
 
+    // Utility function to check if an item is in the inventory
+    private async isItemInInventory(
+        nftInventory: Array<{ metadata: { id: string; group: string; uri: string, slot: string  } }>,
+        tokenId: string,
+        group: string,
+        uri: string,
+        slot: string ): Promise<boolean> {
+        return nftInventory.some(
+            (nft) =>
+                nft.metadata.id === tokenId &&
+                nft.metadata.group === group &&
+                nft.metadata.uri === uri &&
+                nft.metadata.slot === slot
+        );
+    }
+    
+
+    // Retrieves inventory card data for a user based on the provided access token.
+    private async getInventoryNFT(username: string, contractAddress: string) {
+        try {
+
+            const nftInventory = await engine.erc1155.getOwned(username, CHAIN, contractAddress);
+            return nftInventory.result;
+
+        } catch(error: any) {
+            console.error("Error retrieving NFT Inventory:", error);
+            throw error;
+        }
+    }
+
+    // Updates the inventory database with the provided update data.
+    private async updateInventoryDB(groupName: string, username: string, slot: string, updateData: UpdateInventoryData): Promise<void> {
+        try {
+            const session: Session | undefined = this.driver?.session();
+    
+            // Fetch the inventory node for the group
+            const result: QueryResult | undefined = await session?.executeWrite((tx: ManagedTransaction) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[:INVENTORY]->(i:${groupName})
+                    RETURN i
+                    `,
+                    { username }
+                )
+            );
+    
+            if (!result || result.records.length === 0) {
+                throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
+            }
+    
+            // Construct the Cypher query to update the specific slot dynamically
+            const query = `
+                MATCH (u:User {username: $username})-[:INVENTORY]->(i:${groupName})
+                SET i.${slot} = $updateData
+            `;
+    
+            // Execute the update query
+            await session?.executeWrite((tx: ManagedTransaction) =>
+                tx.run(query, {
+                    username,
+                    updateData,
+                })
+            );
+    
+            console.log(`Inventory for ${groupName} updated: ${slot} set successfully.`);
+        } catch (error: any) {
+            console.error("Error updating inventory in database:", error);
+            throw error;
+        } finally {
+            const session: Session | undefined = this.driver?.session();
+            await session?.close();
+        }
+    }
+    
+
+
+
+    // Retrieves inventory card data for a user based on the provided access token.
     public async upgradeInventoryOpen(token: string): Promise<StoreCardUpgradeData[]> {
       try {
         const tokenService: TokenService = new TokenService();
@@ -131,7 +222,7 @@ this.driver = driver;
       }
     }
     
-
+    // Updates inventory data for a user based on the provided access token and update information.
     public async unequipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
       try {
           const tokenService: TokenService = new TokenService();
@@ -176,7 +267,7 @@ this.driver = driver;
       }
     }
 
-
+    // Check the remaining inventory size for a user based on the provided username.
     public async checkInventorySize(userName: string): Promise<number | undefined> {
       try {
           const session: Session | undefined = this.driver?.session();
@@ -206,7 +297,7 @@ this.driver = driver;
       }
     }
 
-
+    //
     public async packInventoryOpen(token: string) {
         try {
             const tokenService: TokenService = new TokenService();
@@ -258,7 +349,7 @@ this.driver = driver;
         }
     }
 
-
+    // Updates inventory data for a user based on the provided access token and update information.
     public async getChatItems(token: string): Promise<{ loudspeaker: { quantity: number } }> {
         let session: Session | undefined;
         try {
