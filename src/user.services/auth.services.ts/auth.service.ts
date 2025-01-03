@@ -80,8 +80,14 @@ class AuthService {
                  suspended: $suspended,
                  country: $country,
                  deviceId: $deviceId,
-                 equipped: [],
                  inventorySize: 200
+
+                 xinInventroy: [],
+                 icuInventory: [],
+                 greatGuysInventory: [],
+                 iRohmInventory: [],
+
+
               })
             `,
               { signupDate, userId, userName, encrypted, smartWalletAddress, playerStats, suspended, country, email }

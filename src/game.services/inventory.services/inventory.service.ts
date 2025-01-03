@@ -13,12 +13,14 @@ import { engine } from "../../user.services/wallet.services/wallet.service";
 import { CHAIN, EDITION_ADDRESS } from "../../config/constants";
 
 
+
 class InventoryService {
 driver?: Driver;
 constructor(driver?: Driver) {
 this.driver = driver;
     }
 
+    
     //** CARD INVENTORY */
     // Retrieves inventory card data for a user based on the provided access token.
     public async cardInventoryOpen(token: string): Promise<InventoryCards> {
@@ -70,13 +72,12 @@ this.driver = driver;
     }
     
 
-
     // Updates inventory data for a user based on the provided access token and update information.
     public async equipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
       try {
           const tokenService: TokenService = new TokenService();
           const userName: string = await tokenService.verifyAccessToken(token);
-
+        
           const session: Session | undefined = this.driver?.session();
 
           // Iterate over each item in the updateInventoryData array
@@ -295,7 +296,6 @@ this.driver = driver;
             }
         }
     }
-    
     
     
     public async openGroupCardEquipped(apiKey: string, groupName: string, username: string) {

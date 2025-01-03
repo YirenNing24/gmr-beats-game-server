@@ -97,8 +97,7 @@ export interface UpdateInventoryData {
   tokenId: string;
   contractAddress: string;
   group: string;
-
-  equipped: boolean;
+  slot: string;
 }
 
 
