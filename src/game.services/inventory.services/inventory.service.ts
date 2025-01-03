@@ -53,7 +53,7 @@ this.driver = driver;
     
             // Iterate over ownedCards and check against equipped
             ownedCards.forEach(card => {
-                const tokenId: string = card.metadata.id; // Assuming metadata.id is a string
+                const tokenId: string = card.metadata.uri; // Assuming metadata.id is a string
     
                 if (equipped.includes(tokenId)) {
                     ownedAndEquipped.push(card.metadata);
@@ -87,7 +87,7 @@ this.driver = driver;
               await session?.executeWrite(async (tx: ManagedTransaction) => {
                   await tx.run(equipItemCypher, { userName, uri, equipped });
               });
-          }
+          };
 
           await session?.close();
 

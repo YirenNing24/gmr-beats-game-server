@@ -93,9 +93,11 @@ export interface CardMetaData {
  * Interface for updating inventory data.
  */
 export interface UpdateInventoryData {
-  /** URI of the card to be updated. */
   uri: string;
-  /** Indicates whether the card is equipped. */
+  tokenId: string;
+  contractAddress: string;
+  group: string;
+
   equipped: boolean;
 }
 
