@@ -2,7 +2,7 @@
 
 
 //** MEMGRAPH IMPORTS
-import { CARD_MARKETPLACE, EDITION_ADDRESS, PACK_MARKETPLACE } from "../../config/constants";
+import { CARD_MARKETPLACE, EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, PACK_MARKETPLACE } from "../../config/constants";
 import { Driver, Session, ManagedTransaction, QueryResult, RecordShape } from "neo4j-driver-core";
 
 //** CONFIG IMPORTs
@@ -192,7 +192,7 @@ export default class StoreService {
       };
   
       // Call the buyFromListing function
-      await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, buyerWalletAddress, requestBody);
+      await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
 
     } catch(error: any) {
       console.log(error);
@@ -461,3 +461,6 @@ export default class StoreService {
   }
   
 }
+
+
+
