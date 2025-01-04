@@ -180,10 +180,7 @@ export default class StoreService {
   //Initiates a card purchase using the provided wallet information and listing ID.
 
   private async cardPurchase(buyerWalletAddress: string, listingId: number) {
-
     try {
-      const contractAddress: string = CARD_MARKETPLACE; 
-
       // Constructing the request body
       const requestBody = {
           listingId: listingId.toString(), // Convert listingId to string
@@ -192,7 +189,7 @@ export default class StoreService {
       };
   
       // Call the buyFromListing function
-      await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
+      await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, buyerWalletAddress, requestBody);
 
     } catch(error: any) {
       console.log(error);
