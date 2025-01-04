@@ -163,8 +163,8 @@ export default class StoreService {
       await this.cardPurchase(smartWalletAddress, listingId);
 
       // Decide the relationship type based on inventory and bag size
-      const inventorySize: number = userData.properties.inventorySize.toNumber()
-      const inventoryCurrentSize: number = result.records[0].get("inventoryCurrentSize").toNumber()
+      // const inventorySize: number = userData.properties.inventorySize.toNumber()
+      // const inventoryCurrentSize: number = result.records[0].get("inventoryCurrentSize").toNumber()
 
       // Create relationship using a separate Cypher query
       // await this.createCardRelationship(username, uri, inventoryCurrentSize, inventorySize );
