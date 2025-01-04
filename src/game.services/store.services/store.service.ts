@@ -65,6 +65,7 @@ export default class StoreService {
                   startTime: listing.startTimeInSeconds?.toString() || "", // Add startTime property
                   endTime: listing.endTimeInSeconds?.toString() || "", // Add endTime property
                   imageByte: cardData.metadata.imageByte || "", // Add imageByte property
+                  listingId: listing.id, // Add listingId property
                   lister: "beats", // Add lister property with default value
               };
   

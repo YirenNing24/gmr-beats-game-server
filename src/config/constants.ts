@@ -46,7 +46,7 @@ export const CHAIN: string  = process.env.CHAIN || "33139";
 
 // Contract Addresses
 export const BEATS_TOKEN: string = '0xfD842Fa70bC97EA64D81F61b7930cA1983d576f5';
-export const GMR_TOKEN: string = '0x7dce27C81b7e112018FA6C2e27f8444b5D39688B';
+export const GMR_TOKEN: string = '0xfD842Fa70bC97EA64D81F61b7930cA1983d576f5';
 
 export const PACK_ADDRESS: string = '0x3B88F847236Dd2CbD24796F0b8Da6cf0DC111701';
 export const EDITION_ADDRESS: string = '0x7536D6d120C6a7ee50B792b33862A74E6f404589'; // ** NFT CARD ADDRESS

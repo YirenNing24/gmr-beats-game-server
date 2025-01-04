@@ -66,7 +66,7 @@ export interface StoreCardData {
     owner: string;
     tokenId: string
     id: string;
-    listingId: number;
+    listingId: number | string;
     cardAddress: string;
     uploader: string;
     supply: string;
