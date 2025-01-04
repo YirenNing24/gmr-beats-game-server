@@ -44,7 +44,7 @@ export const SECRET_KEY: string = process.env.SECRET_KEY || ""
 // Chain and Wallet Factory Configuration
 export const CHAIN: string  = process.env.CHAIN || "33139";
 // Contract Addresses
-export const BEATS_TOKEN: string = '0xAA95DA3D6EbdAb099630b6d4Cf0fcb904a44C2ab';
+export const BEATS_TOKEN: string = '0xfD842Fa70bC97EA64D81F61b7930cA1983d576f5';
 export const GMR_TOKEN: string = '0x7dce27C81b7e112018FA6C2e27f8444b5D39688B';
 
 export const PACK_ADDRESS: string = '0x3B88F847236Dd2CbD24796F0b8Da6cf0DC111701';
