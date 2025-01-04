@@ -2,7 +2,7 @@
 import { Engine } from "@thirdweb-dev/engine";
 
 //** CONFIG IMPORT
-import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, ENGINE_URI } from "../../config/constants";
+import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN } from "../../config/constants";
 
 //**  TYPE INTERFACE
 import { WalletData } from "../user.service.interface";
@@ -46,11 +46,11 @@ class WalletService {
 
   public async getWalletBalance(walletAddress: string) {
     try {
-      const chain = "421614" //ARBITRUM SEPOLIA
+
       const [arbitrumToken, gmrToken, beatsToken] = await Promise.all([
-        engine.backendWallet.getBalance(chain, walletAddress),
-        engine.erc20.balanceOf(walletAddress, chain, GMR_TOKEN),
-        engine.erc20.balanceOf(walletAddress, chain, BEATS_TOKEN)
+        engine.backendWallet.getBalance(CHAIN, walletAddress),
+        engine.erc20.balanceOf(walletAddress, CHAIN, GMR_TOKEN),
+        engine.erc20.balanceOf(walletAddress, CHAIN, BEATS_TOKEN)
       ]);
 
       return {
