@@ -190,7 +190,7 @@ export default class StoreService {
   
       // Call the buyFromListing function
 
-      await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, ENGINE_ADMIN_WALLET_ADDRESS, requestBody, false, "", buyerWalletAddress);
+      await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, buyerWalletAddress, requestBody);
 
     } catch(error: any) {
       console.log(error);
