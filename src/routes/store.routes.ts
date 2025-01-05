@@ -41,7 +41,7 @@ const store = (app: Elysia) => {
   )
 
 
-  .post('/api/store/cards/buy', async ({ headers, body }): Promise<SuccessMessage> => {
+  .post('/api/store/cards/buy', async ({ headers, body }) => {
       try {
         const authorizationHeader: string = headers.authorization;
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -52,11 +52,11 @@ const store = (app: Elysia) => {
         const driver: Driver = getDriver();
         const storeService: StoreService = new StoreService(driver);
         
-        const output: SuccessMessage = await storeService.buyCard(body, jwtToken);
+        const output = await storeService.buyCard(body, jwtToken);
 
         console.log(output);
 
-        return output as SuccessMessage;
+        return output;
       } catch (error: any) {
         console.log(error);
         throw error

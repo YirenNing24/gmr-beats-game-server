@@ -143,7 +143,7 @@ export default class StoreService {
   //   }
   // }
 
-  public async buyCard(buycardData: BuyCardData, token: string): Promise<SuccessMessage> {
+  public async buyCard(buycardData: BuyCardData, token: string) {
     try {
       const tokenService: TokenService = new TokenService();
       const username: string = await tokenService.verifyAccessToken(token);
@@ -163,7 +163,7 @@ export default class StoreService {
 
       await this.cardPurchase(smartWalletAddress, listingId, price);
 
-      return new SuccessMessage("Purchase was successful");
+      return { success: "Purchase was successful" };
     } catch (error: any) {
       console.log(error)
       throw error
