@@ -108,41 +108,7 @@ export default class StoreService {
     }
   }
 
-
-  //Buys a card using the provided card data and access token.
-  // public async buyCard(buycardData: BuyCardData, token: string): Promise<SuccessMessage> {
-  //   try {
-  //     const tokenService: TokenService = new TokenService();
-  //     const username: string = await tokenService.verifyAccessToken(token);
-
-  //     const { listingId, uri } = buycardData as BuyCardData
-
-  //     const session: Session = this.driver.session();
-  //     const result: QueryResult<RecordShape> = await session.executeRead((tx: ManagedTransaction) =>
-  //       tx.run(buyCardCypher, { username }) 
-  //     );
-  //     await session.close();
-  //     if (result.records.length === 0) {
-  //       throw new ValidationError(`User with username '${username}' not found.`, '');
-  //     }
-  //     const userData: UserData = result.records[0].get("u");
-  //     const { localWallet, localWalletKey } = userData.properties;
-
-  //     await this.cardPurchase(localWallet, localWalletKey, listingId);
-
-  //     // Decide the relationship type based on inventory and bag size
-  //     const inventorySize: number = userData.properties.inventorySize.toNumber()
-  //     const inventoryCurrentSize: number = result.records[0].get("inventoryCurrentSize").toNumber()
-
-  //     // Create relationship using a separate Cypher query
-  //     await this.createCardRelationship(username, uri, inventoryCurrentSize, inventorySize );
-
-  //     return new SuccessMessage("Purchase was successful");
-  //   } catch (error: any) {
-  //     throw error
-  //   }
-  // }
-
+  // 
   public async buyCard(buycardData: BuyCardData, token: string) {
     try {
       const tokenService: TokenService = new TokenService();
@@ -211,27 +177,28 @@ export default class StoreService {
   }
   
 
-    private async cardPackPurchase(buyerWalletAddress: string, listingId: number) {
-      try {
-        const contractAddress: string = PACK_MARKETPLACE;  // Assuming this is a constant or predefined variable
+  //
+  private async cardPackPurchase(buyerWalletAddress: string, listingId: number) {
+    try {
+      const contractAddress: string = PACK_MARKETPLACE;  // Assuming this is a constant or predefined variable
 
-        // Constructing the request body
-        const requestBody = {
-            listingId: listingId.toString(), // Convert listingId to string
-            quantity: "1", // Default quantity for ERC721 tokens
-            buyer: buyerWalletAddress // The buyer's wallet address
-        };
-    
-        // Call the buyFromListing function
-        await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, buyerWalletAddress, requestBody);
+      // Constructing the request body
+      const requestBody = {
+          listingId: listingId.toString(), // Convert listingId to string
+          quantity: "1", // Default quantity for ERC721 tokens
+          buyer: buyerWalletAddress // The buyer's wallet address
+      };
+  
+      // Call the buyFromListing function
+      await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, buyerWalletAddress, requestBody);
 
-        return new SuccessMessage("Purchase was successful");
-      } catch(error: any) {
-        console.log(error)
-        throw error
-      }
-      
+      return new SuccessMessage("Purchase was successful");
+    } catch(error: any) {
+      console.log(error)
+      throw error
     }
+    
+  }
 
 
   public async buyCardPack(buycardData: BuyCardData, token: string): Promise<SuccessMessage> {
