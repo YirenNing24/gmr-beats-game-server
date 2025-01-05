@@ -163,7 +163,7 @@ export default class StoreService {
 
       await this.cardPurchase(smartWalletAddress, listingId, price);
 
-      return { success: "Purchase was successful" };
+      return new SuccessMessage("Purchase was successful");
     } catch (error: any) {
       console.log(error)
       throw error
