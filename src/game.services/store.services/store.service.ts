@@ -176,22 +176,46 @@ export default class StoreService {
     try {
       // Constructing the request body
       const requestBody = {
-          listingId: listingId.toString(), // Convert listingId to string
-          quantity: "1", // Default quantity for ERC721 tokens
-          buyer: buyerWalletAddress // The buyer's wallet address
+        listingId: listingId.toString(), // Convert listingId to string
+        quantity: "1", // Default quantity for ERC721 tokens
+        buyer: buyerWalletAddress // The buyer's wallet address
       };
   
-      // Call the buyFromListing function
-      await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, { spenderAddress: CARD_MARKETPLACE, amount: price})
-      await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, buyerWalletAddress, requestBody);
-
-
-    } catch(error: any) {
-      console.log(error);
-      throw error;
+      // Set allowance for the transaction
+      await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
+        spenderAddress: CARD_MARKETPLACE,
+        amount: price
+      });
+  
+      // Execute the card purchase
+      const transaction = (await engine.marketplaceDirectListings.buyFromListing(
+        CHAIN,
+        CARD_MARKETPLACE,
+        buyerWalletAddress,
+        requestBody
+      )).result;
+  
+      // Check transaction status
+      let status = await engine.transaction.status(transaction.queueId);
+  
+      // Wait for the transaction to be mined
+      while (status.result.minedAt === null) {
+        console.log("Transaction not mined yet, waiting...");
+        await new Promise((resolve) => setTimeout(resolve, 3000)); 
+        status = await engine.transaction.status(transaction.queueId);
+      }
+  
+      console.log("Transaction mined at: ", status.result.minedAt);
+  
+      // Proceed if minedAt is not null
+      return { success: true, minedAt: status.result.minedAt };
+  
+    } catch (error: any) {
+      console.error("Error during card purchase: ", error);
+      throw new Error("Failed to complete the card purchase.");
     }
-
-}
+  }
+  
 
     private async cardPackPurchase(buyerWalletAddress: string, listingId: number) {
       try {
