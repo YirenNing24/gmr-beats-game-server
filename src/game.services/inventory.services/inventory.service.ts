@@ -41,7 +41,7 @@ class InventoryService {
                     MATCH (u)-[:INVENTORY]->(g:GREATGUYS)
                     MATCH (u)-[:INVENTORY]->(i:ICU)
                     MATCH (u)-[:INVENTORY]->(r:IROHM)
-                    RETURN x, g, i, r
+                    RETURN x, g, i, r, u.smartWalletAddress as smartWalletAddress
                     `,
                     { userName }
                 )
