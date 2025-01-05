@@ -200,16 +200,10 @@ export default class StoreService {
   
       // Wait for the transaction to be mined
       while (status.result.minedAt === null) {
-        console.log("Transaction not mined yet, waiting...");
-        await new Promise((resolve) => setTimeout(resolve, 3000)); 
+        await new Promise((resolve) => setTimeout(resolve, 500)); 
         status = await engine.transaction.status(transaction.queueId);
       }
-  
-      console.log("Transaction mined at: ", status.result.minedAt);
-  
-      // Proceed if minedAt is not null
-      return { success: true, minedAt: status.result.minedAt };
-  
+    
     } catch (error: any) {
       console.error("Error during card purchase: ", error);
       throw new Error("Failed to complete the card purchase.");
