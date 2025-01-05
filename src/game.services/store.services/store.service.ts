@@ -2,7 +2,7 @@
 
 
 //** MEMGRAPH IMPORTS
-import { CARD_MARKETPLACE, EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, PACK_MARKETPLACE } from "../../config/constants";
+import { BEATS_TOKEN, CARD_MARKETPLACE, EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, PACK_MARKETPLACE } from "../../config/constants";
 import { Driver, Session, ManagedTransaction, QueryResult, RecordShape } from "neo4j-driver-core";
 
 //** CONFIG IMPORTs
@@ -148,7 +148,7 @@ export default class StoreService {
       const tokenService: TokenService = new TokenService();
       const username: string = await tokenService.verifyAccessToken(token);
 
-      const { listingId, uri } = buycardData as BuyCardData
+      const { listingId, uri, price } = buycardData as BuyCardData
 
       const session: Session = this.driver.session();
       const result: QueryResult<RecordShape> = await session.executeRead((tx: ManagedTransaction) =>
@@ -161,14 +161,7 @@ export default class StoreService {
       const userData: UserData = result.records[0].get("u");
       const { smartWalletAddress } = userData.properties;
 
-      await this.cardPurchase(smartWalletAddress, listingId);
-
-      // Decide the relationship type based on inventory and bag size
-      // const inventorySize: number = userData.properties.inventorySize.toNumber()
-      // const inventoryCurrentSize: number = result.records[0].get("inventoryCurrentSize").toNumber()
-
-      // Create relationship using a separate Cypher query
-      // await this.createCardRelationship(username, uri, inventoryCurrentSize, inventorySize );
+      await this.cardPurchase(smartWalletAddress, listingId, price);
 
       return new SuccessMessage("Purchase was successful");
     } catch (error: any) {
@@ -178,8 +171,7 @@ export default class StoreService {
 
 
   //Initiates a card purchase using the provided wallet information and listing ID.
-
-  private async cardPurchase(buyerWalletAddress: string, listingId: number) {
+  private async cardPurchase(buyerWalletAddress: string, listingId: number, price: string) {
     try {
       // Constructing the request body
       const requestBody = {
@@ -189,9 +181,9 @@ export default class StoreService {
       };
   
       // Call the buyFromListing function
-
-      await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
-
+      await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, { spenderAddress: CARD_MARKETPLACE, amount: price})
+      await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, buyerWalletAddress, requestBody);
+      
     } catch(error: any) {
       console.log(error);
       throw error;

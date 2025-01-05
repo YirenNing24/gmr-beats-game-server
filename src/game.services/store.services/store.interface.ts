@@ -79,15 +79,27 @@ export interface StoreCardData {
     currencyName: string
 }
 
+
 /**
  * Interface for buying card data.
+ * @interface BuyCardData
+ * @property {string} uri - URI of the card.
+ * @property {number} listingId - Listing ID of the card.
+ * @property {string} price - Price of the card.
  */
 export interface BuyCardData {
     uri: string;
-    listingId: number
+    listingId: number;
+    price: string;
 }
 
-
+/**
+ * Interface for buying card upgrade data.
+ * @interface BuyCardUpgradeData
+ * @property {string} uri - URI of the upgrade.
+ * @property {number} listingId - Listing ID of the upgrade.
+ * @property {string} quantity - Quantity of the upgrade.
+ */
 export interface BuyCardUpgradeData {
     uri: string;
     listingId: number
