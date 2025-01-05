@@ -183,7 +183,8 @@ export default class StoreService {
       // Call the buyFromListing function
       await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, { spenderAddress: CARD_MARKETPLACE, amount: price})
       await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, buyerWalletAddress, requestBody);
-      
+
+      return new SuccessMessage("Purchase was successful");
     } catch(error: any) {
       console.log(error);
       throw error;
@@ -204,7 +205,8 @@ export default class StoreService {
     
         // Call the buyFromListing function
         await engine.marketplaceDirectListings.buyFromListing(CHAIN, contractAddress, buyerWalletAddress, requestBody);
-  
+
+        return new SuccessMessage("Purchase was successful");
       } catch(error: any) {
         console.log(error)
         throw error
