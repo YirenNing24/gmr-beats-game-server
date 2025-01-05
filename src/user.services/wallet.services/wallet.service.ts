@@ -2,7 +2,7 @@
 import { Engine } from "@thirdweb-dev/engine";
 
 //** CONFIG IMPORT
-import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN } from "../../config/constants";
+import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS } from "../../config/constants";
 
 //**  TYPE INTERFACE
 import { WalletData } from "../user.service.interface";
@@ -33,10 +33,14 @@ class WalletService {
      try {
          // Create a new backend wallet with the player's username as the label
          const wallet = await engine.backendWallet.create({ label: username, type: "smart:local" });
-
+         
          // Extract the wallet address from the response
          const { walletAddress } = wallet.result;
 
+         const requestBody = { adminAddress: ENGINE_ADMIN_WALLET_ADDRESS }
+
+         const result  = await engine.accountFactory.createAccount(CHAIN, "0x09c9C21E33DacCE2Fdd20911388Ee6Ddb7f784c9", ENGINE_ADMIN_WALLET_ADDRESS, requestBody)
+        console.log(result.result.deployedAddress)
          return walletAddress as string;
      } catch (error: any) {
          console.error("Error creating player wallet:", error);
