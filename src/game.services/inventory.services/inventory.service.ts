@@ -66,7 +66,7 @@ class InventoryService {
                 .filter((item: any) => item.slot && item.slot !== "")
                 .map((item: any) => item.tokenId);
     
-            const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS)).result;
+            const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS)).result as unknown as InventoryCardData[];
     
             // Initialize arrays to store cards with different relationships
             const ownedAndInventory: InventoryCardData[] = [];
@@ -77,9 +77,9 @@ class InventoryService {
                 const tokenId: string = card.metadata.id; // Ensure correct property
     
                 if (equipped.includes(tokenId)) {
-                    ownedAndEquipped.push({ ...card.metadata,  });
+                    ownedAndEquipped.push({ [card.metadata.uri]: {...card.metadata} });
                 } else {
-                    ownedAndInventory.push({ ...card.metadata });
+                    ownedAndInventory.push({ [card.metadata.uri]: {...card.metadata} });
                 }
             });
     
@@ -91,8 +91,6 @@ class InventoryService {
     }
     
     
-    
-
     // Updates inventory data for a user based on the provided access token and update information.
     public async equipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
         try {
