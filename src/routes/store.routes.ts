@@ -55,6 +55,7 @@ const store = (app: Elysia) => {
 
         return output as SuccessMessage;
       } catch (error: any) {
+        console.log(error);
         throw error
 
       }
