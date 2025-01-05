@@ -37,6 +37,7 @@ export const buyCardPackSchema = {
     body: t.Object({ 
         listingId: t.Number(), 
         uri: t.String(),
+        price: t.String(),
     }),
         
 }
