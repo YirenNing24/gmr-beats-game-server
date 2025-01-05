@@ -32,6 +32,7 @@ const store = (app: Elysia) => {
 
         const output: StoreCardData[] = await storeService.getValidCards(jwtToken);
         return output as StoreCardData[] 
+
       } catch (error: any) {
         console.log(error);
         throw error;
@@ -51,7 +52,9 @@ const store = (app: Elysia) => {
         const driver: Driver = getDriver();
         const storeService: StoreService = new StoreService(driver);
         
-        const output: SuccessMessage = await storeService.buyCard(body, jwtToken)
+        const output: SuccessMessage = await storeService.buyCard(body, jwtToken);
+
+        console.log(output);
 
         return output as SuccessMessage;
       } catch (error: any) {

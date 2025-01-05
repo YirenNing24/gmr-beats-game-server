@@ -3,7 +3,7 @@ import { KEYDB_HOST, KEYDB_PORT, KEYDB_PASSWORD } from '../config/constants';
 
 const keydbUrl = `redis://:${KEYDB_PASSWORD}@${KEYDB_HOST}:${KEYDB_PORT}`;
 
-console.log(keydbUrl)
+// Create a new KeyDB client
 const keydb = createClient({ url: keydbUrl });
 
 // Listen for error events
@@ -15,7 +15,7 @@ keydb.on('connect', () => {
 });
 
 // Set a ping interval
-const PING_INTERVAL_MS = 10000; // 10 seconds
+const PING_INTERVAL_MS: number = 10000; // 10 seconds
 keydb.on('ready', () => {
     console.log('KeyDB is ready. Setting up ping interval...');
     setInterval(async () => {
