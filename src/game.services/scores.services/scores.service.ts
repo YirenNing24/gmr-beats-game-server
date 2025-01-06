@@ -13,6 +13,7 @@ import ExperienceService from "../experience.services/experience.service";
 //** INTERFACE IMPORT
 import { LevelUpResult } from "../experience.services/experience.interface";
 import RewardService from "../rewards.services/rewards.service";
+import SoulService from "../soul.services/soul.service";
 
 
 
@@ -25,11 +26,11 @@ class ScoreService {
 
     //** BEATS SERVER EXCLUSIVE SERVICE */
     public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
-		try {
-			const tokenService: TokenService = new TokenService();
-			const rewardService: RewardService = new RewardService();
-			
+		const tokenService: TokenService = new TokenService();
+		const rewardService: RewardService = new RewardService();
+		const soulService: SoulService = new SoulService();
 
+		try {
 			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
 
 			if (!isAuthorized) {
@@ -51,10 +52,8 @@ class ScoreService {
 			const hasCompleted: boolean = await rewardService.hasCompletedThreeUniqueSongs(score.username);
 
 			if (hasCompleted) {
-				
+				soulService.createSoul(score.username)
 			}
-
-
 
 
 

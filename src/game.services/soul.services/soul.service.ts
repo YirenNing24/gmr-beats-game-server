@@ -4,16 +4,17 @@ import { Driver, ManagedTransaction, QueryResult, RecordShape, Session } from "n
 //** ERROR CODES
 import ValidationError from '../../outputs/validation.error'
 
-//** THIRDWEB IMPORTS
-
 
 //** CONFIGS
-import { BEATS_TOKEN, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PRIVATE_KEY, SECRET_KEY, SOCIAL_BADGES_ADDRESS, SOUL_ADDRESS } from "../../config/constants";
+import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, SOUL_ADDRESS } from "../../config/constants";
+
 
 //** SERVICE IMPORTS
+import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
 
 
 //** TYPE INTERFACE IMPORT
+import { SoulMetadata } from "./soul.service.interfrace";
 
 //** MONGODB IMPORT
 
@@ -27,13 +28,38 @@ class SoulService {
         this.driver = driver;
     }
 
+    public async createSoul(username: string): Promise<void> {
+        const walletService = new WalletService();
+        try {
+            const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
+            const soulMetaData: SoulMetadata = {
+                walletAddress: smartWalletAddress,
+                name: username,
+                description: `This is ${username}'s soul`,
+                image: "",
+                uploader: "beats", 
+                accountAchievements: [{ rookie: true }],
+            };
+    
+            const metadataWithSupply = Array.from({ length: 1 }, () => ({
+                metadata: { ...soulMetaData, },
+                supply: "1" }
+            ));
 
-
-    public async createSoul() {
-
-
+            const requestBody = {
+                receiver: smartWalletAddress,
+                metadataWithSupply,
+            };
+            await engine.erc1155.mintBatchTo(CHAIN, SOUL_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
+        } catch (error: any) {
+            console.log(error);
+            throw error;
+        }
     }
+    
 
 
 
 }
+
+export default SoulService;
