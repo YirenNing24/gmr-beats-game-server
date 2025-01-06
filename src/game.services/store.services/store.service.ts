@@ -417,19 +417,19 @@ export default class StoreService {
   // }
 
 
-  private async createCardUpgradeRelationship(username: string, listingId: number): Promise<void> {
-  try {
-    const session: Session = this.driver.session();
+  // private async createCardUpgradeRelationship(username: string, listingId: number): Promise<void> {
+  // try {
+  //   const session: Session = this.driver.session();
 
-    await session.executeWrite((tx: ManagedTransaction) =>
-      tx.run(`
-        MATCH (u:User {username: "nashar4"}), (c:CardUpgrade {listingId: listingId}), (cu:CardUpgradeStore)
-        MATCH (c)-[l:LISTED]->(cu)
-        DELETE l
-        CREATE (u)-[:OWNED]->(c)
-        CREATE (c)-[:SOLD]->(cu)
-      `, { username, listingId }) 
-    );
+  //   await session.executeWrite((tx: ManagedTransaction) =>
+  //     tx.run(`
+  //       MATCH (u:User {username: "nashar4"}), (c:CardUpgrade {listingId: listingId}), (cu:CardUpgradeStore)
+  //       MATCH (c)-[l:LISTED]->(cu)
+  //       DELETE l
+  //       CREATE (u)-[:OWNED]->(c)
+  //       CREATE (c)-[:SOLD]->(cu)
+  //     `, { username, listingId }) 
+  //   );
 
     
   } catch (error: any) {

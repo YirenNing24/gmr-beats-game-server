@@ -4,16 +4,16 @@ import { ClassicScoreStats, ScorePeerId } from "../leaderboard.services/leaderbo
 
 //** MONGODB IMPORT
 import { mongoDBClient } from "../../db/mongodb.client";
-
+import { MongoClient } from "mongodb";
 
 //** IMPORTED SERVICES
 import TokenService from "../../user.services/token.services/token.service";
+import ExperienceService from "../experience.services/experience.service";
+
+//** INTERFACE IMPORT
+import { LevelUpResult } from "../experience.services/experience.interface";
 import RewardService from "../rewards.services/rewards.service";
 
-import { RewardData } from "../rewards.services/reward.interface";
-import ExperienceService from "../experience.services/experience.service";
-import { LevelUpResult } from "../experience.services/experience.interface";
-import { MongoClient } from "mongodb";
 
 
 class ScoreService {
@@ -27,6 +27,9 @@ class ScoreService {
     public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
 		try {
 			const tokenService: TokenService = new TokenService();
+			const rewardService: RewardService = new RewardService();
+			
+
 			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
 
 			if (!isAuthorized) {
@@ -38,13 +41,23 @@ class ScoreService {
 
 			// Establish MongoDB connection
 			const client: MongoClient = await mongoDBClient.connect();
-			const collection = client.db("beats").collection("classicScores")
+			const collection = client.db("beats").collection("classicScores");
 
 			// Insert score into the collection
 			await collection.insertOne(scoreWithTime);
 
 			// Calculate experience gain
 			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
+			const hasCompleted: boolean = await rewardService.hasCompletedThreeUniqueSongs(score.username);
+
+			if (hasCompleted) {
+				
+			}
+
+
+
+
+
 
 			return experienceGain;	
 		} catch (error: any) {
@@ -54,6 +67,9 @@ class ScoreService {
 			await mongoDBClient.close();
 		}
 	}
+
+
+
     
 
     //* CLASSIC GAME MODE RETRIEVE SCORE FUNCTION

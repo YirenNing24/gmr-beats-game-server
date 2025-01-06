@@ -21,11 +21,13 @@ import rt from "rethinkdb";
 import { getRethinkDB } from "../../db/rethink";
 
 //** TYPE INTERFACE IMPORT
-import { AnimalMatch, CardOwned, RewardData } from "./reward.interface";
+import { CardOwned, RewardData } from "./reward.interface";
 import { engine } from "../../user.services/wallet.services/wallet.service";
-import { Arbitrum } from "@thirdweb-dev/chains";
+import { MongoClient } from "mongodb";
 
-
+//** MONGODB IMPORT
+import { mongoDBClient } from "../../db/mongodb.client";
+import { ClassicScoreStats } from "../leaderboard.services/leaderboard.interface";
 
 
 
@@ -36,6 +38,36 @@ class RewardService {
     constructor(driver?: Driver) {
         this.driver = driver;
     }
+
+
+	public async hasCompletedThreeUniqueSongs(username: string): Promise<boolean> {
+		try {
+			const client: MongoClient = await mongoDBClient.connect();
+			const collection = client.db("beats").collection("classicScores");
+
+			// Query to find completed scores for the given username
+			const scores = await collection
+				.find<ClassicScoreStats>({ username, finished: true })
+				.project({ songName: 1 })
+				.toArray();
+
+			// Extract unique song names
+			const uniqueSongs = new Set(scores.map((score) => score.songName));
+
+			// Check if there are at least three unique songs
+			return uniqueSongs.size >= 3;
+		} catch (error: any) {
+			console.error("Error in hasCompletedThreeUniqueSongs: ", error);
+			throw error;
+		}
+	}
+
+
+
+
+
+
+
 
     public async getAvailableCardReward(token: string) {
         const tokenService: TokenService = new TokenService();

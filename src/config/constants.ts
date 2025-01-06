@@ -1,6 +1,3 @@
-import { Arbitrum } from "@thirdweb-dev/chains";
-
-
 
 // API Configuration
 export const API_PREFIX: string = process.env.API_PREFIX || '/api';
@@ -33,11 +30,6 @@ export const KEYDB_PORT: number  = Number(process.env.KEYDB_PORT) || 6379;
 export const KEYDB_HOST: string | undefined = process.env.KEYDB_HOST;
 export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmetarave.com:3005";
 
-export const KDB: { host: string | undefined; port: string | number; password: string | undefined } = {
-  host: process.env.KEYDB_HOST,
-  port: process.env.KEYDB_PORT || 6379,
-  password: process.env.KEYDB_PASSWORD,
-};
 
 // Thirdweb SDK Configuration
 export const SECRET_KEY: string = process.env.SECRET_KEY || ""
@@ -54,7 +46,7 @@ export const CARD_MARKETPLACE: string = '0x033d72A6fACD989396D64D9704ED57F7cABF2
 export const CARD_UPGRADE_MARKETPLACE: string = '0x001dC831E422cd8924A806bA41da5A91A09dFc35'; // ** CARD MARKETPLACE ADDRESS
 export const PACK_MARKETPLACE: string = '0x1c23651182a1742E87188BA53E29564f37c6Af74'; // ** CARD PACK MARKETPLACE ADDRESS
 export const CARD_UPGRADE: string = '0xac8aADf1dB87A6193E306884aB57940f72986a53'; 
-export const SOUL_ADDRESS: string = '0xc465946c70C08e438294824050B51cfb77aEe2A5';
+export const SOUL_ADDRESS: string = '0x8f5B9b1b7BE5E3dA49b56462bBB172d61cFb467b';
 export const SOCIAL_BADGES_ADDRESS: string = '0xa98d398DA254Cda866acae71592ac8E12581AF19';
 export const PRIVATE_KEY: string  = process.env.THIRDWEB_AUTH_PRIVATE_KEY || ""
 
