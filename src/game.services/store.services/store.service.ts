@@ -177,7 +177,7 @@ export default class StoreService {
   }
   
 
-  //
+  //Initiates a card pack purchase using the provided wallet information and listing ID.
   private async cardPackPurchase(buyerWalletAddress: string, listingId: number) {
     try {
       const contractAddress: string = PACK_MARKETPLACE;  // Assuming this is a constant or predefined variable
@@ -201,6 +201,7 @@ export default class StoreService {
   }
 
 
+  
   public async buyCardPack(buycardData: BuyCardData, token: string): Promise<SuccessMessage> {
     try {
       const tokenService: TokenService = new TokenService();
@@ -432,13 +433,12 @@ export default class StoreService {
   //   );
 
     
-  } catch (error: any) {
-    console.error("Error creating relationship:", error);
-    throw error;
+  // } catch (error: any) {
+  //   console.error("Error creating relationship:", error);
+  //   throw error;
+  // }
   }
-  }
-  
-}
+
 
 
 
