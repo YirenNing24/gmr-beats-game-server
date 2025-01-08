@@ -22,19 +22,35 @@ import { SuccessMessage } from '../outputs/success.message';
 
 const rewards = (app: Elysia) => {
 
-  app.get('/api/reward/card', async ({ headers }) => {
+  app.get('/api/reward/personal-missions', async ({ headers }) => {
       try {
         const authorizationHeader: string = headers.authorization;
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
           throw new Error('Bearer token not found in Authorization header');
         }
         const jwtToken: string = authorizationHeader.substring(7);
-
-        const driver: Driver = getDriver();
-        const rewardService: RewardService = new RewardService(driver)
+        const rewardService: RewardService = new RewardService()
         
-        const output = await rewardService.getAvailableCardReward(jwtToken);
+        const output = await rewardService.getPersonalMissions(jwtToken);
+        return output 
+      } catch (error: any) {
+        console.log(error)
+        throw error
 
+        }
+     }, authorizationBearerSchema
+    )
+
+    .get('/api/reward/collection-missions', async ({ headers }) => {
+      try {
+        const authorizationHeader: string = headers.authorization;
+        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+          throw new Error('Bearer token not found in Authorization header');
+        }
+        const jwtToken: string = authorizationHeader.substring(7);
+        const rewardService: RewardService = new RewardService()
+        
+        const output = await rewardService.getCollectionMissions(jwtToken);
         return output 
       } catch (error: any) {
         console.log(error)
@@ -45,113 +61,7 @@ const rewards = (app: Elysia) => {
     )
 
     
-  .post('/api/reward/claim/ownership', async ({ headers, body }): Promise<SuccessMessage> => {
-      try {
-        const authorizationHeader: string = headers.authorization;
-        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-          throw new Error('Bearer token not found in Authorization header');
-        }
-        const jwtToken: string = authorizationHeader.substring(7);
-
-        const driver: Driver = getDriver();
-        const rewardService: RewardService = new RewardService(driver)
-        
-        const output: SuccessMessage = await rewardService.ClaimCardOwnershipReward(jwtToken, body);
-
-        return output as SuccessMessage
-      } catch (error: any) {
-        throw error
-
-        }
-     }, claimCardOwnershipRewardSchema
-    )
-
-
-  .post('/api/reward/claim/zodiac', async ({ headers, body }): Promise<SuccessMessage> => {
-      try {
-        const authorizationHeader: string = headers.authorization;
-        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-          throw new Error('Bearer token not found in Authorization header');
-        }
-        const jwtToken: string = authorizationHeader.substring(7);
-
-        const driver: Driver = getDriver();
-        const rewardService: RewardService = new RewardService(driver)
-        
-        const output = await rewardService.provideHoroscopeReward(jwtToken, body);
-
-        return output as SuccessMessage;
-      } catch (error: any) {
-        throw error
-
-        }
-     }, claimCardOwnershipRewardSchema
-    )
-
-  .post('/api/reward/claim/animal', async ({ headers, body }): Promise<SuccessMessage> => {
-      try {
-        const authorizationHeader: string = headers.authorization;
-        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-          throw new Error('Bearer token not found in Authorization header');
-        }
-        const jwtToken: string = authorizationHeader.substring(7);
-
-        const driver: Driver = getDriver();
-        const rewardService: RewardService = new RewardService(driver)
-        
-        const output: SuccessMessage = await rewardService.provideAnimalReward(jwtToken, body);
-
-        return output as SuccessMessage;
-      } catch (error: any) {
-        throw error
-
-        }
-     }, claimCardOwnershipRewardSchema
-    )
-
-
-  .get('/api/reward/mission/list', async ({ headers }) => {
-      try {
-        const authorizationHeader: string = headers.authorization;
-        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-          throw new Error('Bearer token not found in Authorization header');
-        }
-        const jwtToken: string = authorizationHeader.substring(7);
-
-        const driver: Driver = getDriver();
-        const rewardService: RewardService = new RewardService(driver)
-        
-        const output: RewardData[] = await rewardService.getMissionRewardList(jwtToken);
-
-        return output 
-      } catch (error: any) {
-        console.log(error)
-        throw error
-
-        }
-     }, authorizationBearerSchema
-    )
-
-  .post('/api/reward/mission/claim', async ({ headers, body }): Promise<SuccessMessage> => {
-      try {
-        const authorizationHeader: string = headers.authorization;
-        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-          throw new Error('Bearer token not found in Authorization header');
-        }
-        const jwtToken: string = authorizationHeader.substring(7);
-
-        const driver: Driver = getDriver();
-        const rewardService: RewardService = new RewardService(driver)
-        
-        const output: SuccessMessage = await rewardService.claimMissionReward(jwtToken, body);
-
-        return output as SuccessMessage;
-      } catch (error: any) {
-        throw error
-
-        }
-     }, claimMissionRewardSchema
-    )
+ 
 
 
 }
