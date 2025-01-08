@@ -27,9 +27,6 @@ class ScoreService {
     //** BEATS SERVER EXCLUSIVE SERVICE */
     public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
 		const tokenService: TokenService = new TokenService();
-		const rewardService: RewardService = new RewardService();
-		const soulService: SoulService = new SoulService();
-
 		try {
 			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
 
@@ -49,13 +46,6 @@ class ScoreService {
 
 			// Calculate experience gain
 			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
-			const hasCompleted: boolean = await rewardService.hasCompletedThreeUniqueSongs(score.username);
-
-			if (hasCompleted) {
-				soulService.createSoul(score.username)
-			}
-
-
 
 
 			return experienceGain;	

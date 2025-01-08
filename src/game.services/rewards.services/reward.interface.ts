@@ -58,6 +58,13 @@ interface PersonalMissionRequirement {
 	};
 }
 
+export interface Reward {
+	name: string;
+	cards?: Array<any>;
+	beats?: number;
+	amount: number;
+}
+
 
 /**
  * Collection mission interface.

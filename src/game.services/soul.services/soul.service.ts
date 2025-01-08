@@ -30,6 +30,8 @@ class SoulService {
 
     public async createSoul(username: string): Promise<void> {
         const walletService = new WalletService();
+
+        //**TODO check if a soul exists already */
         try {
             const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
             const soulMetaData: SoulMetadata = {
