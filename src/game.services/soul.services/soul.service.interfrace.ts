@@ -7,4 +7,6 @@ export interface SoulMetadata {
     accountAchievements: any[];
     image: string;
     uploader: string;
+    personalMissions: string[];
+    collectionMissions: string[];
 }

@@ -15,6 +15,8 @@ import WalletService, { engine } from "../../user.services/wallet.services/walle
 
 //** TYPE INTERFACE IMPORT
 import { SoulMetadata } from "./soul.service.interfrace";
+import { getDriver } from "../../db/memgraph";
+import { t } from "elysia";
 
 //** MONGODB IMPORT
 
@@ -29,7 +31,7 @@ class SoulService {
     }
 
     public async createSoul(username: string, smartWalletAddress: string): Promise<void> {
-        const walletService = new WalletService();
+        const walletService = new WalletService(this.driver);
         try {
 
             const soulMetaData: SoulMetadata = {
@@ -39,6 +41,8 @@ class SoulService {
                 image: "",
                 uploader: "beats", 
                 accountAchievements: [{ rookie: true }],
+                personalMissions: [],
+                collectionMissions: [],
             };
     
             const metadataWithSupply = Array.from({ length: 1 }, () => ({
@@ -88,6 +92,60 @@ class SoulService {
             throw error;
         }
     }
+
+
+    public async updateSoulMetaData(username: string, missionName: string, missionType: string): Promise<void> {
+        const walletService = new WalletService(this.driver);
+        try {
+            // Fetch user's soul and wallet address
+            const soul: string = await walletService.getSoul(username);
+            const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
+    
+            // Validate that the user has a soul
+            if (!soul) {
+                throw new ValidationError(`Soul for user ${username} not found.`, "");
+            }
+    
+            // Fetch existing metadata of the soul NFT
+            const soulNFT = await engine.erc1155.getOwned(smartWalletAddress, CHAIN, SOUL_ADDRESS);
+            if (!soulNFT.result.length) {
+                throw new ValidationError(`Soul NFT for user ${username} not found.`, "");
+            }
+    
+            // Get the current metadata
+            const currentSoulMetadata = soulNFT.result[0].metadata as unknown as SoulMetadata;
+    
+            // Determine which metadata field to update
+            const metadataKey: keyof SoulMetadata = missionType === "personal" ? "personalMissions" : "collectionMissions";
+    
+            // Safely update the metadata array
+            const updatedMetadata = { ...currentSoulMetadata }; // Create a copy of the metadata
+            if (!Array.isArray(updatedMetadata[metadataKey])) {
+                updatedMetadata[metadataKey] = []; // Initialize the array if it doesn't exist
+            }
+    
+            // Add the new mission name to the array (avoid duplicates)
+            if (!updatedMetadata[metadataKey].includes(missionName)) {
+                updatedMetadata[metadataKey].push(missionName);
+            }
+    
+            // Prepare the request body for the update
+            const requestBody = {
+                tokenId: soul,
+                metadata: updatedMetadata,
+            };
+    
+            // Update the metadata on-chain
+            engine.erc1155.updateTokenMetadata(CHAIN, SOUL_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
+    
+            console.log(`Soul metadata updated successfully for user: ${username}`);
+    
+        } catch (error: any) {
+            console.error("Error updating soul metadata:", error);
+            throw error;
+        }
+    }
+    
     
 
 

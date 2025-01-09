@@ -144,7 +144,7 @@ class AuthService {
                 country: $country,
                 deviceId: $deviceId,
                 inventorySize: 200,
-                soul: "0"
+                soul: ""
               })
 
               ${inventoryCypher}
@@ -152,6 +152,8 @@ class AuthService {
               { signupDate, userId, userName, encrypted, locKey, smartWalletAddress, playerStats, suspended, country, deviceId }
             )
         );
+
+        
       } catch (error: any) {
         // Handle unique constraints in the database
         if (error.code === "Neo.ClientError.Schema.ConstraintValidationFailed") {

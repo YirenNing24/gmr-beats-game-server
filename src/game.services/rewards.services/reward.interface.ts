@@ -1,29 +1,4 @@
 
-export interface CardOwned {
-    name: string;
-}
-
-export interface AnimalMatch {
-    name: string;
-}
-
-
-export interface RewardData {
-    username?: string;
-    type?: string;
-
-    songName?: string;
-    songRewardType?: string;
-
-    reward?: string;
-    rewardName?: string;
-    
-    claimed?: boolean;
-    claimedAt?: string
-    eligible?: boolean;
-}
-
-
 /**
  * Personal mission interface.
  *
@@ -58,6 +33,25 @@ interface PersonalMissionRequirement {
 	};
 }
 
+
+
+
+export interface GetPersonalMission extends PersonalMission {
+	claimed: boolean;
+	elligible: boolean;
+}
+
+
+
+/**
+ * Reward interface.
+ * 
+ * @interface Reward
+ * @property {string} name - The name of the reward.
+ * @property {Array<any>} [cards] - The list of cards in the reward.
+ * @property {number} beats - The number of beats in the reward.
+ * @property {number} amount - The amount of the reward.
+ */
 export interface Reward {
 	name: string;
 	cards?: Array<any>;
@@ -100,4 +94,35 @@ interface CollectionMissionRequirement {
 		description: string;
         reward: { name: string, cards?: Array<any>, beats?: number, amount: number };
 	};
+}
+
+
+/**
+ * User missions interface.
+ * 
+ * @interface UserMissions
+ * @property {string} username - The username of the user.
+ * @property {CompletedMission[]} completedMissions - The list of completed missions.
+ * @property {string} createdAt - The date and time the user missions were created.
+ * @property {string} updatedAt - The date and time the user missions were last updated.  
+ */
+export interface UserMissions {
+	username: string;
+	completedMissions: CompletedMission[];
+	createdAt: string; // ISO date string
+	updatedAt: string; // ISO date string
+}
+
+/**
+ * Completed mission interface.
+ * 
+ * @interface CompletedMission
+ * @property {string} missionName - The name of the completed mission.
+ * @property {string} completedAt - The date and time the mission was completed.
+ * @property {boolean} rewardClaimed - Indicates whether the reward has been claimed.
+ */
+export interface CompletedMission {
+	missionName: string;
+	completedAt: string; // ISO date string
+	rewardClaimed: boolean;
 }

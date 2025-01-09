@@ -9,22 +9,21 @@ import { BEATS_TOKEN, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PRIVATE_KEY, SECRET_KE
 
 //** SERVICE IMPORTS
 import TokenService from "../../user.services/token.services/token.service";
+import SoulService from "../soul.services/soul.service";
+
+
+//** TYPE INTERFACE IMPORT
+import { CollectionMission, CompletedMission, GetPersonalMission, PersonalMission, Reward, UserMissions } from "./reward.interface";
+import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
 import { SoulMetaData } from "../profile.services/profile.interface";
 import { SuccessMessage } from "../../outputs/success.message";
 
-//** RETHINK DB IMPORT
-import rt from "rethinkdb";
-import { getRethinkDB } from "../../db/rethink";
-
-//** TYPE INTERFACE IMPORT
-import { CardOwned, CollectionMission, PersonalMission, Reward, RewardData } from "./reward.interface";
-import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
-import { MongoClient } from "mongodb";
 
 //** MONGODB IMPORT
+import { MongoClient } from "mongodb";
 import { mongoDBClient } from "../../db/mongodb.client";
 import { ClassicScoreStats } from "../leaderboard.services/leaderboard.interface";
-import SoulService from "../soul.services/soul.service";
+
 
 
 class RewardService {
@@ -35,26 +34,51 @@ class RewardService {
     }
 
 
-
-
-
-	public async getPersonalMissions(token: string): Promise<PersonalMission[]> {
-
+	public async getPersonalMissions(token: string): Promise<GetPersonalMission[]> {
 		const tokenService = new TokenService();
-		try {
-			await tokenService.verifyAccessToken(token);
-			const client: MongoClient = await mongoDBClient.connect();
-			const collection = client.db("beats").collection("personalMissions");
+		const client: MongoClient = await mongoDBClient.connect();
 	
-			const personalMissions = await collection.find({ missionType: "personal" }).toArray() as unknown as PersonalMission[];
+		try {
+			// Verify the access token
+			const username: string = await tokenService.verifyAccessToken(token);
+			const collection = client.db("beats").collection("personalMissions");
+			
+			// Fetch all personal missions from the database
+			const personalMissions = await collection
+				.find({ missionType: "personal" })
+				.toArray() as unknown as PersonalMission[];
+	
+			// Fetch the user's completed missions
+			const userMissions = await this.getUserMissions(username);
+	
+			// Enrich missions with eligibility and claim status
+			const enrichedMissions: GetPersonalMission[] = await Promise.all(
+				personalMissions.map(async (mission) => {
+					const eligible: boolean = await this.checkPersonalMissionEligibility(username, mission);
+	
+					// Check if the mission is already completed by the user
+					const completedMission = userMissions?.completedMissions.find(
+						(completed) => completed.missionName === mission.name
+					);
+	
+					return {
+						...mission,
+						elligible: eligible,
+						claimed: eligible && !!completedMission && completedMission.rewardClaimed
+					};
+				})
+			);
 	
 			await client.close(); // Close the client after the operation
-			return personalMissions;
+			return enrichedMissions;
 		} catch (error: any) {
 			console.error("Error fetching personal missions:", error);
 			throw error;
+		} finally {
+			await client.close(); // Ensure the database connection is closed in case of an error
 		}
 	}
+	
 
 
 	public async getCollectionMissions(token: string): Promise<CollectionMission[]> {
@@ -65,6 +89,7 @@ class RewardService {
 			const collection = client.db("beats").collection("collectionMissions");
 	
 			const collectionMissions = await collection.find({ missionType: "collection" }).toArray() as unknown as CollectionMission[];
+			
 	
 			await client.close(); // Close the client after the operation
 			return collectionMissions;
@@ -77,31 +102,129 @@ class RewardService {
 
 	public async claimPersonalMissionReward(token: string, missionData: PersonalMission): Promise<SuccessMessage> {
 		const tokenService = new TokenService();
+		const soulService = new SoulService(this.driver);
+	
 		try {
-			if( missionData.missionType !== "personal") {
+			// Validate the mission type
+			if (missionData.missionType !== "personal") {
 				throw new ValidationError("Invalid mission type", "Invalid mission type");
 			}
-
+	
+			// Verify the token and get the username
 			const username: string = await tokenService.verifyAccessToken(token);
 			const client: MongoClient = await mongoDBClient.connect();
 			const collection = client.db("beats").collection("personalMissions");
-
+	
+			// Retrieve the mission details
 			const { name } = missionData;
 			const personalMission = await collection.findOne({ name }) as unknown as PersonalMission;
+			if (!personalMission) {
+				throw new ValidationError("Mission not found", "Mission not found");
+			}
+	
+			// Check eligibility
 			const eligibility: boolean = await this.checkPersonalMissionEligibility(username, personalMission);
-
 			if (!eligibility) {
 				throw new ValidationError("User is not eligible for the reward", "User is not eligible for the reward");
 			}
-
+	
+			// Check if the mission has already been claimed
+			const userMissions = await this.getUserMissions(username);
+	
+			if (userMissions !== null) {
+				// User has missions recorded; check for duplicates
+				const completedMission = userMissions.completedMissions.find(
+					(mission) => mission.missionName === name
+				);
+	
+				if (completedMission && completedMission.rewardClaimed) {
+					throw new ValidationError("Reward for this mission has already been claimed", "Reward already claimed");
+				}
+			}
+	
+			// Award the reward
 			await this.giveReward(username, personalMission.requirement.criteria.reward, "BEATS");
+	
+			// Update the user's mission data
+			await this.updateUserMission(username, name);
+	
+			// Update Soul Metadata
+			await soulService.updateSoulMetaData(username, name, "personal");
+	
+			// Close the database connection
+			await client.close();
+	
 			return new SuccessMessage("Personal mission reward claimed successfully");
 		} catch (error: any) {
 			console.error("Error claiming personal mission reward:", error);
 			throw error;
 		}
 	}
+	
+	
+	
 
+	private async updateUserMission(username: string, missionName: string): Promise<void> {
+		const client: MongoClient = await mongoDBClient.connect();
+		const soulService = new SoulService(this.driver);
+		try {
+			const userMissionsCollection = client.db("beats").collection("missionsCompleted");
+	
+			// Fetch or initialize the user's mission record
+			const userMissions = await userMissionsCollection.findOne({ username }) ?? {
+				username,
+				completedMissions: [],
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString()
+			} as unknown as UserMissions;
+	
+			// Add the completed mission to the user's record
+			const completedMission: CompletedMission = {
+				missionName,
+				completedAt: new Date().toISOString(),
+				rewardClaimed: true
+			};
+	
+			userMissions.completedMissions.push(completedMission);
+			userMissions.updatedAt = new Date().toISOString();
+	
+			// Save the updated user missions back to the database
+			await userMissionsCollection.updateOne(
+				{ username },
+				{ $set: userMissions },
+				{ upsert: true }
+			);
+		} catch (error: any) {
+			console.error("Error updating user mission:", error);
+			throw error;
+		} finally {
+			await client.close(); // Ensure the database connection is closed
+		}
+	}
+
+
+	private async getUserMissions(username: string): Promise<UserMissions | null> {
+		const client: MongoClient = await mongoDBClient.connect();
+		try {
+			const userMissionsCollection = client.db("beats").collection("missionsCompleted");
+	
+			// Fetch the user's mission record
+			const userMissions = await userMissionsCollection.findOne({ username }) as UserMissions | null;
+	
+			return userMissions;
+		} catch (error: any) {
+			console.error("Error fetching user missions:", error);
+			throw error;
+		} finally {
+			await client.close(); // Ensure the database connection is closed
+		}
+	}
+	
+
+
+
+	
+	
 
 	private async checkPersonalMissionEligibility(username: string, missionData: PersonalMission): Promise<boolean> {
 		try {
@@ -111,6 +234,7 @@ class RewardService {
 			const { type, value: requirementValue } = missionData.requirement.criteria;
 	
 			if (type === "uniqueSongs") {
+				
 				verified = await this.checkCompletedSongs(username, requirementValue);
 			}
 			return verified;
@@ -142,26 +266,26 @@ class RewardService {
 
 
 	private async giveReward(username: string, rewardData: Reward, rewardType: string): Promise<void> {
-		const walletService = new WalletService();
+		const walletService = new WalletService(this.driver);
 		const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
-		const soulService: SoulService = new SoulService();
+		const soulService: SoulService = new SoulService(this.driver);
 		try {
 			const soul: string = await walletService.getSoul(username);
-			if (soul === "0") {
+			if (soul === "") {
 				await soulService.createSoul(username, smartWalletAddress);
 			}
 
 			if (rewardType === "BEATS") {
 				await this.sendBeatsReward(smartWalletAddress, rewardData.amount.toString());
 			}
-
-
+		
 		} catch (error: any) {
 			console.error("Error in giveReward: ", error);
 			throw error;
 		}
 
 	}
+
 
 	private async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
 		try{
