@@ -82,20 +82,20 @@ class RewardService {
 				throw new ValidationError("Invalid mission type", "Invalid mission type");
 			}
 
-			const username = await tokenService.verifyAccessToken(token);
+			const username: string = await tokenService.verifyAccessToken(token);
 			const client: MongoClient = await mongoDBClient.connect();
 			const collection = client.db("beats").collection("personalMissions");
 
 			const { name } = missionData;
 			const personalMission = await collection.findOne({ name }) as unknown as PersonalMission;
-			const eligibility = await this.checkPersonalMissionEligibility(username, personalMission);
+			const eligibility: boolean = await this.checkPersonalMissionEligibility(username, personalMission);
 
 			if (!eligibility) {
 				throw new ValidationError("User is not eligible for the reward", "User is not eligible for the reward");
 			}
 
-
-			return new SuccessMessage("Personal mission claimed successfully");
+			await this.giveReward(username, personalMission.requirement.criteria.reward, "BEATS");
+			return new SuccessMessage("Personal mission reward claimed successfully");
 		} catch (error: any) {
 			console.error("Error claiming personal mission reward:", error);
 			throw error;
@@ -108,16 +108,11 @@ class RewardService {
 			let verified = false;
 	
 			// Destructure for easier access
-			const { type, value: requirementValue, reward } = missionData.requirement.criteria;
+			const { type, value: requirementValue } = missionData.requirement.criteria;
 	
 			if (type === "uniqueSongs") {
 				verified = await this.checkCompletedSongs(username, requirementValue);
 			}
-	
-			if (verified) {
-				await this.giveReward(username, reward, reward.name);
-			}
-	
 			return verified;
 		} catch (error: any) {
 			console.error("Error checking personal mission eligibility:", error);
