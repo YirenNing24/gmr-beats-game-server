@@ -28,12 +28,10 @@ class SoulService {
         this.driver = driver;
     }
 
-    public async createSoul(username: string): Promise<void> {
+    public async createSoul(username: string, smartWalletAddress: string): Promise<void> {
         const walletService = new WalletService();
-
-        //**TODO check if a soul exists already */
         try {
-            const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
+
             const soulMetaData: SoulMetadata = {
                 walletAddress: smartWalletAddress,
                 name: username,
@@ -52,9 +50,41 @@ class SoulService {
                 receiver: smartWalletAddress,
                 metadataWithSupply,
             };
-            await engine.erc1155.mintBatchTo(CHAIN, SOUL_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
+            const transaction = await engine.erc1155.mintBatchTo(CHAIN, SOUL_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
+            let status = await engine.transaction.status(transaction.result.queueId);
+  
+            // Wait for the transaction to be mined
+            while (status.result.minedAt === null) {
+              await new Promise((resolve) => setTimeout(resolve, 500)); 
+              status = await engine.transaction.status(transaction.result.queueId);
+            };
+
+            await this.saveSoul(username, smartWalletAddress);
+
         } catch (error: any) {
             console.log(error);
+            throw error;
+        }
+    }
+
+
+    private async saveSoul(username: string, smartWalletAddress: string): Promise<void> {
+        try {
+            const transaction = await engine.erc1155.getOwned(smartWalletAddress, CHAIN, SOUL_ADDRESS);
+            const soul = transaction.result[0];
+            const id: string = soul.metadata.id;
+            const session: Session | undefined = this.driver?.session();
+            await session?.executeWrite(async (tx: ManagedTransaction) => {
+                await tx.run(
+                    `MATCH (u:User {username: $username})
+                     SET u.soul = $soul
+                        `,
+                    { username, id, soul }
+                )
+            } );
+
+        } catch (error: any) {
+            console.error("Error saving soul:", error);
             throw error;
         }
     }

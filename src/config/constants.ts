@@ -52,6 +52,7 @@ export const PRIVATE_KEY: string  = process.env.THIRDWEB_AUTH_PRIVATE_KEY || ""
 
 export const ENGINE_ACCESS_TOKEN: string = process.env.ENGINE_ACCESS_TOKEN || ""
 export const ENGINE_ADMIN_WALLET_ADDRESS: string = process.env.ENGINE_ADMIN_WALLET_ADDRESS || ""
+export const TREASURY_WALLET: string = process.env.TREASURY_WALLET || ""
 
 export const GOOGLE_CLIENT_ID: string  = process.env.GOOGLE_CLIENT_ID || ""
 export const GOOGLE_CLIENT_SECRET: string = process.env.GOOGLE_CLIENT_SECRET || ""

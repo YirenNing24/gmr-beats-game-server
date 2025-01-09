@@ -143,8 +143,8 @@ class AuthService {
                 suspended: $suspended,
                 country: $country,
                 deviceId: $deviceId,
-                inventorySize: 200
-
+                inventorySize: 200,
+                soul: "0"
               })
 
               ${inventoryCypher}

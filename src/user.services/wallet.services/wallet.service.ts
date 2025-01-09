@@ -93,6 +93,33 @@ class WalletService {
     }
   }
 
+
+  public async getSoul(userName: string): Promise<string> {
+    try {
+        const session: Session | undefined = this.driver?.session();
+        
+        // Find the user node within a Read Transaction
+        const result: QueryResult | undefined = await session?.executeRead(tx =>
+            tx.run('MATCH (u:User {username: $userName}) RETURN u.soul AS soul', { userName })
+        );
+
+        await session?.close();
+        
+        // Verify the user exists
+        if (result?.records.length === 0) {
+            throw new ValidationError(`User with username '${userName}' not found.`, "");
+        }
+
+        // Retrieve the soul
+        const soul: string = result?.records[0].get('soul');
+        
+        return soul;
+    } catch (error: any) {
+        console.log(error);
+        throw error;
+    }
+  }
+
 }
 
 

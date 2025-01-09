@@ -5,7 +5,7 @@ import { Driver, ManagedTransaction, QueryResult, RecordShape, Session } from "n
 import ValidationError from '../../outputs/validation.error'
 
 //** CONFIGS
-import { BEATS_TOKEN, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PRIVATE_KEY, SECRET_KEY, SOCIAL_BADGES_ADDRESS, SOUL_ADDRESS } from "../../config/constants";
+import { BEATS_TOKEN, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PRIVATE_KEY, SECRET_KEY, SOCIAL_BADGES_ADDRESS, SOUL_ADDRESS, TREASURY_WALLET } from "../../config/constants";
 
 //** SERVICE IMPORTS
 import TokenService from "../../user.services/token.services/token.service";
@@ -24,6 +24,7 @@ import { MongoClient } from "mongodb";
 //** MONGODB IMPORT
 import { mongoDBClient } from "../../db/mongodb.client";
 import { ClassicScoreStats } from "../leaderboard.services/leaderboard.interface";
+import SoulService from "../soul.services/soul.service";
 
 
 class RewardService {
@@ -105,25 +106,25 @@ class RewardService {
 	private async checkPersonalMissionEligibility(username: string, missionData: PersonalMission): Promise<boolean> {
 		try {
 			let verified = false;
-			const type = missionData.requirement.criteria.type;
-			const requirementValue = missionData.requirement.criteria.value;
+	
+			// Destructure for easier access
+			const { type, value: requirementValue, reward } = missionData.requirement.criteria;
+	
 			if (type === "uniqueSongs") {
 				verified = await this.checkCompletedSongs(username, requirementValue);
-			};
-
-			if (verified) {
-				await this.giveReward(username, missionData.requirement.criteria.reward);
 			}
-
-
-
+	
+			if (verified) {
+				await this.giveReward(username, reward, reward.name);
+			}
+	
 			return verified;
-		}	catch (error: any) {
+		} catch (error: any) {
 			console.error("Error checking personal mission eligibility:", error);
 			throw error;
 		}
-
-	}    
+	}
+	 
 
 	private async checkCompletedSongs(username: string, value: number): Promise<boolean> {
 		try {
@@ -145,15 +146,19 @@ class RewardService {
 	}
 
 
-	private async giveReward(username: string, rewardData: Reward): Promise<void> {
+	private async giveReward(username: string, rewardData: Reward, rewardType: string): Promise<void> {
 		const walletService = new WalletService();
+		const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
+		const soulService: SoulService = new SoulService();
 		try {
-			const smartWalletAddress = await walletService.getSmartWalletAddress(username);
+			const soul: string = await walletService.getSoul(username);
+			if (soul === "0") {
+				await soulService.createSoul(username, smartWalletAddress);
+			}
 
-			
-
-
-
+			if (rewardType === "BEATS") {
+				await this.sendBeatsReward(smartWalletAddress, rewardData.amount.toString());
+			}
 
 
 		} catch (error: any) {
@@ -163,11 +168,26 @@ class RewardService {
 
 	}
 
+	private async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
+		try{
+			const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
+			const transaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
+			let status = await engine.transaction.status(transaction.result.queueId);
+  
+            // Wait for the transaction to be mined
+            while (status.result.minedAt === null) {
+              await new Promise((resolve) => setTimeout(resolve, 500)); 
+              status = await engine.transaction.status(transaction.result.queueId);
+            };
 
+			const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
+			await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
+		} catch (error: any) {
+			console.error("Error in sendBeatsReward: ", error);
+			throw error;
+		}
+	}
 
-
-    
-    
 }
 
 export default RewardService;
