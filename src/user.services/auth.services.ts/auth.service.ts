@@ -22,7 +22,7 @@ import TokenService from '../token.services/token.service.js'
 import GoogleService from '../google.services/google.service.js'
 
 //** UUID GENERATOR
-import { nanoid } from "nanoid/async";
+import { nanoid } from "nanoid"
 
 //** MEMGRAPH DRIVER
 import { Driver, QueryResult, Session,  ManagedTransaction } from 'neo4j-driver-core'
@@ -230,136 +230,6 @@ class AuthService {
     }
 
 
-    public async googleRegister(body: GoogleRegister , ipAddress: string): Promise<void | ValidationError> {
-      const walletService: WalletService = new WalletService();
-      const googleService: GoogleService = new GoogleService();
-
-      const { serverToken, deviceId } = body
-      const playerInfo: PlayerInfo = await googleService.googleAuth(serverToken);
-      const { displayName, playerId } = playerInfo as PlayerInfo;
-
-      const userName: string = displayName;
-      const signupDate: number = Date.now()
-      const suspended: Suspended = { until: null, reason: "" };
-
-      const geo = geoip.lookup(ipAddress);
-      const country: string | undefined = geo?.country
-      const session: Session | undefined = this.driver?.session();
-
-      try {
-        const password: string = await nanoid()
-        const encrypted: string = await hash(password, parseInt(SALT_ROUNDS));
-        const locKey: string = await hash(userName, parseInt(SALT_ROUNDS));
-        const smartWallet = await walletService.createWallet(userName)
-
-        const smartWalletAddress: string = smartWallet;
-
-        await session?.executeWrite(
-          (tx: ManagedTransaction) => tx.run(
-              `
-              CREATE (u:User {
-                signupDate: $signupDate,
-                accountType: "google",
-                userId: $playerId,
-                username: $userName,
-                password: $encrypted,
-                locKey: $locKey
-                smartWalletAddress: $smartWalletAddress
-                playerStats: $playerStats,
-                suspended: $suspended,
-                country: "SOKOR",
-                deviceId: $deviceId,
-                inventorySize: 200
-              })
-
-              ${inventoryCypher}
-            `,
-            { signupDate, userName, encrypted, smartWalletAddress, playerStats, suspended, country, deviceId, locKey, playerId }
-            ) 
-          )
-    
-          // Close the session
-          await session?.close()
-    
-        } catch (error: any) {
-          console.log(error)
-          // Handle unique constraints in the database
-          if (error.code === 'Neo.ClientError.Schema.ConstraintValidationFailed') {
-            if (error.message.includes('userId')) {
-              return new ValidationError(`An account already exists`,'An account already exists')}
-            }
-
-          if (error.code === 'Neo.ClientError.Schema.ConstraintValidationFailed') {
-            if (error.message.includes('username')) {
-                return new ValidationError(`An account already exists`,'An account already exists')}
-            }
-            throw error
-            
-          } finally {
-            await session?.close()
-          }
-    }
-
-
-    public async googleLogin(token: string): Promise<AuthenticateReturn | ValidationError> {
-      const googleService: GoogleService = new GoogleService();
-      const playerInfo: PlayerInfo = await googleService.googleAuth(token);
-      const energyService: EnergyService = new EnergyService();
-      const { playerId } = playerInfo as PlayerInfo;
-
-
-      const walletService: WalletService = new WalletService();
-      const tokenService: TokenService = new TokenService();
-
-      try {
-        const session: Session | undefined = this.driver?.session();
-        // Find the user node within a Read Transaction
-        const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
-            tx.run('MATCH (u:User {userId: $playerId}) RETURN u', { playerId })
-        );
-
-        await session?.close();
-        // Verify the user exists
-        if (result?.records.length === 0) {
-            console.log('none')
-            return new ValidationError(`User with playerId '${playerId}' not found.`, "");
-        }
-
-        // Compare Passwords
-        const user: UserData = result?.records[0].get('u');
-
-        // Return User Details
-        const { password, smartWalletAddress, playerStats, userId, username, ...safeProperties } = user.properties
-
-        const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
-        const [ wallet ] = await Promise.all([walletPromise ]);
-
-        const tokens: TokenScheme = await tokenService.generateTokens(playerId);
-        const { refreshToken, accessToken } = tokens as TokenScheme
-
-        const energy = await energyService.getPlayerEnergyBeats(username);
-        return {
-            username,
-            wallet,
-            safeProperties,
-            playerStats,
-            energy,
-            uuid: userId,
-            refreshToken,
-            accessToken,
-            message: 'You are now logged in',
-            success: 'OK',
-            loginType: 'google'
-
-        } as AuthenticateReturn
-
-      } catch(error: any) {
-        throw error
-
-      }
-
-    }
-
 
     public async passkeyRegister(userData: PasskeyUser, ipAddress: string = "") {
       const walletService: WalletService = new WalletService();
@@ -510,6 +380,138 @@ class AuthService {
               throw error;
             }
     }
+
+
+
+    // public async googleRegister(body: GoogleRegister , ipAddress: string): Promise<void | ValidationError> {
+    //   const walletService: WalletService = new WalletService();
+    //   const googleService: GoogleService = new GoogleService();
+
+    //   const { serverToken, deviceId } = body
+    //   const playerInfo: PlayerInfo = await googleService.googleAuth(serverToken);
+    //   const { displayName, playerId } = playerInfo as PlayerInfo;
+
+    //   const userName: string = displayName;
+    //   const signupDate: number = Date.now()
+    //   const suspended: Suspended = { until: null, reason: "" };
+
+    //   const geo = geoip.lookup(ipAddress);
+    //   const country: string | undefined = geo?.country
+    //   const session: Session | undefined = this.driver?.session();
+
+    //   try {
+    //     const password: string = await nanoid()
+    //     const encrypted: string = await hash(password, parseInt(SALT_ROUNDS));
+    //     const locKey: string = await hash(userName, parseInt(SALT_ROUNDS));
+    //     const smartWallet = await walletService.createWallet(userName)
+
+    //     const smartWalletAddress: string = smartWallet;
+
+    //     await session?.executeWrite(
+    //       (tx: ManagedTransaction) => tx.run(
+    //           `
+    //           CREATE (u:User {
+    //             signupDate: $signupDate,
+    //             accountType: "google",
+    //             userId: $playerId,
+    //             username: $userName,
+    //             password: $encrypted,
+    //             locKey: $locKey
+    //             smartWalletAddress: $smartWalletAddress
+    //             playerStats: $playerStats,
+    //             suspended: $suspended,
+    //             country: "SOKOR",
+    //             deviceId: $deviceId,
+    //             inventorySize: 200
+    //           })
+
+    //           ${inventoryCypher}
+    //         `,
+    //         { signupDate, userName, encrypted, smartWalletAddress, playerStats, suspended, country, deviceId, locKey, playerId }
+    //         ) 
+    //       )
+    
+    //       // Close the session
+    //       await session?.close()
+    
+    //     } catch (error: any) {
+    //       console.log(error)
+    //       // Handle unique constraints in the database
+    //       if (error.code === 'Neo.ClientError.Schema.ConstraintValidationFailed') {
+    //         if (error.message.includes('userId')) {
+    //           return new ValidationError(`An account already exists`,'An account already exists')}
+    //         }
+
+    //       if (error.code === 'Neo.ClientError.Schema.ConstraintValidationFailed') {
+    //         if (error.message.includes('username')) {
+    //             return new ValidationError(`An account already exists`,'An account already exists')}
+    //         }
+    //         throw error
+            
+    //       } finally {
+    //         await session?.close()
+    //       }
+    // }
+
+
+    // public async googleLogin(token: string): Promise<AuthenticateReturn | ValidationError> {
+    //   const googleService: GoogleService = new GoogleService();
+    //   const playerInfo: PlayerInfo = await googleService.googleAuth(token);
+    //   const energyService: EnergyService = new EnergyService();
+    //   const { playerId } = playerInfo as PlayerInfo;
+
+
+    //   const walletService: WalletService = new WalletService();
+    //   const tokenService: TokenService = new TokenService();
+
+    //   try {
+    //     const session: Session | undefined = this.driver?.session();
+    //     // Find the user node within a Read Transaction
+    //     const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
+    //         tx.run('MATCH (u:User {userId: $playerId}) RETURN u', { playerId })
+    //     );
+
+    //     await session?.close();
+    //     // Verify the user exists
+    //     if (result?.records.length === 0) {
+    //         console.log('none')
+    //         return new ValidationError(`User with playerId '${playerId}' not found.`, "");
+    //     }
+
+    //     // Compare Passwords
+    //     const user: UserData = result?.records[0].get('u');
+
+    //     // Return User Details
+    //     const { password, smartWalletAddress, playerStats, userId, username, ...safeProperties } = user.properties
+
+    //     const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
+    //     const [ wallet ] = await Promise.all([walletPromise ]);
+
+    //     const tokens: TokenScheme = await tokenService.generateTokens(playerId);
+    //     const { refreshToken, accessToken } = tokens as TokenScheme
+
+    //     const energy = await energyService.getPlayerEnergyBeats(username);
+    //     return {
+    //         username,
+    //         wallet,
+    //         safeProperties,
+    //         playerStats,
+    //         energy,
+    //         uuid: userId,
+    //         refreshToken,
+    //         accessToken,
+    //         message: 'You are now logged in',
+    //         success: 'OK',
+    //         loginType: 'google'
+
+    //     } as AuthenticateReturn
+
+    //   } catch(error: any) {
+    //     throw error
+
+    //   }
+
+    // }
 };
 
 export default AuthService

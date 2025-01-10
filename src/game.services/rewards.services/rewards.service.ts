@@ -1,11 +1,11 @@
 //** MEMGRAPH DRIVER AND TYPES
-import { Driver, ManagedTransaction, QueryResult, RecordShape, Session } from "neo4j-driver";
+import { Driver } from "neo4j-driver";
 
 //** ERROR CODES
 import ValidationError from '../../outputs/validation.error'
 
 //** CONFIGS
-import { BEATS_TOKEN, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PRIVATE_KEY, SECRET_KEY, SOCIAL_BADGES_ADDRESS, SOUL_ADDRESS, TREASURY_WALLET } from "../../config/constants";
+import { BEATS_TOKEN, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, TREASURY_WALLET } from "../../config/constants";
 
 //** SERVICE IMPORTS
 import TokenService from "../../user.services/token.services/token.service";

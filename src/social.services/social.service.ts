@@ -31,7 +31,7 @@ import NotificationService from "../game.services/notification.services/notifica
 import { EDITION_ADDRESS } from "../config/constants";
 
 //**NANOID IMPORT
-import { nanoid } from "nanoid/async";
+import { nanoid } from "nanoid";
 import { followCypher, getFollowersFollowingCountCypher } from "./social.cypher";
 
 
