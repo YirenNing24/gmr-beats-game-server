@@ -26,7 +26,7 @@ export const soulMetaDataSchema = {
     })
 }
 
-
+//
 export const claimCardOwnershipRewardSchema = {
     headers: t.Object({ 
         authorization: t.String() }), 
@@ -56,7 +56,30 @@ export const claimMissionRewardSchema = {
 
 
 
-
+/**
+ * Schema for validating personal mission data.
+ * 
+ * @property {Object} headers - The headers object.
+ * @property {string} headers.authorization - The authorization token.
+ * 
+ * @property {Object} body - The body object containing mission details.
+ * @property {string} body.name - The name of the mission.
+ * @property {'personal'} body.missionType - The type of the mission, which is always 'personal'.
+ * @property {string} body.description - The description of the mission.
+ * 
+ * @property {Object} body.requirement - The requirement object for the mission.
+ * @property {Object} body.requirement.criteria - The criteria object for the mission.
+ * @property {'uniqueSongs' | 'score'} body.requirement.criteria.type - The type of criteria, which can be either 'uniqueSongs' or 'score'.
+ * @property {number} body.requirement.criteria.value - The value associated with the criteria.
+ * @property {string} [body.requirement.criteria.group] - An optional group identifier.
+ * @property {string} body.requirement.criteria.description - The description of the criteria.
+ * 
+ * @property {Object} body.requirement.criteria.reward - The reward object for completing the mission.
+ * @property {string} body.requirement.criteria.reward.name - The name of the reward.
+ * @property {Array<any>} [body.requirement.criteria.reward.cards] - An optional array of cards included in the reward.
+ * @property {number} [body.requirement.criteria.reward.beats] - An optional number of beats included in the reward.
+ * @property {number} body.requirement.criteria.reward.amount - The amount of the reward.
+ */
 export const personalMissionSchema = {
 	headers: t.Object({
 		authorization: t.String()
