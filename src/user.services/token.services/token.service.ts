@@ -7,7 +7,7 @@ import { JWT_SECRET, GAME_SERVER_KEY } from '../../config/constants';
 //** TYPE INTERFACE IMPORT
 import { TokenScheme } from '../user.service.interface';
 
-const ACCESS_TOKEN_EXPIRY = '1h';
+const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY = '30d';
 
 class TokenService {
