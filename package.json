@@ -1,48 +1,48 @@
 {
-  "name": "gmr-beats-game-server",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "scripts": {
-    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun run --watch src/index.ts"
-  },
-  "peerDependencies": {
-    "typescript": "^5.5.2"
-  },
-  "dependencies": {
-    "@elysiajs/cors": "^0.6.0",
-    "@elysiajs/eden": "^0.8.1",
-    "@elysiajs/jwt": "^0.6.4",
-    "@simplewebauthn/server": "^11.0.0",
-    "@thirdweb-dev/chains": "^0.1.120",
-    "@thirdweb-dev/engine": "^0.0.11",
-    "@thirdweb-dev/sdk": "^4.0.99",
-    "@thirdweb-dev/storage": "^2.0.15",
-    "@thirdweb-dev/wallets": "^2.5.39",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^20.17.11",
-    "@types/ping": "^0.4.4",
-    "@types/rethinkdb": "^2.3.21",
-    "bcrypt-ts": "^4.0.1",
-    "colyseus": "^0.15.57",
-    "crypto-random-string": "^5.0.0",
-    "elysia": "^1.2.9",
-    "elysia-ip": "^0.0.7",
-    "ethers": "^5.7.2",
-    "fast-jwt": "^4.0.6",
-    "geoip-lite2": "^2.2.2",
-    "google-auth-library": "^9.15.0",
-    "hyperimport": "^0.2.0",
-    "lucky-item": "^2.0.2",
-    "mongodb": "^6.12.0",
-    "nanoid": "^4.0.2",
-    "neo4j-driver": "^5.27.0",
-    "oauth-1.0a": "^2.2.6",
-    "ping": "^0.4.4",
-    "redis": "^4.7.0",
-    "rethinkdb": "^2.4.2",
-    "thirdweb": "^5.80.0"
-  }
+	"name": "gmr-beats-game-server",
+	"module": "index.ts",
+	"type": "module",
+	"devDependencies": {
+		"bun-types": "1.1.43"
+	},
+	"scripts": {
+		"dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun run --watch src/index.ts"
+	},
+	"peerDependencies": {
+		"typescript": "^5.7.3"
+	},
+	"dependencies": {
+		"@elysiajs/cors": "^1.2.0",
+		"@elysiajs/eden": "^1.2.0",
+		"@elysiajs/jwt": "^1.2.0",
+		"@simplewebauthn/server": "^13.0.0",
+		"@thirdweb-dev/chains": "^0.1.120",
+		"@thirdweb-dev/engine": "^0.0.17",
+		"@thirdweb-dev/sdk": "^4.0.99",
+		"@thirdweb-dev/storage": "^2.0.15",
+		"@thirdweb-dev/wallets": "^2.5.39",
+		"@types/jsonwebtoken": "^9.0.7",
+		"@types/node": "^22.10.5",
+		"@types/ping": "^0.4.4",
+		"@types/rethinkdb": "^2.3.21",
+		"bcrypt-ts": "^5.0.3",
+		"colyseus": "^0.15.57",
+		"crypto-random-string": "^5.0.0",
+		"elysia": "^1.2.10",
+		"elysia-ip": "^1.0.8",
+		"ethers": "^6.13.5",
+		"fast-jwt": "^5.0.2",
+		"geoip-lite2": "^2.2.3",
+		"google-auth-library": "^9.15.0",
+		"hyperimport": "^0.2.0",
+		"lucky-item": "^2.0.2",
+		"mongodb": "^6.12.0",
+		"nanoid": "^5.0.9",
+		"neo4j-driver": "^5.27.0",
+		"oauth-1.0a": "^2.2.6",
+		"ping": "^0.4.4",
+		"redis": "^4.7.0",
+		"rethinkdb": "^2.4.2",
+		"thirdweb": "^5.83.1"
+	}
 }

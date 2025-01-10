@@ -48,7 +48,6 @@ export const PACK_MARKETPLACE: string = '0x1c23651182a1742E87188BA53E29564f37c6A
 export const CARD_UPGRADE: string = '0xac8aADf1dB87A6193E306884aB57940f72986a53'; 
 export const SOUL_ADDRESS: string = '0x8f5B9b1b7BE5E3dA49b56462bBB172d61cFb467b';
 export const SOCIAL_BADGES_ADDRESS: string = '0xa98d398DA254Cda866acae71592ac8E12581AF19';
-export const PRIVATE_KEY: string  = process.env.THIRDWEB_AUTH_PRIVATE_KEY || ""
 
 export const ENGINE_ACCESS_TOKEN: string = process.env.ENGINE_ACCESS_TOKEN || ""
 export const ENGINE_ADMIN_WALLET_ADDRESS: string = process.env.ENGINE_ADMIN_WALLET_ADDRESS || ""
