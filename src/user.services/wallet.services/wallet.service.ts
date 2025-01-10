@@ -49,16 +49,15 @@ class WalletService {
 
   public async getWalletBalance(walletAddress: string) {
     try {
-      const [arbitrumToken, gmrToken, beatsToken] = await Promise.all([
+      const [arbitrumToken, beatsToken] = await Promise.all([
         engine.backendWallet.getBalance(CHAIN, walletAddress),
-        engine.erc20.balanceOf(walletAddress, CHAIN, BEATS_TOKEN),
         engine.erc20.balanceOf(walletAddress, CHAIN, BEATS_TOKEN)
       ]);
 
       return {
         smartWalletAddress: walletAddress,
         beatsBalance: beatsToken.result.displayValue,
-        gmrBalance: gmrToken.result.displayValue,
+        gmrBalance: "0",
         nativeBalance: arbitrumToken.result.displayValue,
       } as WalletData;
     } catch (error: any) {
