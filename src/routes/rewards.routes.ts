@@ -15,6 +15,7 @@ import { authorizationBearerSchema } from './route.schema/schema.auth';
 
 //** OUTPUT MESSSAGE IMPORT
 import { SuccessMessage } from '../outputs/success.message';
+import { personalMissionSchema } from '../game.services/rewards.services/rewards.schema';
 
 
 
@@ -58,6 +59,27 @@ const rewards = (app: Elysia) => {
 
         }
      }, authorizationBearerSchema
+    )
+
+    .post('/api/reward/claim/personal-mission', async ({ headers, body }) => {
+     try {
+        const authorizationHeader: string = headers.authorization;
+        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+          throw new Error('Bearer token not found in Authorization header');
+        }
+        const jwtToken: string = authorizationHeader.substring(7);
+        const driver: Driver = getDriver();
+        const rewardService: RewardService = new RewardService(driver);
+        const output = await rewardService.claimPersonalMissionReward(jwtToken, body)
+
+
+
+     } catch (error: any) {
+       console.log(error);
+       throw error
+     }
+
+     }, personalMissionSchema
     )
 
     

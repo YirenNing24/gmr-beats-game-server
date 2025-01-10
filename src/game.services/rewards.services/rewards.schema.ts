@@ -36,19 +36,6 @@ export const claimCardOwnershipRewardSchema = {
 
 }
 
-// username?: string;
-// type?: 'song';
-
-// songName?: string;
-// songRewardType?: 'first';
-
-// reward?: string;
-// rewardName?: string;
-
-// claimed?: boolean;
-// claimedAt?: Time
-// eligible?: boolean;
-
 
 export const claimMissionRewardSchema = {
     headers: t.Object({ 
@@ -69,25 +56,31 @@ export const claimMissionRewardSchema = {
 
 
 
-// Expected: {
-//     "username": "",
-//     "type": "",
-//     "songName": "",
-//     "songRewardType": "",
-//     "reward": "",
-//     "rewardName": "",
-//     "claimed": false,
-//     "eligible": false
-//   }
-  
-//   Found: {
-//     "claimed": false,
-//     "eligible": true,
-//     "id": "01268923-04fa-4c27-9776-6ea4f5d247be",
-//     "reward": "1000",
-//     "rewardName": "First time completing No Doubt",
-//     "songName": "No Doubt",
-//     "songRewardType": "first",
-//     "type": "song",
-//     "username": "nashar4"
-//   }
+
+export const personalMissionSchema = {
+	headers: t.Object({
+		authorization: t.String()
+	}),
+	body: t.Object({
+		name: t.String(),
+		missionType: t.Literal('personal'),
+		description: t.String(),
+		requirement: t.Object({
+			criteria: t.Object({
+				type: t.Union([t.Literal("uniqueSongs"), t.Literal("score")]),
+				value: t.Number(),
+				group: t.Optional(t.String()),
+				description: t.String(),
+				reward: t.Object({
+					name: t.String(),
+					cards: t.Optional(t.Array(t.Any())),
+					beats: t.Optional(t.Number()),
+					amount: t.Number()
+				})
+			})
+		})
+	})
+};
+
+
+
