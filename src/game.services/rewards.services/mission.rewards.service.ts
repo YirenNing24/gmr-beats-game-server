@@ -80,7 +80,6 @@ class RewardService {
 	}
 	
 
-
 	public async getCollectionMissions(token: string): Promise<CollectionMission[]> {
 		const tokenService = new TokenService();
 		try {
@@ -160,7 +159,6 @@ class RewardService {
 	}
 	
 	
-	
 
 	private async updateUserMission(username: string, missionName: string): Promise<void> {
 		const client: MongoClient = await mongoDBClient.connect();
@@ -217,11 +215,6 @@ class RewardService {
 			await client.close(); // Ensure the database connection is closed
 		}
 	}
-	
-
-
-
-	
 	
 
 	private async checkPersonalMissionEligibility(username: string, missionData: PersonalMission): Promise<boolean> {

@@ -12,7 +12,7 @@ import ExperienceService from "../experience.services/experience.service";
 
 //** INTERFACE IMPORT
 import { LevelUpResult } from "../experience.services/experience.interface";
-import RewardService from "../rewards.services/rewards.service";
+import RewardService from "../rewards.services/mission.rewards.service";
 import SoulService from "../soul.services/soul.service";
 
 

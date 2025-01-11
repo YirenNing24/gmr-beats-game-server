@@ -6,7 +6,7 @@ import { getDriver } from '../db/memgraph';
 import { Driver } from 'neo4j-driver';
 
 //** SERVICE IMPORT
-import RewardService from '../game.services/rewards.services/rewards.service';
+import RewardService from '../game.services/rewards.services/mission.rewards.service';
 
 
 //** SCHEMA IMPORT

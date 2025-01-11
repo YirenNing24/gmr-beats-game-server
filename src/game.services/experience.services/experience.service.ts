@@ -96,7 +96,7 @@ constructor(driver?: Driver) {
             if (!result || result.records.length === 0) {
                 throw new ValidationError(`User with username '${username}' not found.`, "");
             }
-dd
+
             return result.records[0].get('u');
         } catch(error: any) {
           console.log(error)
