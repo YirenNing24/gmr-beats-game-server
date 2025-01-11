@@ -85,23 +85,7 @@ export const personalMissionSchema = {
 		authorization: t.String()
 	}),
 	body: t.Object({
-		name: t.String(),
-		missionType: t.Literal('personal'),
-		description: t.String(),
-		requirement: t.Object({
-			criteria: t.Object({
-				type: t.Union([t.Literal("uniqueSongs"), t.Literal("score")]),
-				value: t.Number(),
-				group: t.Optional(t.String()),
-				description: t.String(),
-				reward: t.Object({
-					name: t.String(),
-					cards: t.Optional(t.Array(t.Any())),
-					beats: t.Optional(t.Number()),
-					amount: t.Number()
-				})
-			})
-		})
+		name: t.String()
 	})
 };
 

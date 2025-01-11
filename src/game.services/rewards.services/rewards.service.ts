@@ -100,30 +100,28 @@ class RewardService {
 	}
 
 
-	public async claimPersonalMissionReward(token: string, missionData: PersonalMission): Promise<SuccessMessage> {
+	public async claimPersonalMissionReward(token: string, missionName: {name: string}): Promise<SuccessMessage> {
 		const tokenService = new TokenService();
 		const soulService = new SoulService(this.driver);
-	
+
 		try {
+			const { name } = missionName
+			const username: string = await tokenService.verifyAccessToken(token);
+			const client: MongoClient = await mongoDBClient.connect();
+			const collection = client.db("beats").collection("personalMissions");
+
+
+			const missionData = await collection.findOne({ name }) as unknown as PersonalMission;
+			if (!missionData) {
+				throw new ValidationError("Mission not found", "Mission not found");
+			}
 			// Validate the mission type
 			if (missionData.missionType !== "personal") {
 				throw new ValidationError("Invalid mission type", "Invalid mission type");
 			}
 	
-			// Verify the token and get the username
-			const username: string = await tokenService.verifyAccessToken(token);
-			const client: MongoClient = await mongoDBClient.connect();
-			const collection = client.db("beats").collection("personalMissions");
-	
-			// Retrieve the mission details
-			const { name } = missionData;
-			const personalMission = await collection.findOne({ name }) as unknown as PersonalMission;
-			if (!personalMission) {
-				throw new ValidationError("Mission not found", "Mission not found");
-			}
-	
 			// Check eligibility
-			const eligibility: boolean = await this.checkPersonalMissionEligibility(username, personalMission);
+			const eligibility: boolean = await this.checkPersonalMissionEligibility(username, missionData);
 			if (!eligibility) {
 				throw new ValidationError("User is not eligible for the reward", "User is not eligible for the reward");
 			}
@@ -134,7 +132,7 @@ class RewardService {
 			if (userMissions !== null) {
 				// User has missions recorded; check for duplicates
 				const completedMission = userMissions.completedMissions.find(
-					(mission) => mission.missionName === name
+					(mission) => mission.missionName ===  name 
 				);
 	
 				if (completedMission && completedMission.rewardClaimed) {
@@ -143,7 +141,7 @@ class RewardService {
 			}
 	
 			// Award the reward
-			await this.giveReward(username, personalMission.requirement.criteria.reward, "BEATS");
+			await this.giveReward(username, missionData.requirement.criteria.reward, "BEATS");
 	
 			// Update the user's mission data
 			await this.updateUserMission(username, name);

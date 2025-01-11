@@ -70,10 +70,9 @@ const rewards = (app: Elysia) => {
         const jwtToken: string = authorizationHeader.substring(7);
         const driver: Driver = getDriver();
         const rewardService: RewardService = new RewardService(driver);
+        
         const output = await rewardService.claimPersonalMissionReward(jwtToken, body)
-
-
-
+        return output as SuccessMessage;
      } catch (error: any) {
        console.log(error);
        throw error
@@ -81,11 +80,6 @@ const rewards = (app: Elysia) => {
 
      }, personalMissionSchema
     )
-
-    
- 
-
-
 }
 
 export default rewards
