@@ -278,7 +278,7 @@ class RewardService {
 	}
 
 
-	private async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
+	public async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
 		try{
 			const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
 			const transaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
