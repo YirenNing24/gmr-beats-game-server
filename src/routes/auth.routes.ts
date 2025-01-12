@@ -30,22 +30,22 @@ import { RegistrationResponseJSON } from '../user.services/auth.services.ts/auth
 const auth = (app: Elysia): void => {
 
   app.use(ip())
-  .post('api/login/google', async ({ body }): Promise<AuthenticateReturn> => {
-    try {
-      const { serverToken } = body;
+  // app.post('api/login/google', async ({ body }): Promise<AuthenticateReturn> => {
+  //   try {
+  //     const { serverToken } = body;
   
-      const driver: Driver = getDriver();
-      const authService: AuthService = new AuthService(driver);
-      const output: AuthenticateReturn | ValidationError = await authService.googleLogin(serverToken);
+  //     const driver: Driver = getDriver();
+  //     const authService: AuthService = new AuthService(driver);
+  //     const output: AuthenticateReturn | ValidationError = await authService.googleLogin(serverToken);
   
-      return output as AuthenticateReturn;
-    } catch (error: any) {
-      return error;
-    }
-      }, { body: t.Object({ serverToken: t.String() }) 
-  })
+  //     return output as AuthenticateReturn;
+  //   } catch (error: any) {
+  //     return error;
+  //   }
+  //     }, { body: t.Object({ serverToken: t.String() }) 
+  // })
 
-  .post('/api/login/beats', async ({ body }): Promise<AuthenticateReturn> => {
+  app.post('/api/login/beats', async ({ body }): Promise<AuthenticateReturn> => {
     try {
         const { username, password } = body
         const driver: Driver = getDriver(); 
@@ -57,7 +57,8 @@ const auth = (app: Elysia): void => {
     } catch (error: any) {
       return error
     }
-  }, beatsLoginSchema)
+    }, beatsLoginSchema
+  )
 
   .post('/api/validate-session/beats', async ({ headers }): Promise<AuthenticateReturn> => {
     try {
