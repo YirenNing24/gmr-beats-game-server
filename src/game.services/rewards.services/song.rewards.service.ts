@@ -11,7 +11,6 @@ class SongRewardService {
     public async classicSongReward(apiKey: string, score: ClassicScoreStats): Promise<number> {
 		const tokenService: TokenService = new TokenService();
 		try {
-			// Verify the API key
 			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
 			if (!isAuthorized) {
 				throw new Error("Unauthorized");
@@ -43,7 +42,6 @@ class SongRewardService {
 			var beatsRewardAmount: number = Math.round(reward)
 			this.sendBeatsReward(score.username, beatsRewardAmount)
 
-			// Round the reward to 2 decimal places for precision
 			return beatsRewardAmount;
 		} catch (error: any) {
 		  console.error("Error calculating song reward:", error);
