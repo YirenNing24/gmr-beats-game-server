@@ -2,7 +2,7 @@ import TokenService from "../../user.services/token.services/token.service";
 import { ClassicScoreStats } from "../leaderboard.services/leaderboard.interface";
 
 
-class SongRewards {
+class SongRewardService {
 
     public async classicSongReward(apiKey: string, score: ClassicScoreStats): Promise<number> {
 		const tokenService: TokenService = new TokenService();
@@ -54,4 +54,4 @@ class SongRewards {
     }
 
 
-export default SongRewards
+export default SongRewardService

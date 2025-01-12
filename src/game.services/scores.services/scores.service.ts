@@ -14,6 +14,8 @@ import ExperienceService from "../experience.services/experience.service";
 import { LevelUpResult } from "../experience.services/experience.interface";
 import RewardService from "../rewards.services/mission.rewards.service";
 import SoulService from "../soul.services/soul.service";
+import SongRewards from "../rewards.services/song.rewards.service";
+import SongRewardService from "../rewards.services/song.rewards.service";
 
 
 
@@ -27,6 +29,7 @@ class ScoreService {
     //** BEATS SERVER EXCLUSIVE SERVICE */
     public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
 		const tokenService: TokenService = new TokenService();
+		const songRewardService: SongRewardService = new SongRewardService();
 		try {
 			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
 
@@ -46,8 +49,9 @@ class ScoreService {
 
 			// Calculate experience gain
 			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
+			const beatsReward: number  = await songRewardService.classicSongReward(apiKey, score);
 
-
+			experienceGain.beatsReward = beatsReward
 			return experienceGain;	
 		} catch (error: any) {
 			console.error("Error saving classic score:", error);

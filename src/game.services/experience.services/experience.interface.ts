@@ -42,5 +42,6 @@ export interface LevelUpResult {
     currentLevel: number;
     currentExperience: number;
     experienceGained: number;
-    stats: PlayerStats
+    beatsReward?: number;
+    stats: PlayerStats;
 }
