@@ -12,6 +12,7 @@ import { CHAIN, MISCELLANEOUS_ITEMS_CONTRACT } from "../../config/constants";
 import ValidationError from "../../outputs/validation.error";
 import { SuccessMessage } from "../../outputs/success.message";
 import EnergyService from "./energy.service";
+import { EnergyBottleMetadata, EnergyBottleNFT } from "./energy.interface";
 
 
 
@@ -104,8 +105,54 @@ class EnergyItems {
         throw error
       }
      }
-  
 
-  }
+
+     public async getEnergyBottles(token: string): Promise<EnergyBottleNFT> {
+      const tokenService: TokenService = new TokenService();
+      const driver = getDriver();
+      const walletService: WalletService = new WalletService(driver);
+    
+      try {
+        const username: string = await tokenService.verifyAccessToken(token);
+        const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
+    
+        // Fetch owned energy bottles
+        const energyBottlesBasic = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, MISCELLANEOUS_ITEMS_CONTRACT)).result;
+    
+        // Find energy bottle with metadata id "0"
+        const energyBottle = energyBottlesBasic.find(
+          (item) => item.metadata.id === "0"
+        ) as unknown as EnergyBottleNFT;
+    
+        // If no energy bottle or insufficient quantity
+        if (!energyBottle || BigInt(energyBottle.quantityOwned ?? "0") < 1n) {
+          const energyBottleBasic: EnergyBottleMetadata = {
+            name: "Basic Energy Bottle",
+            description: "A basic energy bottle that recharges 5 energy points.",
+            rechargeAmount: "5",
+            tier: "Basic",
+          };
+    
+          const energyBottleNFT: EnergyBottleNFT = {
+            metadata: energyBottleBasic,
+            owner: smartWalletAddress,
+            type: "ERC1155",
+            supply: "1",
+            quantityOwned: "0",
+          };
+    
+          return energyBottleNFT;
+        }
+    
+        // Return existing energy bottle
+        return energyBottle;
+    
+      } catch (error: any) {
+        console.error("Error fetching energy bottles:", error);
+        throw error;
+      }
+     }
+    
+}
 
 export default EnergyItems
