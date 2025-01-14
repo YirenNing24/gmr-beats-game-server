@@ -1,8 +1,11 @@
 //** KEYDB IMPORTS
+import keydb from "../../db/keydb.client";
+
+//** MEMGRAPH IMPORT
 import { Driver, ManagedTransaction, QueryResult, Session } from "neo4j-driver-core";
 
 //** SERVICE IMPORTS
-import keydb from "../../db/keydb.client";
+
 import TokenService from "../../user.services/token.services/token.service";
 
 class EnergyService {
@@ -12,8 +15,7 @@ class EnergyService {
 	constructor(driver?: Driver) {
 		this.driver = driver;
 	}
-
-
+	
 	public async getPlayerEnergyBeats(username: string): Promise<{ energy: number; timeUntilNextRecharge: number | null; maxEnergy: number }> {
 		try {
 		// Ensure player energy data exists
@@ -103,7 +105,7 @@ class EnergyService {
 	}
 
 	// Private helper function to get player level from Neo4j
-	private async getMaxEnergy(username: string): Promise<number> {
+	public async getMaxEnergy(username: string): Promise<number> {
 		const session: Session | undefined = this.driver?.session();
 		let level: number = 1;
 
@@ -122,7 +124,6 @@ class EnergyService {
 			}
 		} catch (error: any) {
 			console.error("Error fetching player level from Neo4j:", error);
-			throw error;
 		} finally {
 			await session?.close();
 		}

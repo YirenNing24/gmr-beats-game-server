@@ -1,0 +1,111 @@
+//** MEMGRAPH IMPORT
+import { Driver, ManagedTransaction, QueryResult, Session } from "neo4j-driver-core";
+
+//** KEYDB IMPORTS
+import keydb from "../../db/keydb.client";
+
+//** SERVICE IMPORT
+import TokenService from "../../user.services/token.services/token.service"
+import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
+import { getDriver } from "../../db/memgraph";
+import { CHAIN, MISCELLANEOUS_ITEMS_CONTRACT } from "../../config/constants";
+import ValidationError from "../../outputs/validation.error";
+import { SuccessMessage } from "../../outputs/success.message";
+import EnergyService from "./energy.service";
+
+
+
+class EnergyItems {
+  private driver?: Driver;
+
+	constructor(driver?: Driver) {
+		this.driver = driver;
+	}
+
+    public async rechargeEnergy(token: string) {
+      const driver: Driver = getDriver();
+        const tokenSerivce: TokenService = new TokenService();
+        const walletService: WalletService = new WalletService(driver);
+        
+        try {
+
+          const username: string = await tokenSerivce.verifyAccessToken(token);
+          const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
+          await this.checkEnergyItem(smartWalletAddress);
+          await this.addEnergy(username);
+          
+          return new SuccessMessage("Energy recharged successfully");
+        } catch(error: any) {
+          console.log(error)
+          throw error
+        }
+     }
+
+
+    private async checkEnergyItem(smartWalletAddress: string) {
+      try {
+          const { result: ownedEnergyItems } = await engine.erc1155.getOwned(
+              smartWalletAddress,
+              CHAIN,
+              MISCELLANEOUS_ITEMS_CONTRACT
+          );
+  
+          const energyItem = ownedEnergyItems.find(item => item.metadata.id === "0");
+  
+          if (!energyItem || BigInt(energyItem.quantityOwned ?? "0") < 1n) {
+            throw new ValidationError("No energy items owned", "No energy items owned");
+        }
+  
+        await this.useEnergyItem(smartWalletAddress);
+      } catch (error: any) {
+          console.error("Error checking energy item:", error);
+          throw error
+      }
+     }
+
+
+    private async useEnergyItem(smartWalletAddress: string) {
+      try {
+
+        const requestBody = { tokenId: "0", amount: "1"}
+        const transaction = await engine.erc1155.burn(CHAIN, MISCELLANEOUS_ITEMS_CONTRACT, smartWalletAddress, requestBody);
+
+        let status = await engine.transaction.status(transaction.result.queueId);
+  
+        // Wait for the transaction to be mined
+        while (status.result.minedAt === null) {
+          await new Promise((resolve) => setTimeout(resolve, 500)); 
+          status = await engine.transaction.status(transaction.result.queueId);
+        };
+      } catch(error: any) {
+        console.log(error)
+        throw error
+      }
+        
+     }
+
+
+    private async addEnergy(username: string) {
+      try {
+        const driver: Driver = getDriver();
+        const energyService: EnergyService = new EnergyService(driver);
+        const BASE_MAX_ENERGY: number = 15;
+	
+        const playerLevel: number = await energyService.getMaxEnergy(username);
+        const MAX_ENERGY: number = BASE_MAX_ENERGY + playerLevel;
+
+        await keydb.HSET(`player:${username}`, {
+          currentEnergy: MAX_ENERGY,
+          lastEnergyUpdate: Date.now()
+        });
+
+      } catch(error: any) {
+        console.log(error)
+        throw error
+      }
+     }
+  
+
+  }
+
+export default EnergyItems
