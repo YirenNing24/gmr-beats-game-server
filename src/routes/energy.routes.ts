@@ -33,7 +33,7 @@ const energy = (app: Elysia): void => {
     )
 
 
-    app.post('/api/energy-drinks/get', async ({ headers }): Promise<EnergyBottleNFT[]> => {
+    .post('/api/energy-drinks/get', async ({ headers }): Promise<EnergyBottleNFT[]> => {
       try {
         const authorizationHeader = headers.authorization;
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -43,6 +43,7 @@ const energy = (app: Elysia): void => {
 
           const energyItemService: EnergyItemsService = new EnergyItemsService(); 
           const result: EnergyBottleNFT[] = await energyItemService.getEnergyDrinks(jwtToken);
+          console.log(result);
 
           return result
       } catch (error: any) {
