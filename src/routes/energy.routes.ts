@@ -33,7 +33,7 @@ const energy = (app: Elysia): void => {
     )
 
 
-    .post('/api/energy-drinks/get', async ({ headers }): Promise<EnergyBottleNFT[]> => {
+    .get('/api/energy-drinks/get', async ({ headers }): Promise<EnergyBottleNFT[]> => {
       try {
         const authorizationHeader = headers.authorization;
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
