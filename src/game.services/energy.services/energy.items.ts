@@ -16,7 +16,7 @@ import { EnergyBottleMetadata, EnergyBottleNFT } from "./energy.interface";
 
 
 
-class EnergyItems {
+class EnergyItemsService {
   private driver?: Driver;
 
 	constructor(driver?: Driver) {
@@ -107,7 +107,7 @@ class EnergyItems {
      }
 
 
-     public async getEnergyBottles(token: string): Promise<EnergyBottleNFT> {
+     public async getEnergyDrinks(token: string): Promise<EnergyBottleNFT> {
       const tokenService: TokenService = new TokenService();
       const driver = getDriver();
       const walletService: WalletService = new WalletService(driver);
@@ -155,4 +155,4 @@ class EnergyItems {
     
 }
 
-export default EnergyItems
+export default EnergyItemsService

@@ -10,6 +10,9 @@ import EnergyService from '../game.services/energy.services/energy.service';
 
 //** SCHEMA IMPORT
 import { useEnergySchema } from '../game.services/energy.services/energy.schema';
+import EnergyItemsService from '../game.services/energy.services/energy.items';
+import { authorizationBearerSchema } from './route.schema/schema.auth';
+import { EnergyBottleNFT } from '../game.services/energy.services/energy.interface';
 
 const energy = (app: Elysia): void => {
 
@@ -28,6 +31,28 @@ const energy = (app: Elysia): void => {
         }
       }, useEnergySchema
     )
+
+
+    app.post('/api/energy-drinks/get', async ({ headers }): Promise<EnergyBottleNFT> => {
+      try {
+        const authorizationHeader = headers.authorization;
+        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+            throw new Error('Bearer token not found in Authorization header');
+        }
+        const jwtToken: string = authorizationHeader.substring(7);
+
+          const energyItemService: EnergyItemsService = new EnergyItemsService(); 
+          const result: EnergyBottleNFT = await energyItemService.getEnergyDrinks(jwtToken);
+
+          return result
+      } catch (error: any) {
+        console.log(error)
+        throw error
+      }
+    }, authorizationBearerSchema
+  )
+
+
 }
 
 export default energy
