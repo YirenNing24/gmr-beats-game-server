@@ -107,7 +107,7 @@ class EnergyItemsService {
      }
 
 
-     public async getEnergyDrinks(token: string): Promise<EnergyBottleNFT> {
+     public async getEnergyDrinks(token: string): Promise<EnergyBottleNFT[]> {
       const tokenService: TokenService = new TokenService();
       const driver = getDriver();
       const walletService: WalletService = new WalletService(driver);
@@ -141,11 +141,11 @@ class EnergyItemsService {
             quantityOwned: "0",
           };
     
-          return energyBottleNFT;
+          return [energyBottleNFT];
         }
     
         // Return existing energy bottle
-        return energyBottle;
+        return [energyBottle];
     
       } catch (error: any) {
         console.error("Error fetching energy bottles:", error);
