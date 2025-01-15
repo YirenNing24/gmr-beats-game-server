@@ -31,14 +31,12 @@ class InventoryService {
         try {
             const tokenService: TokenService = new TokenService();
     
-            // Step 1: Get the username from the token
             const userName: string = await tokenService.verifyAccessToken(token);
-    
-            // Step 2: Fetch inventory data
             const { smartWalletAddress, inventoryData } = await this.getInventoryData(userName);
     
-            // Step 3: Get equipped items
             const equipped = await this.getEquippedItems(inventoryData);
+
+            console.log("equipped??? ", equipped);
     
             // Step 4: Fetch owned cards
             const ownedCards = await this.getOwnedCards(smartWalletAddress);
