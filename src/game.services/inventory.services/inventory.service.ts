@@ -38,7 +38,7 @@ class InventoryService {
             const { smartWalletAddress, inventoryData } = await this.getInventoryData(userName);
     
             // Step 3: Get equipped items
-            const equipped = this.getEquippedItems(inventoryData);
+            const equipped = await this.getEquippedItems(inventoryData);
     
             // Step 4: Fetch owned cards
             const ownedCards = await this.getOwnedCards(smartWalletAddress);
@@ -86,9 +86,12 @@ class InventoryService {
     }
     
     // Helper method to get equipped items
-    private getEquippedItems(inventoryData: Record<string, any>): string[] {
+    private async getEquippedItems(inventoryData: Record<string, any>): Promise<string[]> {
+        console.log(inventoryData)
+
+
         return Object.values(inventoryData)
-            .filter((item: any) => item.slot && item.slot !== "")
+            .filter((item: CardMetaData) => item.slot && item.slot !== "")
             .map((item: any) => item.tokenId);
     }
     
@@ -137,7 +140,6 @@ class InventoryService {
             
     
             const smartWalletAddress: string = await walletService.getSmartWalletAddress(userName);
-            console.log("meron or wala: ", smartWalletAddress)
     
             // Iterate over each item in the updateInventoryData array
             for (const item of updateInventoryData) {
@@ -228,15 +230,12 @@ class InventoryService {
                 throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
             }
     
-            console.log("Eshaaa: ", updateData);
             // Execute the update query
             await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(`MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
                     SET i.${slot} = $updateData`, { username, updateData,})
             );
 
-
-            
             await session?.close();
             console.log(`Inventory for ${group} updated: ${slot} set successfully.`);
         } catch (error: any) {
