@@ -207,8 +207,6 @@ class InventoryService {
     private async updateInventoryDB(groupName: string, username: string, slot: string, updateData: UpdateInventoryData): Promise<void> {
         const session: Session | undefined = this.driver?.session();
         try {
-            
-
             // Handle the case where the group name is X:IN
             let group: string = groupName;
             if (groupName === "X:IN") {
@@ -230,31 +228,22 @@ class InventoryService {
                 throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
             }
     
-            // Construct the Cypher query to update the specific slot dynamically
-            const query = `
-                MATCH (u:User {username: $username})-[:INVENTORY]->(i:${groupName})
-                SET i.${slot} = $updateData
-            `;
-            
-
-
             console.log("Eshaaa: ", updateData);
             // Execute the update query
-            await session?.executeWrite((tx: ManagedTransaction) =>
-                tx.run(query, {
-                    username,
-                    updateData,
-                })
+            const transaction = await session?.executeWrite((tx: ManagedTransaction) =>
+                tx.run(`MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
+                    SET i.${slot} = $updateData`, { username, updateData,})
             );
-    
+
+
+            
+            await session?.close();
             console.log(`Inventory for ${groupName} updated: ${slot} set successfully.`);
         } catch (error: any) {
             console.error("Error updating inventory in database:", error);
             throw error;
-        } finally {
-
-            await session?.close();
         }
+
     }
 
 
