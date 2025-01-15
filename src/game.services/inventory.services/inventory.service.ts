@@ -33,15 +33,10 @@ class InventoryService {
     
             const userName: string = await tokenService.verifyAccessToken(token);
             const { smartWalletAddress, inventoryData } = await this.getInventoryData(userName);
-    
-            const equipped = await this.getEquippedItems(inventoryData);
 
-            console.log("equipped??? ", equipped);
-    
-            // Step 4: Fetch owned cards
-            const ownedCards = await this.getOwnedCards(smartWalletAddress);
-    
-            // Step 5: Categorize owned cards
+            const ownedCards: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
+            const equipped = await this.getEquippedItems(inventoryData, ownedCards);
+
             return this.categorizeCards(ownedCards, equipped);
         } catch (error: any) {
             console.error("Error opening user inventory:", error);
@@ -80,19 +75,43 @@ class InventoryService {
         const irohmInventoryData = result.records[0].get("r").properties;
 
         const inventoryData = {xinInventoryData, greatGuysInventoryData, icuInventoryData, irohmInventoryData};
-        console.log(inventoryData);
 
-
-    
         return { smartWalletAddress, inventoryData };
     }
     
     // Helper method to get equipped items
-    private async getEquippedItems(inventoryData: Record<string, any>): Promise<string[]> {
-        return Object.values(inventoryData)
-            .filter((item: CardMetaData) => item.slot && item.slot !== "")
-            .map((item: any) => item.tokenId);
+    private async getEquippedItems(inventoryData: Record<string, any>, ownedCards: InventoryCardData[]): Promise<InventoryCardData[]> {
+        const equippedCards: InventoryCardData[] = [];
+    
+        for (const groupKey of Object.keys(inventoryData)) {
+            const group = inventoryData[groupKey];
+    
+            // Check each item in the group
+            for (const itemKey of Object.keys(group)) {
+                const inventoryItem = group[itemKey];
+    
+                // Skip items without a slot or empty slot
+                if (!inventoryItem.slot || inventoryItem.slot === "") {
+                    continue;
+                }
+    
+                // Compare equipped inventory items with owned cards
+                const matchedCard = ownedCards.find(card => {
+                    // Match based on tokenId and contractAddress
+                    return card.tokenId === inventoryItem.tokenId &&
+                        card.contractAddress === inventoryItem.contractAddress;
+                });
+    
+                // If a match is found, add it to the equipped array
+                if (matchedCard) {
+                    equippedCards.push(matchedCard);
+                }
+            }
+        }
+    
+        return equippedCards;
     }
+    
     
     // Helper method to fetch owned cards
     private async getOwnedCards(smartWalletAddress: string): Promise<InventoryCardData[]> {
@@ -108,22 +127,34 @@ class InventoryService {
     }
     
     // Helper method to categorize cards
-    private categorizeCards(ownedCards: InventoryCardData[], equipped: string[]): InventoryCards {
+    private categorizeCards(ownedCards: InventoryCardData[], equippedCards: InventoryCardData[]): InventoryCards {
+        // Arrays to store categorized cards
         const ownedAndInventory: InventoryCardData[] = [];
         const ownedAndEquipped: InventoryCardData[] = [];
     
-        ownedCards.forEach(card => {
-            const tokenId: string = card.metadata.id; // Ensure correct property
+        // Get tokenIds for equipped cards for easy comparison
+        const equippedTokenIds: Set<string> = new Set(
+            equippedCards.map(card => Object.values(card)[0].tokenId)
+        );
     
-            if (equipped.includes(tokenId)) {
-                ownedAndEquipped.push({ [card.metadata.uri]: { ...card.metadata } });
+        // Categorize each owned card
+        ownedCards.forEach(card => {
+            const metadata = Object.values(card)[0]; // Extract metadata from the card
+            const tokenId = metadata.tokenId; // Ensure correct property
+    
+            // Check if the card is equipped
+            if (equippedTokenIds.has(tokenId)) {
+                // Add to equipped array
+                ownedAndEquipped.push({ [metadata.uri]: { ...metadata } });
             } else {
-                ownedAndInventory.push({ [card.metadata.uri]: { ...card.metadata } });
+                // Add to inventory array
+                ownedAndInventory.push({ [metadata.uri]: { ...metadata } });
             }
         });
     
         return [ownedAndInventory, ownedAndEquipped];
     }
+    
     
     
     
