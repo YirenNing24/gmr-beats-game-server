@@ -43,7 +43,6 @@ const energy = (app: Elysia): void => {
 
           const energyItemService: EnergyItemsService = new EnergyItemsService(); 
           const result: EnergyBottleNFT[] = await energyItemService.getEnergyDrinks(jwtToken);
-          console.log(result);
 
           return result
       } catch (error: any) {

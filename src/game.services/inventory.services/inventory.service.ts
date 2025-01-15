@@ -37,7 +37,8 @@ class InventoryService {
             const ownedCards: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
             const equipped = await this.getEquippedItems(inventoryData, ownedCards);
 
-            console.log("equipped: ", equipped);
+            console.log("inventory data: ", inventoryData);
+            console.log("owned cards: ", ownedCards);
 
             return this.categorizeCards(ownedCards, equipped);
         } catch (error: any) {
