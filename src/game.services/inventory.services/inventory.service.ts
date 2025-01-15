@@ -35,6 +35,7 @@ class InventoryService {
             const { smartWalletAddress, inventoryData } = await this.getInventoryData(userName);
     
             const equipped = await this.getEquippedItems(inventoryData);
+            console.log("inventoryData??? ", inventoryData);
 
             console.log("equipped??? ", equipped);
     
@@ -85,9 +86,6 @@ class InventoryService {
     
     // Helper method to get equipped items
     private async getEquippedItems(inventoryData: Record<string, any>): Promise<string[]> {
-        console.log("crying: ", inventoryData)
-
-
         return Object.values(inventoryData)
             .filter((item: CardMetaData) => item.slot && item.slot !== "")
             .map((item: any) => item.tokenId);
