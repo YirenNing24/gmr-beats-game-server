@@ -93,7 +93,6 @@ class InventoryService {
     private async getEquippedItems(inventoryData: Record<string, any>, ownedCards: InventoryCardData[]): Promise<InventoryCardData[]> {
         const equippedCards: InventoryCardData[] = [];
     
-        // Iterate over groups in inventoryData
         for (const groupKey of Object.keys(inventoryData)) {
             const group = inventoryData[groupKey];
     
@@ -101,15 +100,14 @@ class InventoryService {
             for (const itemKey of Object.keys(group)) {
                 const inventoryItem = group[itemKey];
     
-                // Skip items without a valid slot
+                // Skip items without a slot or empty slot
                 if (!inventoryItem.slot || inventoryItem.slot === "") {
                     continue;
                 }
     
                 // Compare equipped inventory items with owned cards
                 const matchedCard = ownedCards.find(card => {
-                    // Get metadata for the card
-                    const metadata = Object.values(card)[0];
+                    const metadata = card.metadata; // Extract metadata from the card
     
                     // Match based on tokenId and contractAddress
                     return metadata.tokenId === inventoryItem.tokenId &&
@@ -118,8 +116,9 @@ class InventoryService {
     
                 // If a match is found, add it to the equipped array
                 if (matchedCard) {
+                    // Ensure equipped card format matches InventoryCardData
                     equippedCards.push({
-                        [matchedCard.metadata.uri]: { ...matchedCard.metadata },
+                        [matchedCard.metadata.uri]: matchedCard.metadata,
                     });
                 }
             }
@@ -127,6 +126,7 @@ class InventoryService {
     
         return equippedCards;
     }
+    
     
     
     
