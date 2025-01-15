@@ -230,7 +230,7 @@ class InventoryService {
     
             console.log("Eshaaa: ", updateData);
             // Execute the update query
-            const transaction = await session?.executeWrite((tx: ManagedTransaction) =>
+            await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(`MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
                     SET i.${slot} = $updateData`, { username, updateData,})
             );
