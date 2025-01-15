@@ -238,7 +238,7 @@ class InventoryService {
 
             
             await session?.close();
-            console.log(`Inventory for ${groupName} updated: ${slot} set successfully.`);
+            console.log(`Inventory for ${group} updated: ${slot} set successfully.`);
         } catch (error: any) {
             console.error("Error updating inventory in database:", error);
             throw error;
