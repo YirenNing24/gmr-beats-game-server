@@ -87,7 +87,7 @@ class InventoryService {
     
     // Helper method to get equipped items
     private async getEquippedItems(inventoryData: Record<string, any>): Promise<string[]> {
-        console.log(inventoryData)
+        console.log("crying: ", inventoryData)
 
 
         return Object.values(inventoryData)
@@ -224,8 +224,6 @@ class InventoryService {
                 )
             );
 
-            console.log("nashar? ", result?.records[0].get("i").properties);
-    
             if (!result || result.records.length === 0) {
                 throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
             }
@@ -453,8 +451,6 @@ class InventoryService {
     // Updates inventory data for a user based on the provided access token and update information.
     public async openGroupCardEquipped(apiKey: string, groupName: string, username: string) {
         try {
-
-
             const tokenService: TokenService = new TokenService();
             const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
 
@@ -477,7 +473,6 @@ class InventoryService {
 
             // Process the result and extract the equipped cards
             const cards: CardMetaData[] = result?.records.map((record) => record.get('c').properties) || [];
-            console.log(cards)
             // Close the session
             await session?.close();
     
