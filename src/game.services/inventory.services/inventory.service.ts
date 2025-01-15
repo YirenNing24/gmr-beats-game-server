@@ -129,11 +129,15 @@ class InventoryService {
     // Updates inventory data for a user based on the provided access token and update information.
     public async equipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
         try {
-            const walletService: WalletService = new WalletService();
+            const walletService: WalletService = new WalletService(this.driver);
+
+            
             const tokenService: TokenService = new TokenService();
             const userName: string = await tokenService.verifyAccessToken(token);
+            
     
             const smartWalletAddress: string = await walletService.getSmartWalletAddress(userName);
+            console.log("meron or wala: ", smartWalletAddress)
     
             // Iterate over each item in the updateInventoryData array
             for (const item of updateInventoryData) {
