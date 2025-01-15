@@ -37,6 +37,8 @@ class InventoryService {
             const ownedCards: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
             const equipped = await this.getEquippedItems(inventoryData, ownedCards);
 
+            console.log("equipped: ", equipped);
+
             return this.categorizeCards(ownedCards, equipped);
         } catch (error: any) {
             console.error("Error opening user inventory:", error);
