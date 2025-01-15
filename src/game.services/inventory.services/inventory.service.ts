@@ -35,7 +35,6 @@ class InventoryService {
             const { smartWalletAddress, inventoryData } = await this.getInventoryData(userName);
     
             const equipped = await this.getEquippedItems(inventoryData);
-            console.log("inventoryData??? ", inventoryData);
 
             console.log("equipped??? ", equipped);
     
@@ -74,12 +73,16 @@ class InventoryService {
         }
     
         const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
-        const inventoryData: Record<string, any> = {
-            ...result.records[0].get("x"),
-            ...result.records[0].get("g"),
-            ...result.records[0].get("i"),
-            ...result.records[0].get("r"),
-        };
+
+        const xinInventoryData = result.records[0].get("x").properties;
+        const greatGuysInventoryData = result.records[0].get("g").properties;
+        const icuInventoryData = result.records[0].get("i").properties;
+        const irohmInventoryData = result.records[0].get("r").properties;
+
+        const inventoryData = {xinInventoryData, greatGuysInventoryData, icuInventoryData, irohmInventoryData};
+        console.log(inventoryData);
+
+
     
         return { smartWalletAddress, inventoryData };
     }
