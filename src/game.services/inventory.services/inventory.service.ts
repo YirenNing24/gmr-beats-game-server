@@ -224,7 +224,7 @@ class InventoryService {
                 )
             );
 
-            console.log("nashar? ", result);
+            console.log("nashar? ", result?.records[0].get("i").properties);
     
             if (!result || result.records.length === 0) {
                 throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
