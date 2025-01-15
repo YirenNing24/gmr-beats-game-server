@@ -205,8 +205,9 @@ class InventoryService {
 
     // Updates the inventory database with the provided update data.
     private async updateInventoryDB(groupName: string, username: string, slot: string, updateData: UpdateInventoryData): Promise<void> {
+        const session: Session | undefined = this.driver?.session();
         try {
-            const session: Session | undefined = this.driver?.session();
+            
 
             // Handle the case where the group name is X:IN
             let group: string = groupName;
@@ -222,6 +223,8 @@ class InventoryService {
                     `, { username }
                 )
             );
+
+            console.log("nashar? ", result);
     
             if (!result || result.records.length === 0) {
                 throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
@@ -249,7 +252,7 @@ class InventoryService {
             console.error("Error updating inventory in database:", error);
             throw error;
         } finally {
-            const session: Session | undefined = this.driver?.session();
+
             await session?.close();
         }
     }
