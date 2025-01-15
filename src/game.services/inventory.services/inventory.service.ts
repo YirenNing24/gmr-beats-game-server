@@ -30,65 +30,100 @@ class InventoryService {
     public async cardInventoryOpen(token: string): Promise<InventoryCards> {
         try {
             const tokenService: TokenService = new TokenService();
+    
+            // Step 1: Get the username from the token
             const userName: string = await tokenService.verifyAccessToken(token);
     
-            const session: Session | undefined = this.driver?.session();
+            // Step 2: Fetch inventory data
+            const { smartWalletAddress, inventoryData } = await this.getInventoryData(userName);
     
-            const result: QueryResult | undefined = await session?.executeRead(tx =>
-                tx.run(
-                    `
-                    MATCH (u:User {username: $userName})-[:INVENTORY]->(x:X_IN)
-                    MATCH (u)-[:INVENTORY]->(g:GREATGUYS)
-                    MATCH (u)-[:INVENTORY]->(i:ICU)
-                    MATCH (u)-[:INVENTORY]->(r:IROHM)
-                    RETURN x, g, i, r, u.smartWalletAddress as smartWalletAddress
-                    `,
-                    { userName }
-                )
-            );
+            // Step 3: Get equipped items
+            const equipped = this.getEquippedItems(inventoryData);
     
-            await session?.close();
+            // Step 4: Fetch owned cards
+            const ownedCards = await this.getOwnedCards(smartWalletAddress);
     
-            // If no records found, return empty arrays
-            if (!result || result.records.length === 0) {
-                return [[], []];
-            }
-    
-            const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
-            const inventoryData: Record<string, any> = {
-                ...result.records[0].get("x"),
-                ...result.records[0].get("g"),
-                ...result.records[0].get("i"),
-                ...result.records[0].get("r"),
-            };
-    
-            const equipped: string[] = Object.values(inventoryData)
-                .filter((item: any) => item.slot && item.slot !== "")
-                .map((item: any) => item.tokenId);
-    
-            const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS)).result as unknown as InventoryCardData[];
-    
-            // Initialize arrays to store cards with different relationships
-            const ownedAndInventory: InventoryCardData[] = [];
-            const ownedAndEquipped: InventoryCardData[] = [];
-    
-            // Iterate over ownedCards and check against equipped
-            ownedCards.forEach(card => {
-                const tokenId: string = card.metadata.id; // Ensure correct property
-    
-                if (equipped.includes(tokenId)) {
-                    ownedAndEquipped.push({ [card.metadata.uri]: {...card.metadata} });
-                } else {
-                    ownedAndInventory.push({ [card.metadata.uri]: {...card.metadata} });
-                }
-            });
-    
-            return [ownedAndInventory, ownedAndEquipped] as InventoryCards;
+            // Step 5: Categorize owned cards
+            return this.categorizeCards(ownedCards, equipped);
         } catch (error: any) {
             console.error("Error opening user inventory:", error);
             throw error;
         }
     }
+    
+    // Helper method to fetch inventory data
+    private async getInventoryData(userName: string): Promise<{ smartWalletAddress: string; inventoryData: Record<string, any> }> {
+        const session: Session | undefined = this.driver?.session();
+    
+        const result: QueryResult | undefined = await session?.executeRead(tx =>
+            tx.run(
+                `
+                MATCH (u:User {username: $userName})-[:INVENTORY]->(x:X_IN)
+                MATCH (u)-[:INVENTORY]->(g:GREATGUYS)
+                MATCH (u)-[:INVENTORY]->(i:ICU)
+                MATCH (u)-[:INVENTORY]->(r:IROHM)
+                RETURN x, g, i, r, u.smartWalletAddress as smartWalletAddress
+                `,
+                { userName }
+            )
+        );
+    
+        await session?.close();
+    
+        if (!result || result.records.length === 0) {
+            return { smartWalletAddress: "", inventoryData: {} };
+        }
+    
+        const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
+        const inventoryData: Record<string, any> = {
+            ...result.records[0].get("x"),
+            ...result.records[0].get("g"),
+            ...result.records[0].get("i"),
+            ...result.records[0].get("r"),
+        };
+    
+        return { smartWalletAddress, inventoryData };
+    }
+    
+    // Helper method to get equipped items
+    private getEquippedItems(inventoryData: Record<string, any>): string[] {
+        return Object.values(inventoryData)
+            .filter((item: any) => item.slot && item.slot !== "")
+            .map((item: any) => item.tokenId);
+    }
+    
+    // Helper method to fetch owned cards
+    private async getOwnedCards(smartWalletAddress: string): Promise<InventoryCardData[]> {
+        const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS))
+            .result as unknown as InventoryCardData[];
+    
+        // Add contractAddress to each card
+        ownedCards.forEach(card => {
+            card.metadata.contractAddress = EDITION_ADDRESS;
+        });
+    
+        return ownedCards;
+    }
+    
+    // Helper method to categorize cards
+    private categorizeCards(ownedCards: InventoryCardData[], equipped: string[]): InventoryCards {
+        const ownedAndInventory: InventoryCardData[] = [];
+        const ownedAndEquipped: InventoryCardData[] = [];
+    
+        ownedCards.forEach(card => {
+            const tokenId: string = card.metadata.id; // Ensure correct property
+    
+            if (equipped.includes(tokenId)) {
+                ownedAndEquipped.push({ [card.metadata.uri]: { ...card.metadata } });
+            } else {
+                ownedAndInventory.push({ [card.metadata.uri]: { ...card.metadata } });
+            }
+        });
+    
+        return [ownedAndInventory, ownedAndEquipped];
+    }
+    
+    
     
     
     // Updates inventory data for a user based on the provided access token and update information.

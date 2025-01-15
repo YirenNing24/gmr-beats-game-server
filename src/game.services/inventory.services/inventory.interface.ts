@@ -74,7 +74,8 @@ export interface CardMetaData {
 
     uri: string;
     owner: string;
-    tokenId: string
+    tokenId: string;
+    contractAddress: string;
     id: string;
     listingId: number;
     cardAddress: string;
