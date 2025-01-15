@@ -46,6 +46,13 @@ class InventoryService {
             throw error;
         }
     }
+    // Esha: {
+    //     contractAddress: "0x7536D6d120C6a7ee50B792b33862A74E6f404589",
+    //     group: "X:IN",
+    //     slot: "Esha",
+    //     tokenId: "21",
+    //     uri: "ipfs://QmUWJRQ4rEhZBCiDw2CDNnC4Ko4coeVy3WgHuMb7wFUaG4/1",
+    //   },
     
     // Helper method to fetch inventory data
     private async getInventoryData(userName: string): Promise<{ smartWalletAddress: string; inventoryData: Record<string, any> }> {
@@ -86,6 +93,7 @@ class InventoryService {
     private async getEquippedItems(inventoryData: Record<string, any>, ownedCards: InventoryCardData[]): Promise<InventoryCardData[]> {
         const equippedCards: InventoryCardData[] = [];
     
+        // Iterate over groups in inventoryData
         for (const groupKey of Object.keys(inventoryData)) {
             const group = inventoryData[groupKey];
     
@@ -93,27 +101,33 @@ class InventoryService {
             for (const itemKey of Object.keys(group)) {
                 const inventoryItem = group[itemKey];
     
-                // Skip items without a slot or empty slot
+                // Skip items without a valid slot
                 if (!inventoryItem.slot || inventoryItem.slot === "") {
                     continue;
                 }
     
                 // Compare equipped inventory items with owned cards
                 const matchedCard = ownedCards.find(card => {
+                    // Get metadata for the card
+                    const metadata = Object.values(card)[0];
+    
                     // Match based on tokenId and contractAddress
-                    return card.tokenId === inventoryItem.tokenId &&
-                        card.contractAddress === inventoryItem.contractAddress;
+                    return metadata.tokenId === inventoryItem.tokenId &&
+                        metadata.contractAddress === inventoryItem.contractAddress;
                 });
     
                 // If a match is found, add it to the equipped array
                 if (matchedCard) {
-                    equippedCards.push(matchedCard);
+                    equippedCards.push({
+                        [matchedCard.metadata.uri]: { ...matchedCard.metadata },
+                    });
                 }
             }
         }
     
         return equippedCards;
     }
+    
     
     
     // Helper method to fetch owned cards
@@ -157,6 +171,7 @@ class InventoryService {
     
         return [ownedAndInventory, ownedAndEquipped];
     }
+    
     
     
     
