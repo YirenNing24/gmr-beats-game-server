@@ -232,7 +232,10 @@ class InventoryService {
                 MATCH (u:User {username: $username})-[:INVENTORY]->(i:${groupName})
                 SET i.${slot} = $updateData
             `;
-    
+            
+
+
+            console.log("Eshaaa: ", updateData);
             // Execute the update query
             await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(query, {
