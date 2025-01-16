@@ -6,7 +6,7 @@ import TokenService from "../../user.services/token.services/token.service";
 import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
 
 //** TYPE INTERFACES
-import { CardMetaData, InventoryCardData , InventoryCards, UpdateInventoryData } from "./inventory.interface";
+import { CardMetaData, InventoryCardData , InventoryCards, UpdateData, UpdateInventoryData } from "./inventory.interface";
 import { checkInventorySizeCypher, openCardUpgradeCypher, unequipItemCypher } from "./inventory.cypher";
 import { StoreCardUpgradeData } from "../store.services/store.interface";
 
@@ -47,16 +47,7 @@ class InventoryService {
             throw error;
         }
     }
-    // Esha: {
-    //     contractAddress: "0x7536D6d120C6a7ee50B792b33862A74E6f404589",
-    //     group: "X:IN",
-    //     slot: "Esha",
-    //     tokenId: "21",
-    //     uri: "ipfs://QmUWJRQ4rEhZBCiDw2CDNnC4Ko4coeVy3WgHuMb7wFUaG4/1",
-    //   },
-    
-    // Helper method to fetch inventory data
-    private async getInventoryData(userName: string): Promise<{ smartWalletAddress: string; inventoryData: Record<string, any> }> {
+    private async getInventoryData(userName: string) {
         const session: Session | undefined = this.driver?.session();
     
         const result: QueryResult | undefined = await session?.executeRead(tx =>
@@ -80,12 +71,12 @@ class InventoryService {
     
         const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
 
-        const xinInventoryData = result.records[0].get("x").properties;
-        const greatGuysInventoryData = result.records[0].get("g").properties;
-        const icuInventoryData = result.records[0].get("i").properties;
-        const irohmInventoryData = result.records[0].get("r").properties;
+        const xinInventoryData: UpdateData = result.records[0].get("x").properties;
+        const greatGuysInventoryData: UpdateData  = result.records[0].get("g").properties;
+        const icuInventoryData: UpdateData  = result.records[0].get("i").properties;
+        const irohmInventoryData: UpdateData  = result.records[0].get("r").properties;
 
-        const inventoryData = {xinInventoryData, greatGuysInventoryData, icuInventoryData, irohmInventoryData};
+        const inventoryData = { xinInventoryData, greatGuysInventoryData, icuInventoryData, irohmInventoryData };
 
         return { smartWalletAddress, inventoryData };
     }
@@ -94,39 +85,38 @@ class InventoryService {
     private async getEquippedItems(inventoryData: Record<string, any>, ownedCards: InventoryCardData[]): Promise<InventoryCardData[]> {
         const equippedCards: InventoryCardData[] = [];
     
+        // Iterate through groups in inventoryData
         for (const groupKey of Object.keys(inventoryData)) {
             const group = inventoryData[groupKey];
     
-            // Check each item in the group
+            // Iterate through items in each group
             for (const itemKey of Object.keys(group)) {
                 const inventoryItem = group[itemKey];
     
-                // Skip items without a slot or empty slot
+                // Skip items without a valid slot
                 if (!inventoryItem.slot || inventoryItem.slot === "") {
                     continue;
                 }
     
                 // Compare equipped inventory items with owned cards
                 const matchedCard = ownedCards.find(card => {
-                    const metadata = card.metadata; // Extract metadata from the card
+                    const metadata = card.metadata;
     
-                    // Match based on tokenId and contractAddress
-                    return metadata.tokenId === inventoryItem.tokenId &&
+                    // Match based on `id` in `ownedCards` and `tokenId` in `inventoryItem`
+                    return metadata.id === inventoryItem.tokenId &&
                         metadata.contractAddress === inventoryItem.contractAddress;
                 });
     
-                // If a match is found, add it to the equipped array
+                // If a match is found, push it to the equippedCards array
                 if (matchedCard) {
-                    // Ensure equipped card format matches InventoryCardData
-                    equippedCards.push({
-                        [matchedCard.metadata.uri]: matchedCard.metadata,
-                    });
+                    equippedCards.push(matchedCard); // Push the entire card object
                 }
             }
         }
     
         return equippedCards;
     }
+    
     
     
     
