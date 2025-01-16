@@ -39,6 +39,7 @@ class InventoryService {
 
             console.log("inventory data: ", inventoryData);
             console.log("owned cards: ", ownedCards);
+            console.log("equipped:", equipped)
 
             return this.categorizeCards(ownedCards, equipped);
         } catch (error: any) {
