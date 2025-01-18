@@ -5,10 +5,11 @@ import Elysia, { t } from "elysia";
 import ServerService from "../user.services/auth.services.ts/server.service";
 import { authorizationBearerSchema } from "./route.schema/schema.auth";
 
+
 const server = (app: Elysia): void => {
     app.ws('/api/ping', {
         // Validate the incoming WebSocket message
-        body: t.String(),
+        body: t.Object({ type: t.String(), timestamp: t.Number() }),
         async message(ws, message) {
             try {
 

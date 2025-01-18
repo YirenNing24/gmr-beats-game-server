@@ -11,14 +11,11 @@ class ServerService {
 		this.websocket = websocket;
 	}
 
-    public async checkLatency(message: string) {
+    public async checkLatency(message: { type: string, timestamp: number }): Promise<void> {
         try {
             const ws = this.websocket;
-            const pingMessage: { type: string, timestamp: number} = JSON.parse(message);
 
-
-            console.log('pingMessage', pingMessage);
-            const { timestamp } = pingMessage
+            const { timestamp } = message
             const serverTimePing = [{ "type": "pong", "timestamp": timestamp }];
 
             const stringifyServerTime: string = JSON.stringify(serverTimePing);
