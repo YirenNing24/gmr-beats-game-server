@@ -5,7 +5,9 @@ import { ElysiaWS } from "elysia/ws";
 interface ServerTimeResponse {
   serverTime: string;
 }
-websocket?: ElysiaWS<any>
+
+interface PongMessage {
+  type: string;
   timestamp: number;
 }
 
