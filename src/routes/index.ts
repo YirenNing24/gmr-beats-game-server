@@ -1,4 +1,4 @@
-// * ROUTE FILES
+//** ROUTE FILES
 import auth from './auth.routes'
 import gacha from './gacha.routes'
 import inventory from './inventory.route'
@@ -12,7 +12,9 @@ import rewards from './rewards.routes'
 import notification from './notification.routes'
 import energy from './energy.routes'
 
+//** WEBSOCKET ROUTE FILES
 import chat from './chat.routes'
+import server from './server.routes'
 
 
 
@@ -30,7 +32,8 @@ const routes = (app: any): void => {
         upgrade,
         rewards,
         notification,
-        energy
+        energy,
+        server
     ].forEach(route => route(app));
 }
 
