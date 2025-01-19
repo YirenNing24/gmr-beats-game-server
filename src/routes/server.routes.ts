@@ -23,7 +23,7 @@ const server = (app: Elysia): void => {
 
                 // Process the latency check
                 serverService.checkLatency(message);
-                ws.close();
+                
             } catch (error: any) {
                 console.error('Error in WebSocket message event:', error);
                 throw error;
