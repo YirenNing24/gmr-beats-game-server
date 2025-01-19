@@ -144,7 +144,8 @@ class AuthService {
                 country: $country,
                 deviceId: $deviceId,
                 inventorySize: 200,
-                soul: ""
+                soul: "",
+                preferredSerer: ""
               })
 
               ${inventoryCypher}
@@ -270,6 +271,8 @@ class AuthService {
                 publicKey: $publicKey,
                 counter: $counter,
                 inventorySize: 200
+                soul: "",
+                preferredSerer: ""
               })
 
 
