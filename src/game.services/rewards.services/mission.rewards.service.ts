@@ -54,24 +54,31 @@ class RewardService {
 			// Enrich missions with eligibility and claim status
 			const enrichedMissions: GetPersonalMission[] = await Promise.all(
 				personalMissions.map(async (mission) => {
-					const eligible: boolean = await this.checkPersonalMissionEligibility(username, mission);
-	
-					// Check if the mission is already completed by the user
 					const completedMission = userMissions?.completedMissions.find(
 						(completed) => completed.missionName === mission.name
 					);
-	
-					return {
-						...mission,
-						elligible: eligible,
-						claimed: eligible && !!completedMission && completedMission.rewardClaimed
-					};
+			
+					if (completedMission && completedMission.rewardClaimed) {
+						// If the mission is already completed and claimed
+						return {
+							...mission,
+							elligible: false, // Already claimed, so not eligible
+							claimed: true    // Reward already claimed
+						};
+					} else {
+						// If not claimed, check for eligibility
+						const eligible: boolean = await this.checkPersonalMissionEligibility(username, mission);
+						return {
+							...mission,
+							elligible: eligible,
+							claimed: false   // Not yet claimed
+						};
+					}
 				})
 			);
+			
+			await client.close();
 
-			console.log(enrichedMissions)
-	
-			await client.close(); // Close the client after the operation
 			return enrichedMissions;
 		} catch (error: any) {
 			console.error("Error fetching personal missions:", error);
