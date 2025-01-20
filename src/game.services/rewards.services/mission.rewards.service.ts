@@ -68,6 +68,8 @@ class RewardService {
 					};
 				})
 			);
+
+			console.log(enrichedMissions)
 	
 			await client.close(); // Close the client after the operation
 			return enrichedMissions;
