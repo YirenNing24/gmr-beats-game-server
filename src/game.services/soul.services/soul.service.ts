@@ -58,10 +58,14 @@ class SoulService {
             let status = await engine.transaction.status(transaction.result.queueId);
   
             // Wait for the transaction to be mined
-            while (status.result.minedAt === null) {
-              await new Promise((resolve) => setTimeout(resolve, 500)); 
-              status = await engine.transaction.status(transaction.result.queueId);
-            };
+			const maxRetries = 60; // Allow 30 seconds (60 * 500ms)
+			let retries = 0;
+	
+			while (status.result.minedAt === null && retries < maxRetries) {
+				await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
+				status = await engine.transaction.status(transaction.result.queueId);
+				retries++;
+			}
 
             await this.saveSoul(username, smartWalletAddress);
 
