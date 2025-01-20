@@ -148,7 +148,7 @@ class RewardService {
 			await this.updateUserMission(username, name);
 	
 			// Update Soul Metadata
-			await soulService.updateSoulMetaData(username, name, "personal");
+			soulService.updateSoulMetaData(username, name, "personal");
 	
 			// Close the database connection
 			await client.close();
@@ -281,24 +281,35 @@ class RewardService {
 
 
 	public async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
-		try{
+		try {
 			const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
 			const transaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
+	
 			let status = await engine.transaction.status(transaction.result.queueId);
-  
-            // Wait for the transaction to be mined
-            while (status.result.minedAt === null) {
-              await new Promise((resolve) => setTimeout(resolve, 500)); 
-              status = await engine.transaction.status(transaction.result.queueId);
-            };
-
+	
+			// Retry loop with timeout
+			const maxRetries = 60; // Allow 30 seconds (60 * 500ms)
+			let retries = 0;
+	
+			while (status.result.minedAt === null && retries < maxRetries) {
+				await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
+				status = await engine.transaction.status(transaction.result.queueId);
+				retries++;
+			}
+	
+			if (status.result.minedAt === null) {
+				throw new Error("Transaction not mined within the expected timeframe.");
+			}
+	
 			const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
 			await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
+	
 		} catch (error: any) {
 			console.error("Error in sendBeatsReward: ", error);
 			throw error;
 		}
 	}
+	
 
 }
 
