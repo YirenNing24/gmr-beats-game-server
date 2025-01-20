@@ -192,8 +192,9 @@ class GoogleService {
                     energy, 
                     uuid: userId, 
                     refreshToken, 
-                    accessToken, message: "You are now logged in", 
-                    success: 'OK', 
+                    accessToken, 
+                    message: "You are now logged in", 
+                    success: 'OK',
                     loginType: 'passkey' } as AuthenticateReturn; 
 
                 // Proceed with post-authentication actions (e.g., logging in the user)

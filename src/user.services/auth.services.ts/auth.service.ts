@@ -221,7 +221,8 @@ class AuthService {
               accessToken,
               message: 'You are now logged in',
               success: 'OK',
-              loginType: 'beats'
+              loginType: 'beats',
+  
 
           } as AuthenticateReturn
       } catch (error: any) {
@@ -376,7 +377,7 @@ class AuthService {
               accessToken,
               refreshToken,
               message: "You are now logged-in",
-              success: "OK", 
+              success: "OK",
               loginType: 'beats',} as ValidateSessionReturn
             } catch (error: any) {
               console.log(error)
