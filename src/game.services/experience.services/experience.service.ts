@@ -54,13 +54,13 @@ constructor(driver?: Driver) {
     private async generateExperience(experienceGained: number, stats: PlayerStats): Promise<LevelUpResult> {
         try {
             const { level, playerExp } = stats;
-            let currentLevel = level;
-            let currentExperience = playerExp + experienceGained;
-    
+            let currentLevel: number = level;
+            let currentExperience: number = playerExp + experienceGained;
+            let requiredExp: number
             // Loop until all experience is consumed or no level-up can occur
             while (true) {
                 const requiredExperience = Math.floor(50 * Math.pow(currentLevel, 2.5));
-    
+                requiredExp = requiredExperience
                 // Check if the user can level up
                 if (currentExperience < requiredExperience) break;
     
@@ -76,7 +76,7 @@ constructor(driver?: Driver) {
             stats.level = currentLevel;
             stats.playerExp = currentExperience;
 
-            
+            console.log(`Current Level: ${currentLevel}, Required Experience: ${requiredExp}, Current Experience: ${currentExperience}`);
     
             // Return the updated level and experience
             return {
