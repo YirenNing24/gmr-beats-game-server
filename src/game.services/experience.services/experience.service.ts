@@ -54,36 +54,36 @@ constructor(driver?: Driver) {
     private async generateExperience(experienceGained: number, stats: PlayerStats): Promise<LevelUpResult> {
         try {
             const { level, playerExp } = stats;
-            let currentLevel = level;
-            let currentExperience = playerExp + experienceGained;
+            let currentLevel: number = level;
+            let currentExperience: number = playerExp + experienceGained;
     
-            // Loop until all experience is consumed
+            // Loop until all experience is consumed or no level-up can occur
             while (currentExperience >= 50 * Math.pow(currentLevel, 2.5)) {
                 // Subtract required experience for the current level
-                currentExperience -= 50 * Math.pow(currentLevel, 2.5);
+                const requiredExperience = 50 * Math.pow(currentLevel, 2.5);
+                currentExperience -= requiredExperience;
+    
                 // Increment level
                 currentLevel++;
             }
     
-            // Check if the player leveled up and adjust current experience
-            if (currentExperience > 0 && currentLevel > level) {
-                currentExperience = experienceGained;
-            } else {
-                currentExperience += experienceGained;
-            }
-            
-            // Update user statistics and save details
+            // Update player statistics
             stats.level = currentLevel;
             stats.playerExp = currentExperience;
-            
     
             // Return the updated level and experience
-            return { currentLevel, currentExperience, experienceGained, stats };
+            return { 
+                currentLevel, 
+                currentExperience, 
+                experienceGained, 
+                stats 
+            };
         } catch (error: any) {
             console.error("Error generating experience:", error);
             throw error;
         }
     }
+    
     //Retrieves details of a user  based on the provided username.
     private async getUserDetails(username: string): Promise<UserData> {
         const session: Session | undefined = this.driver?.session();
@@ -115,7 +115,7 @@ constructor(driver?: Driver) {
             }
     
             // Execute a write transaction to update the user's playerStats as a whole object
-            const result: QueryResult | undefined = await session.executeWrite((tx: ManagedTransaction) =>
+            await session.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
                     `
                     MATCH (u:User {username: $username}) 
