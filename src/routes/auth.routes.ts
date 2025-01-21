@@ -71,7 +71,7 @@ const auth = (app: Elysia): void => {
       const driver: Driver = getDriver();
       const authService: AuthService = new AuthService(driver);
 
-      const output: ValidateSessionReturn = await authService.validateSession(jwtToken);
+      const output: ValidateSessionReturn | null = await authService.validateSession(jwtToken);
       return output as ValidateSessionReturn;
     } catch (error: any) {  
       throw error

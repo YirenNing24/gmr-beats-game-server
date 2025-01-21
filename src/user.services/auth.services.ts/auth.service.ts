@@ -330,7 +330,7 @@ class AuthService {
     }
     
 
-    public async validateSession(token: string): Promise<ValidateSessionReturn>  {
+    public async validateSession(token: string): Promise<ValidateSessionReturn | null> { {
           try {
             // Create a new instance of the needed services class
             const walletService: WalletService = new WalletService();
@@ -380,10 +380,14 @@ class AuthService {
               success: "OK",
               loginType: 'beats',} as ValidateSessionReturn
             } catch (error: any) {
-              console.log(error)
-              throw error;
-            }
+              console.error("Error validating session:", error);
+              if (error instanceof ValidationError) {
+                  return null; // Or handle it gracefully here
+              }
+              throw error; // Re-throw if it's an unexpected error
+          }
     }
+  }
 
 
 

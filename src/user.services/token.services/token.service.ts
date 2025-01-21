@@ -71,6 +71,7 @@ class TokenService {
 
 			return tokens as TokenScheme;
 		} catch (error: any) {
+			throw error;
 			return error;
 		}
 	}
