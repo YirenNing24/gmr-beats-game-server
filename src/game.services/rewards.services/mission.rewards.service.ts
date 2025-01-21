@@ -155,7 +155,7 @@ class RewardService {
 			await this.updateUserMission(username, name);
 	
 			// Update Soul Metadata
-			soulService.updateSoulMetaData(username, name, "personal");
+			// soulService.updateSoulMetaData(username, name, "personal");
 	
 			// Close the database connection
 			await client.close();
