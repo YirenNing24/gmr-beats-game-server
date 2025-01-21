@@ -54,35 +54,43 @@ constructor(driver?: Driver) {
     private async generateExperience(experienceGained: number, stats: PlayerStats): Promise<LevelUpResult> {
         try {
             const { level, playerExp } = stats;
-            let currentLevel: number = level;
-            let currentExperience: number = playerExp + experienceGained;
+            let currentLevel = level;
+            let currentExperience = playerExp + experienceGained;
     
             // Loop until all experience is consumed or no level-up can occur
-            while (currentExperience >= 50 * Math.pow(currentLevel, 2.5)) {
-                // Subtract required experience for the current level
-                const requiredExperience = 50 * Math.pow(currentLevel, 2.5);
-                currentExperience -= requiredExperience;
+            while (true) {
+                const requiredExperience = Math.floor(50 * Math.pow(currentLevel, 2.5));
     
-                // Increment level
+                // Check if the user can level up
+                if (currentExperience < requiredExperience) break;
+    
+                // Subtract required experience for the current level and increment level
+                currentExperience -= requiredExperience;
                 currentLevel++;
+
+                console.log(`Current Level: ${currentLevel}, Required Experience: ${requiredExperience}, Current Experience: ${currentExperience}`);
+
             }
     
             // Update player statistics
             stats.level = currentLevel;
             stats.playerExp = currentExperience;
+
+            
     
             // Return the updated level and experience
-            return { 
-                currentLevel, 
-                currentExperience, 
-                experienceGained, 
-                stats 
+            return {
+                currentLevel,
+                currentExperience,
+                experienceGained,
+                stats,
             };
         } catch (error: any) {
             console.error("Error generating experience:", error);
             throw error;
         }
     }
+    
     
     //Retrieves details of a user  based on the provided username.
     private async getUserDetails(username: string): Promise<UserData> {
