@@ -22,61 +22,58 @@ constructor(driver?: Driver) {
             // Retrieve user details
             const user: UserData = await this.getUserDetails(username);
             const { playerStats } = user.properties;
-            
+    
             // Calculate experience gain
             const experienceRequired: number = await this.getRequiredPlayerExperience(playerStats.level);
-
             const baseExperienceGain: number = Math.floor(10 * Math.pow(playerStats.level, 1.8));
             let adjustedExperienceGain: number = baseExperienceGain * (accuracy * 100);
             const minExperienceGain: number = Math.floor(experienceRequired * 0.05);
             const maxExperienceGain: number = Math.floor(experienceRequired * 0.2);
             adjustedExperienceGain = Math.max(minExperienceGain, Math.min(maxExperienceGain, adjustedExperienceGain));
-
+    
             const experienceGained: number = Math.floor(adjustedExperienceGain);
-
+    
             // Generate the experience and return the result
             const result: LevelUpResult = await this.generateExperience(experienceGained, playerStats);
             await this.saveUserDetails(username, result.stats);
             return result;
-            
+    
         } catch (error: any) {
             console.error("Error calculating experience gain:", error);
             throw error;
         }
     }
-
-
+    
     private async getRequiredPlayerExperience(level: number): Promise<number> {
+        // Unified formula for required experience
         return Math.round(Math.pow(level, 1.8) + level * 4);
     }
-
-    //Generates experience for a user, updating their level and experience points accordingly.
+    
+    // Generates experience for a user, updating their level and experience points accordingly
     private async generateExperience(experienceGained: number, stats: PlayerStats): Promise<LevelUpResult> {
         try {
             const { level, playerExp } = stats;
             let currentLevel: number = level;
             let currentExperience: number = playerExp + experienceGained;
-            let requiredExp: number
+    
             // Loop until all experience is consumed or no level-up can occur
             while (true) {
-                const requiredExperience = Math.floor(50 * Math.pow(currentLevel, 2.5));
-                requiredExp = requiredExperience
+                // Use the unified formula for required experience
+                const requiredExperience: number = await this.getRequiredPlayerExperience(currentLevel);
+    
                 // Check if the user can level up
                 if (currentExperience < requiredExperience) break;
     
                 // Subtract required experience for the current level and increment level
                 currentExperience -= requiredExperience;
                 currentLevel++;
-
+    
                 console.log(`Current Level: ${currentLevel}, Required Experience: ${requiredExperience}, Current Experience: ${currentExperience}`);
-
             }
     
             // Update player statistics
             stats.level = currentLevel;
             stats.playerExp = currentExperience;
-
-            console.log(`Current Level: ${currentLevel}, Required Experience: ${requiredExp}, Current Experience: ${currentExperience}`);
     
             // Return the updated level and experience
             return {
@@ -90,6 +87,7 @@ constructor(driver?: Driver) {
             throw error;
         }
     }
+    
     
     
     //Retrieves details of a user  based on the provided username.
