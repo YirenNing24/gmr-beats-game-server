@@ -55,6 +55,7 @@ const auth = (app: Elysia): void => {
 
         return output as AuthenticateReturn;
     } catch (error: any) {
+      console.log(error)
       return error
     }
     }, beatsLoginSchema
