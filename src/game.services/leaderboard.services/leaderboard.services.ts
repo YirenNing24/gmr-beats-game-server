@@ -9,7 +9,7 @@ import TokenService from "../../user.services/token.services/token.service";
 
 //** MONGO DB CLIENT
 import { mongoDBClient } from "../../db/mongodb.client";
-import { Collection, Db } from "mongodb";
+import { Db } from "mongodb";
 
 
 
@@ -85,6 +85,7 @@ class LeaderboardService {
 	private async fetchScores(songName: string, difficulty: string): Promise<savedClassicScoreStats[]> {
 		try {
 			// Connect to the database using the shared client
+			await mongoDBClient.connect();
 			const db: Db = mongoDBClient.db("beats");
 			const collection = db.collection<savedClassicScoreStats[]>("classicScores");
 
@@ -92,7 +93,7 @@ class LeaderboardService {
 			const scores = await collection
 				.find({ songName: songName, difficulty: difficulty })
 				.toArray();
-
+			await mongoDBClient.close();
 			return scores as unknown as savedClassicScoreStats[];
 		} catch (error) {
 			console.error("Error fetching scores:", error);
