@@ -27,5 +27,12 @@
         "Unfollows",
         "unliked",
         "unliking"
-    ]
+    ],
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": true,
+        "strings": true
+    },
+    "editor.suggestOnTriggerCharacters": true,
+    "editor.acceptSuggestionOnEnter": "on"
 }

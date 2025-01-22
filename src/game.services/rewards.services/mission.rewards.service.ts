@@ -244,7 +244,7 @@ class RewardService {
 		}
 	}
 	 
-
+	
 	private async checkCompletedSongs(username: string, value: number): Promise<boolean> {
 		try {
 			const client: MongoClient = await mongoDBClient.connect();
@@ -268,7 +268,7 @@ class RewardService {
 	}
 	
 
-
+	
 	private async giveReward(username: string, rewardData: Reward, rewardType: string): Promise<void> {
 		const walletService = new WalletService(this.driver);
 		const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
