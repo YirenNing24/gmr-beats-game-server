@@ -249,20 +249,24 @@ class RewardService {
 		try {
 			const client: MongoClient = await mongoDBClient.connect();
 			const collection = client.db("beats").collection("classicScores");
-
+	
 			// Query to find completed scores for the given username
 			const scores = await collection
 				.find<ClassicScoreStats>({ username, finished: true })
 				.project({ songName: 1 })
 				.toArray();
-
-			// Check if the song has been completed
-			return scores.length > value;
+	
+			// Use a Set to filter out duplicate song names
+			const uniqueSongs = new Set(scores.map(score => score.songName));
+	
+			// Check if the number of unique songs meets the requirement
+			return uniqueSongs.size >= value;
 		} catch (error: any) {
 			console.error("Error in checkCompletedSongs: ", error);
 			throw error;
 		}
 	}
+	
 
 
 	private async giveReward(username: string, rewardData: Reward, rewardType: string): Promise<void> {
