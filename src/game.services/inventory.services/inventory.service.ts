@@ -37,10 +37,6 @@ class InventoryService {
             const ownedCards: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
             const equipped = await this.getEquippedItems(inventoryData, ownedCards);
 
-            console.log("inventory data: ", inventoryData);
-            console.log("owned cards: ", ownedCards);
-            console.log("equipped:", equipped)
-
             return this.categorizeCards(ownedCards, equipped);
         } catch (error: any) {
             console.error("Error opening user inventory:", error);
@@ -274,7 +270,6 @@ class InventoryService {
             );
 
             await session?.close();
-            console.log(`Inventory for ${group} updated: ${slot} set successfully.`);
         } catch (error: any) {
             console.error("Error updating inventory in database:", error);
             throw error;
