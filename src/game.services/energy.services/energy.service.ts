@@ -120,7 +120,7 @@ class EnergyService {
 
 			const record = result?.records[0];
 			if (record && record.has("level")) {
-				level = record.get("level").toNumber(); // Convert Neo4j Integer to JavaScript number
+				level = record.get("level"); // Convert Neo4j Integer to JavaScript number
 			}
 		} catch (error: any) {
 			console.error("Error fetching player level from Neo4j:", error);
