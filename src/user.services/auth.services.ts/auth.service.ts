@@ -271,7 +271,7 @@ class AuthService {
                 passKeyId: $id,
                 publicKey: $publicKey,
                 counter: $counter,
-                inventorySize: 200
+                inventorySize: 200,
                 soul: "",
                 preferredSerer: ""
               })
