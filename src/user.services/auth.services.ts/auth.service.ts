@@ -236,7 +236,7 @@ class AuthService {
     public async passkeyRegister(userData: PasskeyUser, ipAddress: string = "") {
       const walletService: WalletService = new WalletService();
       
-      const userId: string = await nanoid();
+      const userId: string = nanoid();
       const signupDate: number = Date.now();
       const suspended: Suspended = { until: null, reason: "" };
       
@@ -273,7 +273,7 @@ class AuthService {
                 counter: $counter,
                 inventorySize: 200,
                 soul: "",
-                preferredSerer: ""
+                preferredServer: ""
               })
 
 
