@@ -172,6 +172,8 @@ class GoogleService {
 
             // Perform the verification
             const verificationResult: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(verificationOptions);
+
+            console.log(verificationResult)
             
             // Check if the verification was successful
             if (verificationResult.verified) {
