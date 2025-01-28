@@ -123,8 +123,8 @@ class GoogleService {
 
             // Store the expected challenge in keydb temporarily for later verification
             // In production, use a secure session store or database with TTL if needed
-            keydb.SET(`passkey:challenge:${username.username}`, options.challenge)
-            keydb.EXPIRE(`passkey:challenge:${username.username}`, 120);
+            await keydb.SET(`passkey:challenge:${username.username}`, options.challenge)
+            await keydb.EXPIRE(`passkey:challenge:${username.username}`, 120);
 
         
             // Return options to be sent to the client
@@ -286,8 +286,12 @@ class GoogleService {
             // Call the function to generate registration options
             const options = await generateRegistrationOptions(registrationOptions);
             await keydb.SET(`registerChallenge:${username.username}`, options.challenge)
-            keydb.EXPIRE(`registerChallenge:${username.username}`, 120);
+            await keydb.EXPIRE(`registerChallenge:${username.username}`, 120);
 
+
+            console.log(options)
+
+            
             return options;
         } catch (error: any) {
             console.error("Error in googleRegisterPassKey:", error);
