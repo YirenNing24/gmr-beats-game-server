@@ -6,7 +6,7 @@ import { GetTokenResponse } from "google-auth-library/build/src/auth/oauth2clien
 import { generateAuthenticationOptions, verifyAuthenticationResponse, 
         VerifyAuthenticationResponseOpts, generateRegistrationOptions, 
         GenerateRegistrationOptionsOpts, verifyRegistrationResponse, VerifiedRegistrationResponse, 
-        VerifiedAuthenticationResponse} from "@simplewebauthn/server";
+        VerifiedAuthenticationResponse, PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/server";
 
 //** TYPE INTERFACE IMPORT
 import { AuthenticateReturn, PasskeyUser, PlayerInfo, TokenScheme, WalletData } from "../user.service.interface";
@@ -31,7 +31,23 @@ import EnergyService from "../../game.services/energy.services/energy.service";
 //** ERROR IMPORT
 import ValidationError from "../../outputs/validation.error";
 
-
+/**
+ * Interface for the passkey authentication response
+ * @interface PasskeyAuthVerify
+ * @property {string} authenticatorAttachment - The authenticator attachment
+ * @property {Record<string, unknown>} clientExtensionResults - The client extension results
+ * @property {string} deviceId - The device ID
+ * @property {string} id - The ID
+ * @property {string} rawId - The raw ID
+ * @property {object} response - The response object
+ * @property {string} response.authenticatorData - The authenticator data
+ * @property {string} response.clientDataJSON - The client data JSON
+ * @property {string} response.signature - The signature
+ * @property {string} response.userHandle - The user handle
+ * @property {string} type - The type
+ * @property {string} username - The username
+ * @returns {PasskeyAuthVerify} - The passkey authentication response
+ */
 interface PasskeyAuthVerify {
 	authenticatorAttachment: string | undefined;
 	clientExtensionResults: Record<string, unknown>; // Generic object to allow flexibility
@@ -93,9 +109,8 @@ class GoogleService {
     }
 
 
-    public async googlePassKeyAuth(username: {username: string}) {
+    public async googlePassKeyAuth(username: { username: string }) {
         try {
-
             // Generate authentication options with parameters specific to your app
             const options = await generateAuthenticationOptions({
                 challenge: undefined,
@@ -186,6 +201,9 @@ class GoogleService {
                 const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
                 const [ wallet ] = await Promise.all([walletPromise ]);
 
+
+
+                console.log(`Passkey sign in complete for ${username}`)
                 return { 
                     username, 
                     wallet, 
@@ -214,22 +232,21 @@ class GoogleService {
     
 
     public async googleRegisterPassKey(username: { username: string }) {
-
-        const driver: Driver = getDriver();
-        const session: Session | undefined = driver?.session();
-        const playerName = username.username
-        const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
-            tx.run(
-                `MATCH (u:User {username: $playerName})
-                 RETURN u.username`,
-                { playerName }
-            )
-        );
-        if (!result || result.records.length > 0) {
-            throw new ValidationError(`An account already exists with the username ${playerName}.`, "");
-        }
-
         try {
+            
+            const driver: Driver = getDriver();
+            const session: Session | undefined = driver?.session();
+            const playerName = username.username
+            const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
+                tx.run(
+                    `MATCH (u:User {username: $playerName})
+                     RETURN u.username`,
+                    { playerName }
+                )
+            );
+            if (!result || result.records.length > 0) {
+                throw new ValidationError(`An account already exists with the username ${playerName}.`, "");
+            }
             const registrationOptions: GenerateRegistrationOptionsOpts = {
                 rpName: "beats.game", // The name of your application
                 rpID: "beats.gmetarave.com", // Your domain (this should match the domain in the origin)
@@ -270,7 +287,6 @@ class GoogleService {
             const options = await generateRegistrationOptions(registrationOptions);
             await keydb.SET(`registerChallenge:${username.username}`, options.challenge)
             keydb.EXPIRE(`registerChallenge:${username.username}`, 120);
-
 
             return options;
         } catch (error: any) {
