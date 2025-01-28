@@ -291,7 +291,7 @@ class GoogleService {
 
             console.log(options)
 
-            
+
             return options;
         } catch (error: any) {
             console.error("Error in googleRegisterPassKey:", error);
@@ -351,6 +351,9 @@ class GoogleService {
             const energy = await energyService.getPlayerEnergyBeats(username);
             const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
             const [ wallet ] = await Promise.all([walletPromise ]);
+
+
+            console.log(`registration check for ${username}`)
 
             return { 
                 username, 
