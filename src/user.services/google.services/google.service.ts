@@ -352,9 +352,6 @@ class GoogleService {
             const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
             const [ wallet ] = await Promise.all([walletPromise ]);
 
-
-            console.log(`registration check for ${username}`)
-
             return { 
                 username, 
                 wallet, 
