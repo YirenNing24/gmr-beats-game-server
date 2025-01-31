@@ -13,7 +13,7 @@ import { ClassicScoreStats } from '../game.services/leaderboard.services/leaderb
 //** VALIDATION SCHEMA IMPORT
 import { authorizationBearerSchema } from './route.schema/schema.auth';
 import { classicScoreStatsSchema, getClassicScoreStatsSingle } from '../game.services/leaderboard.services/leaderboard.schema';
-import { SuccessMessage } from '../outputs/success.message';
+
 
 //** TYPE INTERFACE IMPORTS
 import { LevelUpResult } from '../game.services/experience.services/experience.interface';
@@ -37,7 +37,7 @@ const scores = (app: Elysia): void => {
 
     .get('/api/open/highscore/classic/per-song/player', async ({ headers } ): Promise<ClassicScoreStats[]> => {
         try {
-            const authorizationHeader = headers.authorization;
+            const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
                 throw new Error('Bearer token not found in Authorization header');
             }
@@ -47,7 +47,7 @@ const scores = (app: Elysia): void => {
             const scoreService: ScoreService = new ScoreService(driver);
             const output: ClassicScoreStats[] = await scoreService.getPlayerHighScorePerSong(jwtToken);
 
-          return output as ClassicScoreStats[];
+          return output;
         } catch (error: any) {
           throw error
         }
@@ -66,7 +66,7 @@ const scores = (app: Elysia): void => {
           const scoreService: ScoreService = new ScoreService(driver);
           const output: ClassicScoreStats[] = await scoreService.getHighScoreClassic(query, jwtToken);
 
-        return output as ClassicScoreStats[];
+        return output;
       } catch (error: any) {
         throw error
       }
