@@ -9,13 +9,10 @@ import { MongoClient } from "mongodb";
 //** IMPORTED SERVICES
 import TokenService from "../../user.services/token.services/token.service";
 import ExperienceService from "../experience.services/experience.service";
+import SongRewardService from "../rewards.services/song.rewards.service";
 
 //** INTERFACE IMPORT
 import { LevelUpResult } from "../experience.services/experience.interface";
-import RewardService from "../rewards.services/mission.rewards.service";
-import SoulService from "../soul.services/soul.service";
-import SongRewards from "../rewards.services/song.rewards.service";
-import SongRewardService from "../rewards.services/song.rewards.service";
 
 
 
@@ -62,9 +59,6 @@ class ScoreService {
 	}
 
 
-
-    
-
     //* CLASSIC GAME MODE RETRIEVE SCORE FUNCTION
 	public async getHighScoreClassic(peerId: ScorePeerId, token: string): Promise<ClassicScoreStats[]> {
 		try {
@@ -93,7 +87,60 @@ class ScoreService {
 		}
 	}
 
+	//* CLASSIC GAME MODE RETRIEVE ALL SCORE FUNCTION
+	public async getPlayerHighScorePerSong(token: string): Promise<ClassicScoreStats[]> {
+		try {
+			const tokenService: TokenService = new TokenService();
+			const username: string = await tokenService.verifyAccessToken(token);
+	
+			// Establish MongoDB connection
+			const client: MongoClient = await mongoDBClient.connect();
+			const db = client.db("beats");
+			const collection = db.collection<ClassicScoreStats>("classicScores");
+	
+			// Aggregate query to get highest score per song for the user
+			const highScores = await collection
+				.aggregate([
+					{ $match: { username } }, // Filter by username
+					{
+						$group: {
+							_id: "$songName", // Group by songName
+							songName: { $first: "$songName" }, // Keep songName explicitly
+							difficulty: { $first: "$difficulty" },
+							score: { $max: "$score" }, // Get max score per song
+							combo: { $first: "$combo" },
+							maxCombo: { $first: "$maxCombo" },
+							accuracy: { $first: "$accuracy" },
+							finished: { $first: "$finished" },
+							artist: { $first: "$artist" },
+							perfect: { $first: "$perfect" },
+							veryGood: { $first: "$veryGood" },
+							good: { $first: "$good" },
+							bad: { $first: "$bad" },
+							miss: { $first: "$miss" },
+							username: { $first: "$username" },
+							peerId: { $first: "$peerId" }
+						}
+					},
+					{ $sort: { score: -1 } } // Sort by highest score first
+				])
+				.toArray();
+	
+			// Remove `_id` and ensure `songName` is present
+			const formattedScores = highScores.map(({ _id, ...rest }) => rest) as unknown as ClassicScoreStats[];
+	
+			// Close the database connection
+			await client.close();
+	
+			return formattedScores;
+		} catch (error: any) {
+			console.error("Error fetching high scores:", error);
+			throw error;
+		}
+	}
+	
 
+	//* CLASSIC GAME MODE RETRIEVE ALL SCORE FUNCTION
     private async calculateExperience(username: string, accuracy: number): Promise<LevelUpResult> {
         try {
             const experienceService: ExperienceService = new ExperienceService(this.driver);
@@ -105,6 +152,9 @@ class ScoreService {
           throw error
         }
     }
+
+	
+
     
     
 }

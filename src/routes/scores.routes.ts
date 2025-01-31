@@ -35,7 +35,7 @@ const scores = (app: Elysia): void => {
       }, classicScoreStatsSchema
     )
 
-    .get('/api/open/highscore/classic/all', async ({ headers }): Promise<ClassicScoreStats[]> => {
+    .get('/api/open/highscore/classic/per-song/player', async ({ headers } ): Promise<ClassicScoreStats[]> => {
         try {
             const authorizationHeader = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -45,8 +45,8 @@ const scores = (app: Elysia): void => {
 
             const driver: Driver = getDriver();
             const scoreService: ScoreService = new ScoreService(driver);
-            const output: ClassicScoreStats[] = await scoreService.getAllHighScoreClassic(jwtToken);
-            
+            const output: ClassicScoreStats[] = await scoreService.getPlayerHighScorePerSong(jwtToken);
+
           return output as ClassicScoreStats[];
         } catch (error: any) {
           throw error
