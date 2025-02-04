@@ -2,7 +2,7 @@
 import { Engine } from "@thirdweb-dev/engine";
 
 //** CONFIG IMPORT
-import { BEATS_TOKEN, GMR_TOKEN, ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS } from "../../config/constants";
+import { BEATS_TOKEN, ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, ENGINE_ADMIN_WALLET_ADDRESS } from "../../config/constants";
 
 //**  TYPE INTERFACE
 import { WalletData } from "../user.service.interface";
