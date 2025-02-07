@@ -43,6 +43,7 @@ class InventoryService {
             throw error;
         }
     }
+
     private async getInventoryData(userName: string) {
         const session: Session | undefined = this.driver?.session();
     
@@ -115,8 +116,7 @@ class InventoryService {
     
     
     
-    
-    
+
     // Helper method to fetch owned cards
     private async getOwnedCards(smartWalletAddress: string): Promise<InventoryCardData[]> {
         const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS))
@@ -168,12 +168,9 @@ class InventoryService {
     public async equipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
         try {
             const walletService: WalletService = new WalletService(this.driver);
-
-            
             const tokenService: TokenService = new TokenService();
+
             const userName: string = await tokenService.verifyAccessToken(token);
-            
-    
             const smartWalletAddress: string = await walletService.getSmartWalletAddress(userName);
     
             // Iterate over each item in the updateInventoryData array
@@ -483,15 +480,59 @@ class InventoryService {
     
 
     // Updates inventory data for a user based on the provided access token and update information.
-    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string) {
+    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string): Promise<CardMetaData[]> {
+        try {
+            const tokenService = new TokenService();
+            const isAuthorized = await tokenService.verifyApiKey(apiKey);
+    
+            if (!isAuthorized) {
+                throw new Error("Unauthorized API Key");
+            }
+    
+            const session = this.driver?.session();
+            if (!session) {
+                throw new Error("Database session could not be established.");
+            }
+    
+            // Handle cases where group names need formatting
+            const group = groupName === "X:IN" ? "X_IN" : groupName;
+    
+            const result = await session.executeRead((tx: ManagedTransaction) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
+                    RETURN i
+                    `,
+                    { username }
+                )
+            );
+    
+            await session.close();
+    
+            if (!result || result.records.length === 0) {
+                throw new Error(`No equipped card found for user: ${username} in group: ${groupName}`);
+            }
+    
+            // Extracting equipped card metadata from the inventory node
+            const equippedCards = result.records.map((record) => record.get("i").properties);
+    
+            console.log("Equipped Cards: ", equippedCards);
+            return equippedCards;
+        } catch (error) {
+            console.error("Error fetching equipped cards:", error);
+            throw error;
+        }
+    }
+    
+
+
+    public async openGroupCardEquip(token: string, body: { groupName: string}) {
         try {
             const tokenService: TokenService = new TokenService();
-            const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
+            const username: string = await tokenService.verifyAccessToken(token);
 
-            if (!isAuthorized) {
-                return
-            }
-            
+            const { groupName  } = body
+
             const session: Session | undefined = this.driver?.session();
     
             const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
