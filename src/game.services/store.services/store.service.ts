@@ -131,17 +131,19 @@ export default class StoreService {
   private async cardPurchase(buyerWalletAddress: string, listingId: number, price: string) {
     try {
       // Constructing the request body
-      const requestBody = {
-        listingId: listingId.toString(), // Convert listingId to string
-        quantity: "1", // Default quantity for ERC721 tokens
-        buyer: buyerWalletAddress // The buyer's wallet address
-      };
+
   
       // Set allowance for the transaction
       await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
         spenderAddress: CARD_MARKETPLACE,
         amount: price
       });
+
+      const requestBody = {
+        listingId: listingId.toString(), // Convert listingId to string
+        quantity: "1", // Default quantity for ERC721 tokens
+        buyer: buyerWalletAddress // The buyer's wallet address
+      };
   
       // Execute the card purchase
       const transaction = (await engine.marketplaceDirectListings.buyFromListing(

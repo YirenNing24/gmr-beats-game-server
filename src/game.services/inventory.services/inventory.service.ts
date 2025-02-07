@@ -507,6 +507,8 @@ class InventoryService {
 
             // Process the result and extract the equipped cards
             const cards: CardMetaData[] = result?.records.map((record) => record.get('c').properties) || [];
+
+            console.log("Card eqipped please: ", cards)
             // Close the session
             await session?.close();
     
