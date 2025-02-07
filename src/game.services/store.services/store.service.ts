@@ -33,12 +33,14 @@ export default class StoreService {
   }
 
   //Retrieves valid cards from the using the provided access token.
-  public async getValidCards(token: string): Promise<StoreCardData[]> {
+  public async  getValidCards(token: string): Promise<StoreCardData[]> {
     try {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
 
         const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
+
+        console.log(listed)
                     // Prepare the final array of card data
         let finalCardData: StoreCardData[] = [];
 

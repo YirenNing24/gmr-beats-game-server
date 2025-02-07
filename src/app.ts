@@ -13,6 +13,8 @@ import routes from "./routes/index";
 // Initialize Elysia app
 const app = new Elysia()
 
+  
+
 //@ts-ignore
   .use(cors({
     methods: ["GET", "POST", "HEAD", "PUT", "OPTIONS"],
@@ -26,6 +28,8 @@ const app = new Elysia()
     credentials: true,
     maxAge: 600,
   }))
+
+
 
 
   
