@@ -33,54 +33,44 @@ export default class StoreService {
   }
 
   //Retrieves valid cards from the using the provided access token.
-  public async  getValidCards(token: string): Promise<StoreCardData[]> {
+  public async getValidCards(token: string): Promise<StoreCardData[]> {
     try {
-        const tokenService: TokenService = new TokenService();
-        await tokenService.verifyAccessToken(token);
-
-        const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
-
-        console.log(listed)
-                    // Prepare the final array of card data
-        let finalCardData: StoreCardData[] = [];
-
-            // Iterate through listed tokenIds and fetch their metadata
-            for (const listing of listed) {
-              const tokenId: string = listing.tokenId;
+      const tokenService = new TokenService();
+      await tokenService.verifyAccessToken(token);
   
-              // Fetch metadata for the current tokenId
-              const cardData = (await engine.erc1155.get(tokenId, CHAIN, EDITION_ADDRESS)).result as CardNFT;
+      const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
   
-              // Combine tokenId and spread the metadata and cardData into a single object
-              const priceString = listing.pricePerToken;
-              const scaledPrice = Number(BigInt(priceString) / BigInt(10 ** 18)); 
-              
-              const card: StoreCardData = {
-                  ...cardData.metadata, // Spread metadata key-value pairs
-                  tokenId, // Add tokenId
-                  owner: cardData.owner, // Add owner property
-                  type: cardData.type, // Add type property
-                  supply: cardData.supply, // Add supply property
-                  quantityOwned: cardData.quantityOwned || "" , // Add quantityOwned property
-                  pricePerToken: scaledPrice, // Add pricePerToken property
-                  currencyName: listing.currencyValuePerToken?.name || "", // Add currencyName property
-                  startTime: listing.startTimeInSeconds?.toString() || "", // Add startTime property
-                  endTime: listing.endTimeInSeconds?.toString() || "", // Add endTime property
-                  imageByte: cardData.metadata.imageByte || "", // Add imageByte property
-                  listingId: listing.id, // Add listingId property
-                  lister: "beats", // Add lister property with default value
-              };
+      console.log(listed);
   
-              // Push the combined object to the final array
-              finalCardData.push(card);
-          }
-
-        return finalCardData as StoreCardData[];
-    } catch (error: any) {
-        console.error("Error fetching items:", error);
-        throw error
+      // Transform listings into StoreCardData format
+      const finalCardData: StoreCardData[] = listed.map((listing) => {
+        const asset = listing.asset as StoreCardData;
+        const scaledPrice = Number(BigInt(listing.pricePerToken) / BigInt(10 ** 18));
+  
+        return {
+          ...asset, // Spread metadata key-value pairs from asset
+          tokenId: asset.id, // Map asset.id to tokenId
+          owner: asset.uploader || "", // Assuming uploader is the owner
+          type: asset.tier || "", // Assuming tier is the type
+          supply: asset.supply || 0, // Ensure supply is set
+          quantityOwned: "", // Placeholder (if needed later)
+          pricePerToken: scaledPrice,
+          currencyName: listing.currencyValuePerToken?.name || "",
+          startTime: listing.startTimeInSeconds?.toString() || "",
+          endTime: listing.endTimeInSeconds?.toString() || "",
+          imageByte: asset.image || "", // Assuming image is the imageByte equivalent
+          listingId: listing.id, // Map listing.id correctly
+          lister: "beats", // Default lister value
+        };
+      });
+  
+      return finalCardData;
+    } catch (error) {
+      console.error("Error fetching items:", error);
+      throw error;
     }
   }
+  
 
 
   public async getValidCardPacks(token: string): Promise<StorePackData[]> {
