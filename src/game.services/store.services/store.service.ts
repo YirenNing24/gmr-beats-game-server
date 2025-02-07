@@ -40,8 +40,6 @@ export default class StoreService {
   
       const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
   
-      console.log(listed);
-  
       // Transform listings into StoreCardData format
       const finalCardData: StoreCardData[] = listed.map((listing) => {
         const asset = listing.asset as StoreCardData;
