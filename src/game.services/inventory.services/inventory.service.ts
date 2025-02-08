@@ -349,8 +349,6 @@ class InventoryService {
     }
     
 
-    // Updates inventory data for a user based on the provided access token and update information.
-
 
 
     // Check the remaining inventory size for a user based on the provided username.
@@ -517,7 +515,7 @@ class InventoryService {
         }
     }
 
-
+    // Updates inventory data for a user based on the provided access token and update information.
     public async openGroupCardEquippedV2(apiKey: string, groupName: string, username: string): Promise<CardMetaData[]> {
         try {
             const tokenService = new TokenService();
@@ -562,7 +560,7 @@ class InventoryService {
         }
     }
 
-
+    // Updates inventory data for a user based on the provided access token and update information.
     public async equippedGroupCard(token: string, groupName: string) {
         try {
             const tokenService: TokenService = new TokenService();
@@ -579,7 +577,7 @@ class InventoryService {
                 tx.run(
                     `
                     MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
-                    RETURN i
+                    RETURN i, u.smartWalletAddress as smartWalletAddress
                     `,
                     { username }
                 )
@@ -590,23 +588,42 @@ class InventoryService {
             if (!result || result.records.length === 0) {
                 throw new Error(`No equipped card found for user: ${username} in group: ${groupName}`);
             }
+
     
             // Extracting equipped card metadata from the inventory node
             const equippedCards = result.records.map((record) => record.get("i").properties);
-    
-            console.log("Equipped Cards: ", equippedCards);
+
+
             return equippedCards;
-            
         } catch (error: any) {
             console.error(error);
             throw error;
         }
     }
-    
-    
-    
 
+
+    private async getEquippedCardData(smartWalletAddress: string ) {
+        try {
+                      const { result: ownedEnergyItems } = await engine.erc1155.getOwned(
+                          smartWalletAddress,
+                          CHAIN,
+                          EDITION_ADDRESS
+                      );
+
+
+
+
+
+        }
+        catch (error: any) {
+            console.error("Error fetching equipped cards:", error);
+            throw error;
+    }
   }
+
+
+
+}
   
 
 export default InventoryService;

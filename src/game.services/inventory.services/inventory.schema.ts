@@ -22,8 +22,8 @@ export const equipItemSchema = {
         tokenId: t.String(),
         contractAddress: t.String(),
         group: t.String(),
-        slot: t.String()
-
+        slot: t.String(),
+        name: t.String()
      }
     ))
 }
