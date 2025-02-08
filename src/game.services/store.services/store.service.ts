@@ -1,8 +1,5 @@
-//** THIRDWEB IMPORTS
-
-
 //** MEMGRAPH IMPORTS
-import { BEATS_TOKEN, CARD_MARKETPLACE, EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, PACK_MARKETPLACE } from "../../config/constants";
+import { BEATS_TOKEN, CARD_MARKETPLACE, PACK_MARKETPLACE } from "../../config/constants";
 import { Driver, Session, ManagedTransaction, QueryResult, RecordShape } from "neo4j-driver-core";
 
 //** CONFIG IMPORTs
@@ -13,16 +10,19 @@ import ValidationError from "../../outputs/validation.error";
 
 //** SERVICE IMPORTS
 import TokenService from "../../user.services/token.services/token.service";
+import { engine } from "../../user.services/wallet.services/wallet.service";
+
+//** TYPE INTERFACE IMPORTs
 import { BuyCardData, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
 import { UserData } from "../../user.services/user.service.interface";
 
+
 //** CYPHER IMPORTS
-import { buyCardCypher, getValidCardPacks, getValidCardUpgrades, getValidCards } from "./store.cypher";
+import { buyCardCypher, getValidCardPacks, getValidCardUpgrades } from "./store.cypher";
 
 //** SUCCESS MESSAGE IMPORT
 import { SuccessMessage } from "../../outputs/success.message";
-import { engine } from "../../user.services/wallet.services/wallet.service";
-import { CardNFT } from "../inventory.services/inventory.interface";
+
 
 
 
@@ -56,7 +56,7 @@ export default class StoreService {
           currencyName: listing.currencyValuePerToken?.name || "",
           startTime: listing.startTimeInSeconds?.toString() || "",
           endTime: listing.endTimeInSeconds?.toString() || "",
-          imageByte: asset.image || "", // Assuming image is the imageByte equivalent
+          // imageByte: asset.image || "", // Assuming image is the imageByte equivalent
           listingId: listing.id, // Map listing.id correctly
           lister: "beats", // Default lister value
         };
