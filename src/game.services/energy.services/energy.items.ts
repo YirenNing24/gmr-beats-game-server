@@ -65,29 +65,39 @@ class EnergyItemsService {
      }
 
 
-    private async useEnergyItem(smartWalletAddress: string) {
+     private async useEnergyItem(smartWalletAddress: string) {
       try {
-
-        const requestBody = { tokenId: "0", amount: "1"}
-        const transaction = await engine.erc1155.burn(CHAIN, MISCELLANEOUS_ITEMS_CONTRACT, smartWalletAddress, requestBody);
-
-        let status = await engine.transaction.status(transaction.result.queueId);
-  
-        // Wait for the transaction to be mined
-        const maxRetries = 60; // Allow 30 seconds (60 * 500ms)
-        let retries = 0;
+        const maxRetries = 3; // Max retries for burning
+        const retryDelay = 1000; // 1-second delay between retries
     
-        while (status.result.minedAt === null && retries < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
-          status = await engine.transaction.status(transaction.result.queueId);
-          retries++;
+        const requestBody = { tokenId: "0", amount: "1" };
+    
+        let transaction;
+        let burnRetries = maxRetries;
+    
+        // Retry mechanism for burning the item
+        while (burnRetries > 0) {
+          try {
+            transaction = await engine.erc1155.burn(CHAIN, MISCELLANEOUS_ITEMS_CONTRACT, smartWalletAddress, requestBody);
+            break; // Break if successful
+          } catch (error: any) {
+            console.error("Error burning energy item: ", error);
+            burnRetries--;
+            if (burnRetries === 0) {
+              throw new Error("Failed to burn energy item after multiple attempts.");
+            }
+            await new Promise((resolve) => setTimeout(resolve, retryDelay)); // Wait before retrying
+          }
         }
-      } catch(error: any) {
-        console.log(error)
-        throw error
-      }
+    
+
         
-     }
+      } catch (error: any) {
+        console.error("Error in useEnergyItem:", error);
+        throw error;
+      }
+    }
+    
 
 
     private async addEnergy(username: string) {

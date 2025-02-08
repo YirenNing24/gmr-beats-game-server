@@ -480,7 +480,45 @@ class InventoryService {
     
 
     // Updates inventory data for a user based on the provided access token and update information.
-    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string): Promise<CardMetaData[]> {
+    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string) {
+        try {
+            const tokenService: TokenService = new TokenService();
+            const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
+
+            if (!isAuthorized) {
+                return
+            }
+            
+            const session: Session | undefined = this.driver?.session();
+    
+            const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[:EQUIPPED]->(c:Card {group: $groupName})
+                    RETURN c
+                    `,
+                    { username, groupName }
+                )
+            );
+
+
+            // Process the result and extract the equipped cards
+            const cards: CardMetaData[] = result?.records.map((record) => record.get('c').properties) || [];
+
+            console.log("Card eqipped please: ", cards)
+            // Close the session
+            await session?.close();
+    
+            return cards;
+            
+        } catch (error: any) {
+            console.error(error);
+            throw error;
+        }
+    }
+
+
+    public async openGroupCardEquippedV2(apiKey: string, groupName: string, username: string): Promise<CardMetaData[]> {
         try {
             const tokenService = new TokenService();
             const isAuthorized = await tokenService.verifyApiKey(apiKey);
@@ -523,43 +561,48 @@ class InventoryService {
             throw error;
         }
     }
-    
 
 
-    public async openGroupCardEquip(token: string, body: { groupName: string}) {
+    public async equippedGroupCard(token: string, groupName: string) {
         try {
             const tokenService: TokenService = new TokenService();
             const username: string = await tokenService.verifyAccessToken(token);
-
-            const { groupName  } = body
-
-            const session: Session | undefined = this.driver?.session();
+            const session = this.driver?.session();
+            if (!session) {
+                throw new Error("Database session could not be established.");
+            }
     
-            const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
+            // Handle cases where group names need formatting
+            const group: string = groupName === "X:IN" ? "X_IN" : groupName;
+    
+            const result = await session.executeRead((tx: ManagedTransaction) =>
                 tx.run(
                     `
-                    MATCH (u:User {username: $username})-[:EQUIPPED]->(c:Card {group: $groupName})
-                    RETURN c
+                    MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
+                    RETURN i
                     `,
-                    { username, groupName }
+                    { username }
                 )
             );
-
-
-            // Process the result and extract the equipped cards
-            const cards: CardMetaData[] = result?.records.map((record) => record.get('c').properties) || [];
-
-            console.log("Card eqipped please: ", cards)
-            // Close the session
-            await session?.close();
     
-            return cards;
+            await session.close();
+    
+            if (!result || result.records.length === 0) {
+                throw new Error(`No equipped card found for user: ${username} in group: ${groupName}`);
+            }
+    
+            // Extracting equipped card metadata from the inventory node
+            const equippedCards = result.records.map((record) => record.get("i").properties);
+    
+            console.log("Equipped Cards: ", equippedCards);
+            return equippedCards;
             
         } catch (error: any) {
             console.error(error);
             throw error;
         }
     }
+    
     
     
 

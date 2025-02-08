@@ -33,47 +33,55 @@ class SoulService {
     public async createSoul(username: string, smartWalletAddress: string): Promise<void> {
         const walletService = new WalletService(this.driver);
         try {
-
             const soulMetaData: SoulMetadata = {
                 walletAddress: smartWalletAddress,
                 name: username,
                 description: `This is ${username}'s soul`,
                 image: "",
-                uploader: "beats", 
+                uploader: "beats",
                 accountAchievements: [{ rookie: true }],
                 personalMissions: [],
                 collectionMissions: [],
             };
     
-            const metadataWithSupply = Array.from({ length: 1 }, () => ({
-                metadata: { ...soulMetaData, },
-                supply: "1" }
-            ));
-
+            const metadataWithSupply = [{ metadata: { ...soulMetaData }, supply: "1" }];
+    
             const requestBody = {
                 receiver: smartWalletAddress,
                 metadataWithSupply,
             };
-            const transaction = await engine.erc1155.mintBatchTo(CHAIN, SOUL_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
-            let status = await engine.transaction.status(transaction.result.queueId);
-  
-            // Wait for the transaction to be mined
-			const maxRetries = 60; // Allow 30 seconds (60 * 500ms)
-			let retries = 0;
-	
-			while (status.result.minedAt === null && retries < maxRetries) {
-				await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
-				status = await engine.transaction.status(transaction.result.queueId);
-				retries++;
-			}
+    
+            const maxRetries = 3; // Max retry attempts for minting
+            const retryDelay = 1000; // 1-second delay between retries
+    
+            let transaction;
+            let mintRetries = maxRetries;
+    
+            // Retry mechanism for minting
+            while (mintRetries > 0) {
+                try {
+                    transaction = await engine.erc1155.mintBatchTo(CHAIN, SOUL_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, requestBody);
+                    break; // Exit loop if successful
+                } catch (error: any) {
+                    console.error("Error minting soul NFT: ", error);
+                    mintRetries--;
+                    if (mintRetries === 0) {
+                        throw new Error("Failed to mint soul NFT after multiple attempts.");
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, retryDelay)); // Wait before retrying
+                }
+            }
+    
 
+            // Save soul data
             await this.saveSoul(username, smartWalletAddress);
-
+    
         } catch (error: any) {
-            console.log(error);
+            console.error("Error in createSoul:", error);
             throw error;
         }
     }
+    
 
 
     private async saveSoul(username: string, smartWalletAddress: string): Promise<void> {

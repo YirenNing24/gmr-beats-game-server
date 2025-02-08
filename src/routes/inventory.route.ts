@@ -161,6 +161,27 @@ const inventory = (app: Elysia): void => {
         }, authorizationBearerSchema
         )
 
+
+
+    .get('/api/card/inventory/equip-group/:groupName', async ({ headers, params }): Promise<CardMetaData[] | undefined> => {
+            try {
+                const authorizationHeader = headers.authorization;
+                if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                    throw new Error('Bearer token not found in Authorization header');
+                }
+                const jwtToken: string = authorizationHeader.substring(7);
+        
+                const driver: Driver = getDriver();
+                const inventoryService: InventoryService = new InventoryService(driver);
+                const output: CardMetaData[] | undefined = await inventoryService.equippedGroupCard(jwtToken, params.groupName);
+
+                return output;
+            } catch (error: any) {
+                throw error
+                }
+                }
+            )
+
 };
 
 export default inventory;

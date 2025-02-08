@@ -130,47 +130,62 @@ export default class StoreService {
   //Initiates a card purchase using the provided wallet information and listing ID.
   private async cardPurchase(buyerWalletAddress: string, listingId: number, price: string) {
     try {
-      // Constructing the request body
-
+      const maxRetries = 3;
   
-      // Set allowance for the transaction
-      await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
-        spenderAddress: CARD_MARKETPLACE,
-        amount: price
-      });
-
+      // Retry mechanism for setting allowance
+      let allowanceRetries = maxRetries;
+      while (allowanceRetries > 0) {
+        try {
+          await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
+            spenderAddress: CARD_MARKETPLACE,
+            amount: price,
+          });
+          break; // Break if successful
+        } catch (error: any) {
+          console.error("Error setting allowance: ", error);
+          allowanceRetries--;
+          if (allowanceRetries === 0) {
+            throw new Error("Failed to set allowance after multiple attempts.");
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait before retrying
+        }
+      }
+  
       const requestBody = {
-        listingId: listingId.toString(), // Convert listingId to string
+        listingId: listingId.toString(),
         quantity: "1", // Default quantity for ERC721 tokens
-        buyer: buyerWalletAddress // The buyer's wallet address
+        buyer: buyerWalletAddress,
       };
   
-      // Execute the card purchase
-      const transaction = (await engine.marketplaceDirectListings.buyFromListing(
-        CHAIN,
-        CARD_MARKETPLACE,
-        buyerWalletAddress,
-        requestBody
-      )).result;
-  
-      // Check transaction status
-      let status = await engine.transaction.status(transaction.queueId);
-  
-      // Wait for the transaction to be mined
-			const maxRetries = 60; // Allow 30 seconds (60 * 500ms)
-			let retries = 0;
-	
-			while (status.result.minedAt === null && retries < maxRetries) {
-				await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
-				status = await engine.transaction.status(transaction.queueId);
-				retries++;
-			}
-    
+      // Retry mechanism for executing purchase
+      let purchaseRetries = maxRetries;
+      while (purchaseRetries > 0) {
+        try {
+          const transaction = (
+            await engine.marketplaceDirectListings.buyFromListing(
+              CHAIN,
+              CARD_MARKETPLACE,
+              buyerWalletAddress,
+              requestBody
+            )
+          ).result;
+          return transaction;
+        } catch (error: any) {
+          console.error("Error during card purchase attempt: ", error);
+          purchaseRetries--;
+          if (purchaseRetries === 0) {
+            throw new Error("Failed to complete the card purchase after multiple attempts.");
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait before retrying
+        }
+      }
     } catch (error: any) {
       console.error("Error during card purchase: ", error);
       throw new Error("Failed to complete the card purchase.");
     }
   }
+  
+  
   
 
   //Initiates a card pack purchase using the provided wallet information and listing ID.

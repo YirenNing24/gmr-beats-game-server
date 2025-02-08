@@ -294,32 +294,42 @@ class RewardService {
 	public async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
 		try {
 			const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
-			const transaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
-	
-			let status = await engine.transaction.status(transaction.result.queueId);
-	
-			// Retry loop with timeout
-			const maxRetries = 60; // Allow 30 seconds (60 * 500ms)
-			let retries = 0;
-	
-			while (status.result.minedAt === null && retries < maxRetries) {
-				await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
-				status = await engine.transaction.status(transaction.result.queueId);
-				retries++;
-			}
-	
-			if (status.result.minedAt === null) {
-				throw new Error("Transaction not mined within the expected timeframe.");
+			let retries = 3;
+			while (retries > 0) {
+				try {
+					await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
+					break;
+				} catch (error: any) {
+					console.error("Error in setAllowance attempt: ", error);
+					retries--;
+					if (retries === 0) {
+						throw new Error("Failed to set allowance after multiple attempts.");
+					}
+					await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+				}
 			}
 	
 			const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
-			await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
-	
+			retries = 3;
+			while (retries > 0) {
+				try {
+					await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
+					return;
+				} catch (error: any) {
+					console.error("Error in transferFrom attempt: ", error);
+					retries--;
+					if (retries === 0) {
+						throw new Error("Failed to transfer BEATS after multiple attempts.");
+					}
+					await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+				}
+			}
 		} catch (error: any) {
 			console.error("Error in sendBeatsReward: ", error);
 			throw error;
 		}
 	}
+	
 	
 
 }
