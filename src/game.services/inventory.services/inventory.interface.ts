@@ -104,6 +104,7 @@ export interface UpdateInventoryData {
   contractAddress: string;
   group: string;
   slot: string;
+  name: string;
 }
 
 

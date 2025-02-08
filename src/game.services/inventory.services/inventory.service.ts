@@ -175,7 +175,7 @@ class InventoryService {
     
             // Iterate over each item in the updateInventoryData array
             for (const item of updateInventoryData) {
-                const { group, contractAddress, tokenId, slot, uri } = item;
+                const { group, contractAddress, tokenId, slot, uri, name } = item;
                 const nftInventory = await this.getInventoryNFT(smartWalletAddress, contractAddress);
     
                 // Check if the item is in inventory using the utility function
@@ -193,6 +193,7 @@ class InventoryService {
                     contractAddress,
                     group,
                     slot,
+                    name
                 });
 
             }
@@ -295,7 +296,7 @@ class InventoryService {
                     tx.run(
                         `
                         MATCH (u:User {username: $userName})-[:INVENTORY]->(i:${groupName})
-                        SET i.${slot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
+                        SET i.${slot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: "", name: ""}
                         RETURN i
                         `,
                         { userName }
