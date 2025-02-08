@@ -21,23 +21,30 @@ class LeaderboardService {
 
 	public async leaderboard(token: string, query: LeaderboardQuery): Promise<savedClassicScoreStats[]> {
 		try {
-
 			const tokenService: TokenService = new TokenService();
 			await tokenService.verifyAccessToken(token);
 		
 			const { songName, difficulty, period } = query;
-			const songTitle: string = this.correctSongName(songName)
-
+			const songTitle: string = this.correctSongName(songName);
+	
 			const { startOfPeriod, endOfPeriod } = this.getPeriodDates(period);
 			const scores: savedClassicScoreStats[] = await this.fetchScores(songTitle, difficulty.toLowerCase());
-			const filteredScores = this.filterScoresByPeriod(scores, startOfPeriod, endOfPeriod) as savedClassicScoreStats[];
-
+	
+			// Apply filters and sort correctly
+			const filteredScores = scores
+				.filter(score => {
+					const scoreDate = new Date(score.timestamp);
+					return scoreDate >= startOfPeriod && scoreDate < endOfPeriod && score.score > 0;
+				})
+				.sort((a, b) => b.score - a.score); // Ensure highest score is first
+	
 			return filteredScores;
 		} catch (error: any) {
 			console.log(error);
 			throw error;
 		}
 	}
+	
 
 	private correctSongName(songName: string): string {
 		let songTItle: string = songName
