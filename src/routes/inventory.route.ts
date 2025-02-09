@@ -136,9 +136,10 @@ const inventory = (app: Elysia): void => {
     
             return output;
         } catch (error: any) {
+            console.log(error);
             throw error
             }
-            }, cardGroupSchema
+        }, cardGroupSchema
         )
         
         
