@@ -161,9 +161,6 @@ class InventoryService {
     
     
     
-    
-    
-    
     // Updates inventory data for a user based on the provided access token and update information.
     public async equipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
         try {
@@ -180,7 +177,7 @@ class InventoryService {
     
                 // Check if the item is in inventory using the utility function
                 //@ts-ignore
-                const isInInventory = await this.isItemInInventory(nftInventory, tokenId, group, uri, slot);
+                const isInInventory: boolean = await this.isItemInInventory(nftInventory, tokenId, group, uri, slot, name);
     
                 // If a match is not found, throw an error
                 if (!isInInventory) {
@@ -209,17 +206,19 @@ class InventoryService {
 
     // Utility function to check if an item is in the inventory
     private async isItemInInventory(
-        nftInventory: Array<{ metadata: { id: string; group: string; uri: string, slot: string  } }>,
+        nftInventory: Array<{ metadata: { id: string; group: string; uri: string, slot: string, name: string  } }>,
         tokenId: string,
         group: string,
         uri: string,
-        slot: string ): Promise<boolean> {
+        slot: string,
+        name: string ): Promise<boolean> {
         return nftInventory.some(
             (nft) =>
                 nft.metadata.id === tokenId &&
                 nft.metadata.group === group &&
                 nft.metadata.uri === uri &&
-                nft.metadata.slot === slot
+                nft.metadata.slot === slot &&
+                nft.metadata.name === name
         );
     }
     
@@ -523,26 +522,14 @@ class InventoryService {
             // Extract values from the equipped inventory object
             const equippedCards = Object.values(equippedInventory)
                 .filter((item: any) => item.tokenId && item.tokenId.trim() !== ""); // Ensure tokenId is not empty
+            
+
+            console.log("Equipped Cards", equippedCards);
+            const ownedAndEquipped = await this.getInventoryNFT(smartWalletAddress, EDITION_ADDRESS);
+
+            console.log("Owned and Equipped", ownedAndEquipped);
     
-            const ownedAndEquipped: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
-    
-            // Filter matching cards and extract only name and scoreBoost
-            const matchedCards: Pick<CardMetaData, "name" | "scoreBoost">[] = equippedCards
-                .map((equipped: any) => {
-                    // Find a card where `metadata.tokenId` matches the `equipped.tokenId`
-                    const matchedCard = ownedAndEquipped.find((card: any) => card.metadata.id === equipped.tokenId);
-                    if (matchedCard) {
-                        return {
-                            name: matchedCard.metadata.name, // Fix: Access name inside metadata
-                            scoreBoost: matchedCard.metadata.scoreBoost, // Fix: Access scoreBoost inside metadata
-                        };
-                    }
-                    return null;
-                })
-                .filter((card): card is Pick<CardMetaData, "name" | "scoreBoost"> => card !== null);
-    
-            console.log("Matched Equipped Cards: ", matchedCards);
-            return matchedCards;
+
         } catch (error) {
             console.error("Error fetching equipped cards:", error);
             throw error;
