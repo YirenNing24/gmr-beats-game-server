@@ -514,18 +514,23 @@ class InventoryService {
     
             const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
     
-            // Extracting equipped card metadata from the inventory node
-            const equippedCards: EquippedItemsInv = result.records
-                .map((record) => record.get("i").properties)
-                .filter((item) => item.tokenId.trim() !== ""); // Ensure tokenId is not empty
+            // Extract equipped card metadata (inventory is stored as an object)
+            const equippedInventory: any = result.records[0].get("i"); // This is the dictionary
+            if (!equippedInventory) {
+                throw new Error("Equipped inventory data is missing.");
+            }
+    
+            // Extract values from the equipped inventory object
+            const equippedCards = Object.values(equippedInventory)
+                .filter((item: any) => item.tokenId && item.tokenId.trim() !== ""); // Ensure tokenId is not empty
     
             const ownedAndEquipped: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
     
             // Filter matching cards and extract only name and scoreBoost
             const matchedCards: Pick<CardMetaData, "name" | "scoreBoost">[] = equippedCards
-                .map((equipped) => {
+                .map((equipped: any) => {
                     // Find a card where `metadata.tokenId` matches the `equipped.tokenId`
-                    const matchedCard = ownedAndEquipped.find((card) => card.metadata.tokenId === equipped.tokenId);
+                    const matchedCard = ownedAndEquipped.find((card: any) => card.metadata.tokenId === equipped.tokenId);
                     if (matchedCard) {
                         return {
                             name: matchedCard.metadata.name, // Fix: Access name inside metadata
@@ -543,6 +548,7 @@ class InventoryService {
             throw error;
         }
     }
+    
     
     
     
