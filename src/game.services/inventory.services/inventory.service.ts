@@ -530,7 +530,7 @@ class InventoryService {
             const matchedCards: Pick<CardMetaData, "name" | "scoreBoost">[] = equippedCards
                 .map((equipped: any) => {
                     // Find a card where `metadata.tokenId` matches the `equipped.tokenId`
-                    const matchedCard = ownedAndEquipped.find((card: any) => card.metadata.tokenId === equipped.tokenId);
+                    const matchedCard = ownedAndEquipped.find((card: any) => card.metadata.id === equipped.tokenId);
                     if (matchedCard) {
                         return {
                             name: matchedCard.metadata.name, // Fix: Access name inside metadata
