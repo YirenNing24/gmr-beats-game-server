@@ -149,3 +149,14 @@ export interface UpdateData {
   group: string;
   slot: string;
 }
+
+interface EquippedItem {
+	uri: string;
+	tokenId: string;
+	contractAddress: string;
+	group: string;
+	slot: string;
+	name: string;
+}
+
+export type EquippedItemsInv = EquippedItem[];

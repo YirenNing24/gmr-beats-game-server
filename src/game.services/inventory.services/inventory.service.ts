@@ -6,7 +6,7 @@ import TokenService from "../../user.services/token.services/token.service";
 import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
 
 //** TYPE INTERFACES
-import { CardMetaData, InventoryCardData , InventoryCards, UpdateData, UpdateInventoryData } from "./inventory.interface";
+import { CardMetaData, EquippedItemsInv, InventoryCardData , InventoryCards, UpdateData, UpdateInventoryData } from "./inventory.interface";
 import { checkInventorySizeCypher, openCardUpgradeCypher, unequipItemCypher } from "./inventory.cypher";
 import { StoreCardUpgradeData } from "../store.services/store.interface";
 
@@ -479,45 +479,7 @@ class InventoryService {
     
 
     // Updates inventory data for a user based on the provided access token and update information.
-    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string) {
-        try {
-            const tokenService: TokenService = new TokenService();
-            const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
-
-            if (!isAuthorized) {
-                return
-            }
-            
-            const session: Session | undefined = this.driver?.session();
-    
-            const result: QueryResult | undefined = await session?.executeRead((tx: ManagedTransaction) =>
-                tx.run(
-                    `
-                    MATCH (u:User {username: $username})-[:EQUIPPED]->(c:Card {group: $groupName})
-                    RETURN c
-                    `,
-                    { username, groupName }
-                )
-            );
-
-
-            // Process the result and extract the equipped cards
-            const cards: CardMetaData[] = result?.records.map((record) => record.get('c').properties) || [];
-
-            console.log("Card equipped please: ", cards)
-            // Close the session
-            await session?.close();
-    
-            return cards;
-            
-        } catch (error: any) {
-            console.error(error);
-            throw error;
-        }
-    }
-
-    // Updates inventory data for a user based on the provided access token and update information.
-    public async openGroupCardEquippedV2(apiKey: string, groupName: string, username: string): Promise<CardMetaData[]> {
+    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string): Promise<Pick<CardMetaData, "name" | "scoreBoost">[]> {
         try {
             const tokenService = new TokenService();
             const isAuthorized = await tokenService.verifyApiKey(apiKey);
@@ -538,7 +500,7 @@ class InventoryService {
                 tx.run(
                     `
                     MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
-                    RETURN i
+                    RETURN i, u.smartWalletAddress as smartWalletAddress
                     `,
                     { username }
                 )
@@ -550,16 +512,43 @@ class InventoryService {
                 throw new Error(`No equipped card found for user: ${username} in group: ${groupName}`);
             }
     
-            // Extracting equipped card metadata from the inventory node
-            const equippedCards = result.records.map((record) => record.get("i").properties);
+            const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
     
-            console.log("Equipped Cards: ", equippedCards);
-            return equippedCards;
+            // Extracting equipped card metadata from the inventory node
+            const equippedCards: EquippedItemsInv = result.records
+                .map((record) => record.get("i").properties)
+                .filter((item) => item.tokenId.trim() !== ""); // Ensure tokenId is not empty
+    
+            const ownedAndEquipped: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
+    
+            // Filter matching cards and extract only name and scoreBoost
+            const matchedCards: Pick<CardMetaData, "name" | "scoreBoost">[] = equippedCards
+                .map((equipped) => {
+                    // Find a card where `metadata.tokenId` matches the `equipped.tokenId`
+                    const matchedCard = ownedAndEquipped.find((card) => card.metadata.tokenId === equipped.tokenId);
+                    if (matchedCard) {
+                        return {
+                            name: matchedCard.metadata.name, // Fix: Access name inside metadata
+                            scoreBoost: matchedCard.metadata.scoreBoost, // Fix: Access scoreBoost inside metadata
+                        };
+                    }
+                    return null;
+                })
+                .filter((card): card is Pick<CardMetaData, "name" | "scoreBoost"> => card !== null);
+    
+            console.log("Matched Equipped Cards: ", matchedCards);
+            return matchedCards;
         } catch (error) {
             console.error("Error fetching equipped cards:", error);
             throw error;
         }
     }
+    
+    
+    
+    
+
+
 
     // Updates inventory data for a user based on the provided access token and update information.
     public async equippedGroupCard(token: string, groupName: string) {
@@ -603,24 +592,7 @@ class InventoryService {
     }
 
 
-    private async getEquippedCardData(smartWalletAddress: string ) {
-        try {
-                      const { result: ownedEnergyItems } = await engine.erc1155.getOwned(
-                          smartWalletAddress,
-                          CHAIN,
-                          EDITION_ADDRESS
-                      );
 
-
-
-
-
-        }
-        catch (error: any) {
-            console.error("Error fetching equipped cards:", error);
-            throw error;
-    }
-  }
 
 
 
