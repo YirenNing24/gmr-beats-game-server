@@ -524,7 +524,7 @@ class InventoryService {
                 .filter((item: any) => item.tokenId && item.tokenId.trim() !== ""); // Ensure tokenId is not empty
             
 
-            console.log("Equipped Cards", equippedCards);
+            console.log("equipped inventory", equippedInventory);
             const ownedAndEquipped = await this.getInventoryNFT(smartWalletAddress, EDITION_ADDRESS);
 
             console.log("Owned and Equipped", ownedAndEquipped);
