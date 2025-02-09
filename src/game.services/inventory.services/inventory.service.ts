@@ -478,7 +478,7 @@ class InventoryService {
     
 
     // Updates inventory data for a user based on the provided access token and update information.
-    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string): Promise<Pick<CardMetaData, "name" | "scoreBoost">[]> {
+    public async openGroupCardEquipped(apiKey: string, groupName: string, username: string) {
         try {
             const tokenService = new TokenService();
             const isAuthorized = await tokenService.verifyApiKey(apiKey);
@@ -513,8 +513,9 @@ class InventoryService {
     
             const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
     
-            // Extract equipped card metadata (inventory is stored as an object)
-            const equippedInventory: any = result.records[0].get("i"); // This is the dictionary
+            // Extract equipped card metadata (inventory is stored inside `properties`)
+            const equippedInventory = result.records[0].get("i").properties; // ✅ Extract properties
+    
             if (!equippedInventory) {
                 throw new Error("Equipped inventory data is missing.");
             }
@@ -522,19 +523,37 @@ class InventoryService {
             // Extract values from the equipped inventory object
             const equippedCards = Object.values(equippedInventory)
                 .filter((item: any) => item.tokenId && item.tokenId.trim() !== ""); // Ensure tokenId is not empty
-            
-
-            console.log("equipped inventory", equippedInventory);
-            const ownedAndEquipped = await this.getInventoryNFT(smartWalletAddress, EDITION_ADDRESS);
-
-            console.log("Owned and Equipped", ownedAndEquipped);
     
-
+            console.log("Equipped Cards:", equippedCards);
+    
+            // Fetch user's owned and equipped NFT cards
+            const ownedAndEquipped = await this.getInventoryNFT(smartWalletAddress, EDITION_ADDRESS);
+    
+            console.log("Owned and Equipped:", ownedAndEquipped);
+    
+            // Match equipped cards with owned cards
+            const matchedCards = equippedCards
+                .map((equipped: any) => {
+                    const matchedCard = ownedAndEquipped.find((card) => card.metadata.id === equipped.tokenId);
+                    if (matchedCard) {
+                        return {
+                            name: matchedCard.metadata.name,
+                            scoreBoost: matchedCard.metadata.scoreboost, // Ensure correct field name
+                        };
+                    }
+                    return null;
+                })
+                .filter((card): card is { name: string; scoreBoost: string } => card !== null);
+    
+            console.log("Matched Equipped Cards:", matchedCards);
+    
+            return matchedCards;
         } catch (error) {
             console.error("Error fetching equipped cards:", error);
             throw error;
         }
     }
+    
     
     
     
