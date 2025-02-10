@@ -178,9 +178,6 @@ class InventoryService {
                 const { group, contractAddress, tokenId, slot, uri, name } = item;
                 const nftInventory = await this.getInventoryNFT(smartWalletAddress, contractAddress);
 
-                console.log("NFT: ", nftInventory)
-                console.log("Inventory Data: ", updateInventoryData)
-                
 
                 // Check if the item is in inventory using the utility function
                 //@ts-ignore
@@ -215,21 +212,46 @@ class InventoryService {
 
     // Utility function to check if an item is in the inventory
     private async isItemInInventory(
-        nftInventory: Array<{ metadata: { id: string; group: string; uri: string, slot: string, name: string  } }>,
+        nftInventory: Array<{ metadata: { id: string; group: string; uri: string; slot: string; name: string } }>,
         tokenId: string,
         group: string,
         uri: string,
         slot: string,
-        name: string ): Promise<boolean> {
-        return nftInventory.some(
-            (nft) =>
+        name: string
+    ): Promise<boolean> {
+        console.log("Checking item against inventory...");
+        console.log("Expected:", { tokenId, group, uri, slot, name });
+    
+        return nftInventory.some((nft) => {
+            console.log("Checking against NFT:", {
+                id: nft.metadata.id,
+                group: nft.metadata.group,
+                uri: nft.metadata.uri,
+                slot: nft.metadata.slot,
+                name: nft.metadata.name,
+            });
+    
+            const match =
                 nft.metadata.id === tokenId &&
                 nft.metadata.group === group &&
                 nft.metadata.uri === uri &&
                 nft.metadata.slot === slot &&
-                nft.metadata.name === name
-        );
+                nft.metadata.name === name;
+    
+            if (!match) {
+                console.log("Mismatch found!");
+                console.log("Comparing:");
+                console.log(`- ID: ${nft.metadata.id} === ${tokenId} -> ${nft.metadata.id === tokenId}`);
+                console.log(`- Group: ${nft.metadata.group} === ${group} -> ${nft.metadata.group === group}`);
+                console.log(`- URI: ${nft.metadata.uri} === ${uri} -> ${nft.metadata.uri === uri}`);
+                console.log(`- Slot: ${nft.metadata.slot} === ${slot} -> ${nft.metadata.slot === slot}`);
+                console.log(`- Name: ${nft.metadata.name} === ${name} -> ${nft.metadata.name === name}`);
+            }
+    
+            return match;
+        });
     }
+    
     
 
     // Retrieves inventory card data for a user based on the provided access token.
