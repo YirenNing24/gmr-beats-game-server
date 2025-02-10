@@ -271,11 +271,12 @@ class InventoryService {
             // Fetch the inventory node for the group
             const result: QueryResult | undefined = await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
-                    `MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
+                    `MATCH (u:User {username: $username})-[:INVENTORY]->(i:\`${group}\`)
                      RETURN i`,
                     { username }
                 )
             );
+            
     
             if (!result || result.records.length === 0) {
                 throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
