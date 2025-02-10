@@ -179,7 +179,6 @@ class InventoryService {
                 const nftInventory = await this.getInventoryNFT(smartWalletAddress, contractAddress);
                 
 
-                console.log("NFT: ", nftInventory)
                 // Check if the item is in inventory using the utility function
                 //@ts-ignore
                 const isInInventory: boolean = await this.isItemInInventory(nftInventory, tokenId, group, uri, slot, name
@@ -248,42 +247,46 @@ class InventoryService {
     private async updateInventoryDB(groupName: string, username: string, slot: string, updateData: UpdateInventoryData): Promise<void> {
         const session: Session | undefined = this.driver?.session();
         try {
-            // Handle the case where the group name is X:IN
+            // Normalize group name
             let group: string = groupName;
             if (groupName === "X:IN") {
                 group = "X_IN";
-            }
-
-            else if (groupName === "GREAT GUYS") {
+            } else if (groupName === "GREAT GUYS") {
                 group = "GREATGUYS";
             }
+    
+            // Normalize slot (remove spaces)
+            const normalizedSlot: string = slot.replace(/\s+/g, "");
     
             // Fetch the inventory node for the group
             const result: QueryResult | undefined = await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
                     `MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
-                     RETURN i
-                    `, { username }
+                     RETURN i`,
+                    { username }
                 )
             );
-
+    
             if (!result || result.records.length === 0) {
                 throw new Error(`Inventory for group ${groupName} not found for user ${username}`);
             }
     
             // Execute the update query
             await session?.executeWrite((tx: ManagedTransaction) =>
-                tx.run(`MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
-                    SET i.${slot} = $updateData`, { username, updateData,})
+                tx.run(
+                    `MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
+                     SET i.${normalizedSlot} = $updateData`,
+                    { username, updateData }
+                )
             );
-
+    
             await session?.close();
         } catch (error: any) {
             console.error("Error updating inventory in database:", error);
             throw error;
         }
-
     }
+    
 
 
     public async unequipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
