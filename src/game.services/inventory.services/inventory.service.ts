@@ -39,9 +39,6 @@ class InventoryService {
 
             const categorizedCards = this.categorizeCards(ownedCards, equipped);
 
-            console.log("equipped: ", equipped)
-            console.log("catd: ", categorizedCards)
-
             return categorizedCards
         } catch (error: any) {
             console.error("Error opening user inventory:", error);
@@ -175,18 +172,17 @@ class InventoryService {
 
             const userName: string = await tokenService.verifyAccessToken(token);
             const smartWalletAddress: string = await walletService.getSmartWalletAddress(userName);
-            console.log("Update Inventory Data ", updateInventoryData)
 
             // Iterate over each item in the updateInventoryData array
             for (const item of updateInventoryData) {
                 const { group, contractAddress, tokenId, slot, uri, name } = item;
                 const nftInventory = await this.getInventoryNFT(smartWalletAddress, contractAddress);
 
-                console.log("NFT INVENTORY: ", nftInventory)
-    
                 // Check if the item is in inventory using the utility function
                 //@ts-ignore
-                const isInInventory: boolean = await this.isItemInInventory(nftInventory, tokenId, group, uri, slot, name);
+                const isInInventory: boolean = await this.isItemInInventory(nftInventory, tokenId, group, uri, slot, name
+                );
+                
     
                 // If a match is not found, throw an error
                 if (!isInInventory) {
