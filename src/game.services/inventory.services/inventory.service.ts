@@ -175,11 +175,14 @@ class InventoryService {
 
             const userName: string = await tokenService.verifyAccessToken(token);
             const smartWalletAddress: string = await walletService.getSmartWalletAddress(userName);
-    
+            console.log("Update Inventory Data ", updateInventoryData)
+
             // Iterate over each item in the updateInventoryData array
             for (const item of updateInventoryData) {
                 const { group, contractAddress, tokenId, slot, uri, name } = item;
                 const nftInventory = await this.getInventoryNFT(smartWalletAddress, contractAddress);
+
+                console.log("NFT INVENTORY: ", nftInventory)
     
                 // Check if the item is in inventory using the utility function
                 //@ts-ignore
