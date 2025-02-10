@@ -35,9 +35,14 @@ class InventoryService {
             const { smartWalletAddress, inventoryData } = await this.getInventoryData(userName);
 
             const ownedCards: InventoryCardData[] = await this.getOwnedCards(smartWalletAddress);
-            const equipped = await this.getEquippedItems(inventoryData, ownedCards);
+            const equipped: InventoryCardData[] = await this.getEquippedItems(inventoryData, ownedCards);
 
-            return this.categorizeCards(ownedCards, equipped);
+            const categorizedCards = this.categorizeCards(ownedCards, equipped);
+
+            console.log("equipped: ", equipped)
+            console.log("catd: ", categorizedCards)
+
+            return categorizedCards
         } catch (error: any) {
             console.error("Error opening user inventory:", error);
             throw error;
@@ -80,7 +85,7 @@ class InventoryService {
     
     // Helper method to get equipped items
     private async getEquippedItems(inventoryData: Record<string, any>, ownedCards: InventoryCardData[]): Promise<InventoryCardData[]> {
-        const equippedCards: InventoryCardData[] = [];
+        let equippedCards: InventoryCardData[] = [];
     
         // Iterate through groups in inventoryData
         for (const groupKey of Object.keys(inventoryData)) {
@@ -110,7 +115,7 @@ class InventoryService {
                 }
             }
         }
-    
+
         return equippedCards;
     }
     
