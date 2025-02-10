@@ -529,12 +529,10 @@ class InventoryService {
             const equippedCards = Object.values(equippedInventory)
                 .filter((item: any) => item.tokenId && item.tokenId.trim() !== ""); // Ensure tokenId is not empty
     
-            console.log("Equipped Cards:", equippedCards);
     
             // Fetch user's owned and equipped NFT cards
             const ownedAndEquipped = await this.getInventoryNFT(smartWalletAddress, EDITION_ADDRESS);
     
-            console.log("Owned and Equipped:", ownedAndEquipped);
     
             // Match equipped cards with owned cards
             const matchedCards = equippedCards
@@ -549,8 +547,6 @@ class InventoryService {
                     return null;
                 })
                 .filter((card): card is { name: string; scoreBoost: string } => card !== null);
-    
-            console.log("Matched Equipped Cards:", matchedCards);
     
             return matchedCards;
         } catch (error) {
