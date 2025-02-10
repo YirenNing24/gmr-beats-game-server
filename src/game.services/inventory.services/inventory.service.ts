@@ -177,7 +177,9 @@ class InventoryService {
             for (const item of updateInventoryData) {
                 const { group, contractAddress, tokenId, slot, uri, name } = item;
                 const nftInventory = await this.getInventoryNFT(smartWalletAddress, contractAddress);
+                
 
+                console.log("NFT: ", nftInventory)
                 // Check if the item is in inventory using the utility function
                 //@ts-ignore
                 const isInInventory: boolean = await this.isItemInInventory(nftInventory, tokenId, group, uri, slot, name
