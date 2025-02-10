@@ -251,6 +251,10 @@ class InventoryService {
             if (groupName === "X:IN") {
                 group = "X_IN";
             }
+
+            else if (groupName === "GREAT GUYS") {
+                group = "GREATGUYS";
+            }
     
             // Fetch the inventory node for the group
             const result: QueryResult | undefined = await session?.executeWrite((tx: ManagedTransaction) =>
