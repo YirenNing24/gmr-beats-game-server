@@ -11,7 +11,11 @@ import routes from "./routes/index";
 
 
 // Initialize Elysia app
-const app = new Elysia()
+const app = new Elysia({
+  serve: {
+    idleTimeout: 60
+  }
+})
 
   
 
