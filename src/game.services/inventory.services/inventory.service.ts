@@ -138,31 +138,32 @@ class InventoryService {
     // Helper method to categorize cards
     private categorizeCards(ownedCards: InventoryCardData[], equippedCards: InventoryCardData[]): InventoryCards {
         // Arrays to store categorized cards
-        const ownedAndInventory: InventoryCardData[] = [];
-        const ownedAndEquipped: InventoryCardData[] = [];
+        let ownedAndInventory: InventoryCardData[] = [];
+        let ownedAndEquipped: InventoryCardData[] = [];
     
-        // Get tokenIds for equipped cards for easy comparison
-        const equippedTokenIds: Set<string> = new Set(
-            equippedCards.map(card => Object.values(card)[0].tokenId)
+        // Get equipped card IDs for comparison
+        const equippedIds: Set<string> = new Set(
+            equippedCards.map(card => card.metadata.id) // Use `metadata.id`, not `tokenId`
         );
     
         // Categorize each owned card
         ownedCards.forEach(card => {
-            const metadata = Object.values(card)[0]; // Extract metadata from the card
-            const tokenId = metadata.tokenId; // Ensure correct property
+            const metadata = card.metadata; // Directly access metadata
+            const cardId = metadata.id; // Ensure correct property
     
             // Check if the card is equipped
-            if (equippedTokenIds.has(tokenId)) {
+            if (equippedIds.has(cardId)) {
                 // Add to equipped array
-                ownedAndEquipped.push({ [metadata.uri]: { ...metadata } });
+                ownedAndEquipped.push(card);
             } else {
                 // Add to inventory array
-                ownedAndInventory.push({ [metadata.uri]: { ...metadata } });
+                ownedAndInventory.push(card);
             }
         });
     
         return [ownedAndInventory, ownedAndEquipped];
     }
+    
     
     
     
