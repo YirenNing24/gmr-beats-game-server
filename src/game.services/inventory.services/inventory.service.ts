@@ -219,38 +219,23 @@ class InventoryService {
         slot: string,
         name: string
     ): Promise<boolean> {
-        console.log("Checking item against inventory...");
-        console.log("Expected:", { tokenId, group, uri, slot, name });
+        // Normalize slot (remove spaces)
+        const normalizedSlot = slot.replace(/\s+/g, "");
     
         return nftInventory.some((nft) => {
-            console.log("Checking against NFT:", {
-                id: nft.metadata.id,
-                group: nft.metadata.group,
-                uri: nft.metadata.uri,
-                slot: nft.metadata.slot,
-                name: nft.metadata.name,
-            });
+            // Normalize slot for NFT metadata
+            const nftSlot = nft.metadata.slot.replace(/\s+/g, "");
     
-            const match =
+            return (
                 nft.metadata.id === tokenId &&
                 nft.metadata.group === group &&
                 nft.metadata.uri === uri &&
-                nft.metadata.slot === slot &&
-                nft.metadata.name === name;
-    
-            if (!match) {
-                console.log("Mismatch found!");
-                console.log("Comparing:");
-                console.log(`- ID: ${nft.metadata.id} === ${tokenId} -> ${nft.metadata.id === tokenId}`);
-                console.log(`- Group: ${nft.metadata.group} === ${group} -> ${nft.metadata.group === group}`);
-                console.log(`- URI: ${nft.metadata.uri} === ${uri} -> ${nft.metadata.uri === uri}`);
-                console.log(`- Slot: ${nft.metadata.slot} === ${slot} -> ${nft.metadata.slot === slot}`);
-                console.log(`- Name: ${nft.metadata.name} === ${name} -> ${nft.metadata.name === name}`);
-            }
-    
-            return match;
+                nftSlot === normalizedSlot &&
+                nft.metadata.name === name
+            );
         });
     }
+    
     
     
 
