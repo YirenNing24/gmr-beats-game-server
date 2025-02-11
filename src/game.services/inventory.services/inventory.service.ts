@@ -45,7 +45,7 @@ class InventoryService {
             throw error;
         }
     }
-
+    // Retrieves inventory card data for a user based on the provided access token.
     private async getInventoryData(userName: string) {
         const session: Session | undefined = this.driver?.session();
     
