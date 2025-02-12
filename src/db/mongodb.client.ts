@@ -15,10 +15,10 @@ export const mongoDBClient = new MongoClient(uri, {
 		strict: true,
 		deprecationErrors: true,
 	},
-	tlsAllowInvalidCertificates: tlsEnabled, // Use the converted boolean
-	tls: tlsEnabled, // Use the converted boolean
-	timeoutMS: MONGO_TIMEOUT_MS, // Ensure MONGO_TIMEOUT_MS is a number
-	socketTimeoutMS: MONGO_SOCKET_TIMEOUT_MS, // Ensure MONGO_SOCKET_TIMEOUT_MS is a number
+	tlsAllowInvalidCertificates: tlsEnabled,
+	tls: tlsEnabled,
+	timeoutMS: MONGO_TIMEOUT_MS, 
+	socketTimeoutMS: MONGO_SOCKET_TIMEOUT_MS, 
 });
 
 
