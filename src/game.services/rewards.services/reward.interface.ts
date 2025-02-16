@@ -2,6 +2,40 @@
 /**
  * Personal mission interface.
  *
+ * @interface DailyMission
+ * @property {string} name - The name of the personal mission.
+ * @property {string} description - The description of the personal mission.
+ * @property {DailyMissionRequirement} requirement - The requirement of the personal mission.
+ */
+export interface DailyMission {
+	name: string;
+	missionType: 'daily';
+	description: string;
+	requirement: DailyMissionRequirement;
+}
+
+/**
+ * Personal mission requirement interface.
+ * 
+ * @interface DailyMissionRequirement
+ * @property {Object} criteria - The criteria of the personal mission requirement.
+ * @property {string} criteria.type - The type of the criteria.
+ * @property {number} criteria.value - The value of the criteria.
+ * @property {string} criteria.description - The description of the criteria.
+ */
+interface DailyMissionRequirement {
+	criteria: {
+		type: "login";
+		value: number;
+		group?: string;
+		description: string;
+        reward: { name: string, cards?: Array<any>, beats?: number, amount: number };
+	};
+}
+
+/**
+ * Personal mission interface.
+ *
  * @interface PersonalMission
  * @property {string} name - The name of the personal mission.
  * @property {string} description - The description of the personal mission.
@@ -34,6 +68,13 @@ interface PersonalMissionRequirement {
 }
 
 
+
+
+
+export interface GetDailyMission extends DailyMission {
+	claimed: boolean;
+	elligible: boolean;
+}
 
 
 export interface GetPersonalMission extends PersonalMission {

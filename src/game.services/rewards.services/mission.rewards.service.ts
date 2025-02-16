@@ -13,7 +13,7 @@ import SoulService from "../soul.services/soul.service";
 
 
 //** TYPE INTERFACE IMPORT
-import { CollectionMission, CompletedMission, GetPersonalMission, PersonalMission, Reward, UserMissions } from "./reward.interface";
+import { CollectionMission, CompletedMission, DailyMission, GetDailyMission, GetPersonalMission, PersonalMission, Reward, UserMissions } from "./reward.interface";
 import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
 import { SoulMetaData } from "../profile.services/profile.interface";
 import { SuccessMessage } from "../../outputs/success.message";
@@ -89,6 +89,58 @@ class RewardService {
 	}
 	
 
+	public async getDailyMisions(token: string) {
+		const tokenService = new TokenService();
+		const client: MongoClient = await mongoDBClient.connect();
+		try {
+			// Verify the access token
+			const username: string = await tokenService.verifyAccessToken(token);
+			const collection = client.db("beats").collection("dailyMissions");
+	
+			// Fetch all daily missions from the database
+			const dailyMissions = await collection
+				.find({ missionType: "daily" })
+				.toArray() as unknown as DailyMission[];
+	
+			// Fetch the user's completed missions
+			const userMissions = await this.getUserMissions(username);
+	
+			// Enrich missions with eligibility and claim status
+			const enrichedMissions: GetDailyMission[] = await Promise.all(
+				dailyMissions.map(async (mission) => {
+					const completedMission = userMissions?.completedMissions.find(
+						(completed) => completed.missionName === mission.name
+					);
+	
+					if (completedMission && completedMission.rewardClaimed) {
+						// If the mission is already completed and claimed
+						return {
+							...mission,
+							elligible: false, // Already claimed, so not eligible
+							claimed: true    // Reward already claimed
+						};
+					} else {
+						// If not claimed, check for eligibility
+						const eligible: boolean = await this.checkDailyMissionEligibility(username, mission);
+						return {
+							...mission,
+							elligible: eligible,
+							claimed: false   // Not yet claimed
+						};
+					}
+				})
+			);
+	
+			return enrichedMissions;
+
+
+		} catch(error: any) {
+	      console.log(error);
+		  throw error
+		}
+	}
+
+
 	public async getCollectionMissions(token: string): Promise<CollectionMission[]> {
 		const tokenService = new TokenService();
 		try {
@@ -96,16 +148,23 @@ class RewardService {
 			const client: MongoClient = await mongoDBClient.connect();
 			const collection = client.db("beats").collection("collectionMissions");
 	
-			const collectionMissions = await collection.find({ missionType: "collection" }).toArray() as unknown as CollectionMission[];
-			
-	
-			await client.close(); // Close the client after the operation
+			const collectionMissions: CollectionMission[] = await collection.find({ missionType: "collection" }).toArray() as unknown as CollectionMission[];
+			await client.close();
+
 			return collectionMissions;
 		} catch (error: any) {
 			console.error("Error fetching collection missions:", error);
 			throw error;
 		}
 	}
+
+
+
+
+
+
+
+
 
 
 	public async claimPersonalMissionReward(token: string, missionName: {name: string}): Promise<SuccessMessage> {
@@ -225,7 +284,7 @@ class RewardService {
 		}
 	}
 	
-
+	
 	private async checkPersonalMissionEligibility(username: string, missionData: PersonalMission): Promise<boolean> {
 		try {
 			let verified = false;
@@ -243,8 +302,28 @@ class RewardService {
 			throw error;
 		}
 	}
-	 
+
+
+
+	private async checkDailyMissionEligibility(username: string, missionData: DailyMission): Promise<boolean> {
+		try {
+			let verified: boolean = false;
 	
+			// Destructure for easier access
+			const { type } = missionData.requirement.criteria;
+	
+			if (type === "login") {
+				verified = await this.checkDailyLogin(username);
+			}
+			return verified;
+		} catch (error: any) {
+			console.error("Error checking personal mission eligibility:", error);
+			throw error;
+		}
+	}
+
+
+
 	private async checkCompletedSongs(username: string, value: number): Promise<boolean> {
 		try {
 			const client: MongoClient = await mongoDBClient.connect();
@@ -266,6 +345,37 @@ class RewardService {
 			throw error;
 		}
 	}
+
+
+
+	private async checkDailyLogin(username: string): Promise<boolean> {
+		try {
+			const client: MongoClient = await mongoDBClient.connect();
+			const collection = client.db("beats").collection("dailyLogins");
+	
+			// Get the current time in UTC
+			const nowUTC = new Date();
+	
+			// Convert to Korean Standard Time (UTC+9)
+			const nowKST = new Date(nowUTC.getTime() + 9 * 60 * 60 * 1000);
+	
+			// Get 24 hours ago in KST
+			const past24HoursKST = new Date(nowKST.getTime() - 24 * 60 * 60 * 1000);
+	
+			// Check if a login claim exists within the last 24 hours (KST)
+			const recentClaim = await collection.findOne({
+				username,
+				claimed_at: { $gte: past24HoursKST }, // Ensures claimed reward is within 24 hours
+			});
+	
+			// Return true if claimed, otherwise false
+			return recentClaim !== null;
+		} catch (error: any) {
+			console.error("Error in checkDailyLogin: ", error);
+			throw error;
+		}
+	}
+		
 	
 
 	
