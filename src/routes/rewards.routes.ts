@@ -61,7 +61,7 @@ const rewards = (app: Elysia) => {
      }, authorizationBearerSchema
     )
 
-    .get('/api/reward/daily-mission', async ({ headers }) => {
+    .get('/api/reward/daily-missions', async ({ headers }) => {
       try {
         const authorizationHeader: string = headers.authorization;
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
