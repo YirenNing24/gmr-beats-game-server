@@ -265,9 +265,6 @@ class InventoryService {
                 group = "GREATGUYS";
             }
     
-            // Normalize slot (remove spaces)
-            const normalizedSlot: string = slot.replace(/\s+/g, "");
-    
             // Fetch the inventory node for the group
             const result: QueryResult | undefined = await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
@@ -285,7 +282,7 @@ class InventoryService {
             await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
                     `MATCH (u:User {username: $username})-[:INVENTORY]->(i:${group})
-                     SET i.${normalizedSlot} = $updateData`,
+                     SET i.${slot} = $updateData`,
                     { username, updateData }
                 )
             );
