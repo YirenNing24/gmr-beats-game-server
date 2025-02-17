@@ -300,44 +300,49 @@ class InventoryService {
 
 
     public async unequipItem(token: string, updateInventoryData: UpdateInventoryData[]): Promise<SuccessMessage> {
+        let session: Session | undefined;
         try {
             const tokenService: TokenService = new TokenService();
             const userName: string = await tokenService.verifyAccessToken(token);
     
-            const session: Session | undefined = this.driver?.session();
+            session = this.driver?.session();
     
             for (const item of updateInventoryData) {
-                const { group, slot } = item;
-
+                let { group, slot } = item;
+    
+                // Normalize group names
                 let groupName: string = group;
                 if (group === "X:IN") {
                     groupName = "X_IN";
-                }
-                else if (group === "Great Guys") {
+                } else if (group === "Great Guys") {
                     groupName = "GREATGUYS";
                 }
+    
+                // Remove spaces from slot name
+                const sanitizedSlot = slot.replace(/\s+/g, "");
     
                 // Update the inventory node to unequip the specified slot
                 await session?.executeWrite(tx =>
                     tx.run(
                         `
                         MATCH (u:User {username: $userName})-[:INVENTORY]->(i:${groupName})
-                        SET i.${slot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: "", name: ""}
+                        SET i[$slot] = {uri: "", tokenId: "", contractAddress: "", group: "", slot: "", name: ""}
                         RETURN i
                         `,
-                        { userName }
+                        { userName, slot: sanitizedSlot }
                     )
                 );
             }
-    
-            await session?.close();
     
             return new SuccessMessage("Equip removed");
         } catch (error: any) {
             console.error("Error removing equipped items:", error);
             throw error;
+        } finally {
+            await session?.close(); // Ensures session is closed properly
         }
     }
+    
     
     
 
