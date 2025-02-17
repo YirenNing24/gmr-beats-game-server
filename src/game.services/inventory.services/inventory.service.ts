@@ -328,10 +328,10 @@ class InventoryService {
                     tx.run(
                         `
                         MATCH (u:User {username: $userName})-[:INVENTORY]->(i:${groupName})
-                        SET i.${slot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: "", name: ""}
+                        SET i.${sanitizedSlot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: "", name: ""}
                         RETURN i
                         `,
-                        { userName, slot: sanitizedSlot }
+                        { userName }
                     )
                 );
             }
