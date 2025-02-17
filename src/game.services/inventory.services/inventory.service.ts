@@ -309,7 +309,9 @@ class InventoryService {
     
             for (const item of updateInventoryData) {
                 let { group, slot } = item;
-    
+                
+                console.log("Slot", slot);
+
                 // Normalize group names
                 let groupName: string = group;
                 if (group === "X:IN") {
