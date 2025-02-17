@@ -256,9 +256,6 @@ class InventoryService {
     // Updates the inventory database with the provided update data.
     private async updateInventoryDB(groupName: string, username: string, slot: string, updateData: UpdateInventoryData): Promise<void> {
         const session: Session | undefined = this.driver?.session();
-
-
-        console.log("Group name :", groupName)
         try {
             // Normalize group name
             let group: string = groupName;
@@ -315,6 +312,9 @@ class InventoryService {
                 let groupName: string = group;
                 if (group === "X:IN") {
                     groupName = "X_IN";
+                }
+                else if (group === "Great Guys") {
+                    groupName = "GREATGUYS";
                 }
     
                 // Update the inventory node to unequip the specified slot
