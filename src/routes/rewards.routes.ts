@@ -99,6 +99,26 @@ const rewards = (app: Elysia) => {
 
      }, personalMissionSchema
     )
+
+    .post('/api/reward/claim/daily-mission', async ({ headers, body }) => {
+      try {
+         const authorizationHeader: string = headers.authorization;
+         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+           throw new Error('Bearer token not found in Authorization header');
+         }
+         const jwtToken: string = authorizationHeader.substring(7);
+         const driver: Driver = getDriver();
+         const rewardService: RewardService = new RewardService(driver);
+         
+         const output = await rewardService.claimDailyMissionReward(jwtToken, body)
+         return output as SuccessMessage;
+      } catch (error: any) {
+        console.log(error);
+        throw error
+      }
+ 
+      }, personalMissionSchema
+    )
 }
 
 export default rewards
