@@ -316,14 +316,14 @@ class InventoryService {
                 }
     
                 // Remove spaces from slot name
-                const sanitizedSlot = slot.replace(/\s+/g, "");
+
     
                 // Update the inventory node to unequip the specified slot
                 await session?.executeWrite(tx =>
                     tx.run(
                         `
                         MATCH (u:User {username: $userName})-[:INVENTORY]->(i:${groupName})
-                        SET i.${sanitizedSlot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: "", name: ""}
+                        SET i.${slot} = {uri: "", tokenId: "", contractAddress: "", group: "", slot: "", name: ""}
                         RETURN i
                         `,
                         { userName }
