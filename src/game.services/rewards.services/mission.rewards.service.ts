@@ -364,20 +364,24 @@ class RewardService {
 
 	private async checkDailyMissionEligibility(username: string, missionData: DailyMission): Promise<boolean> {
 		try {
-			let verified: boolean = false;
-	
 			// Destructure for easier access
 			const { type } = missionData.requirement.criteria;
 	
+			// If the mission type is "login", check daily login status
 			if (type === "login") {
-				verified = await this.checkDailyLogin(username);
+				const hasClaimed = await this.checkDailyLogin(username);
+	
+				// If the user has already claimed, they are NOT eligible
+				return !hasClaimed;
 			}
-			return verified;
+	
+			return false;
 		} catch (error: any) {
 			console.error("Error checking personal mission eligibility:", error);
 			throw error;
 		}
 	}
+	
 
 
 
