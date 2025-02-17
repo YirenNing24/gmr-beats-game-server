@@ -8,14 +8,14 @@ import { Driver } from 'neo4j-driver';
 //** SERVICE IMPORT
 import RewardService from '../game.services/rewards.services/mission.rewards.service';
 
-
 //** SCHEMA IMPORT
 import { authorizationBearerSchema } from './route.schema/schema.auth';
-
+import { personalMissionSchema } from '../game.services/rewards.services/rewards.schema';
 
 //** OUTPUT MESSSAGE IMPORT
 import { SuccessMessage } from '../outputs/success.message';
-import { personalMissionSchema } from '../game.services/rewards.services/rewards.schema';
+import { GetDailyMission } from '../game.services/rewards.services/reward.interface';
+
 
 
 
@@ -57,6 +57,25 @@ const rewards = (app: Elysia) => {
         console.log(error)
         throw error
 
+        }
+     }, authorizationBearerSchema
+    )
+
+    .get('/api/reward/daily-mission', async ({ headers }) => {
+      try {
+        const authorizationHeader: string = headers.authorization;
+        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+          throw new Error('Bearer token not found in Authorization header');
+        }
+        const jwtToken: string = authorizationHeader.substring(7);
+        const driver: Driver = getDriver();
+        const rewardService: RewardService = new RewardService(driver)
+        
+        const output: GetDailyMission[] = await rewardService.getDailyMisions(jwtToken);
+        return output 
+      } catch (error: any) {
+        console.log(error)
+        throw error
         }
      }, authorizationBearerSchema
     )

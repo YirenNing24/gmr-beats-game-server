@@ -15,7 +15,6 @@ import SoulService from "../soul.services/soul.service";
 //** TYPE INTERFACE IMPORT
 import { CollectionMission, CompletedMission, DailyMission, GetDailyMission, GetPersonalMission, PersonalMission, Reward, UserMissions } from "./reward.interface";
 import WalletService, { engine } from "../../user.services/wallet.services/wallet.service";
-import { SoulMetaData } from "../profile.services/profile.interface";
 import { SuccessMessage } from "../../outputs/success.message";
 
 
@@ -89,7 +88,7 @@ class RewardService {
 	}
 	
 
-	public async getDailyMisions(token: string) {
+	public async getDailyMisions(token: string): Promise<GetDailyMission[]> {
 		const tokenService = new TokenService();
 		const client: MongoClient = await mongoDBClient.connect();
 		try {
