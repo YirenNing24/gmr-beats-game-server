@@ -287,7 +287,6 @@ class RewardService {
 
 	private async updateUserMission(username: string, missionName: string): Promise<void> {
 		const client: MongoClient = await mongoDBClient.connect();
-		const soulService = new SoulService(this.driver);
 		try {
 			const userMissionsCollection = client.db("beats").collection("missionsCompleted");
 	

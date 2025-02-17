@@ -256,6 +256,9 @@ class InventoryService {
     // Updates the inventory database with the provided update data.
     private async updateInventoryDB(groupName: string, username: string, slot: string, updateData: UpdateInventoryData): Promise<void> {
         const session: Session | undefined = this.driver?.session();
+
+
+        console.log("Group name :", groupName)
         try {
             // Normalize group name
             let group: string = groupName;
