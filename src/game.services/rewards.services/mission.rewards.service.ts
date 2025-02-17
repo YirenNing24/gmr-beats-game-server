@@ -225,6 +225,64 @@ class RewardService {
 			throw error;
 		}
 	}
+
+
+	public async claimDailyMissionReward(token: string, missionName: {name: string}): Promise<SuccessMessage> {
+		const tokenService = new TokenService();
+		try {
+			const { name } = missionName
+			const username: string = await tokenService.verifyAccessToken(token);
+			const client: MongoClient = await mongoDBClient.connect();
+			const collection = client.db("beats").collection("dailyMissions");
+	
+			const missionData = await collection.findOne({ name }) as unknown as DailyMission;
+			if (!missionData) {
+				throw new ValidationError("Mission not found", "Mission not found");
+			}
+	
+			// Validate the mission type
+			if (missionData.missionType !== "daily") {
+				throw new ValidationError("Invalid mission type", "Invalid mission type");
+			}
+	
+			// Check eligibility
+			const eligibility: boolean = await this.checkDailyMissionEligibility(username, missionData);
+			if (!eligibility) {
+				throw new ValidationError("User is not eligible for the reward", "User is not eligible for the reward");
+			}
+	
+			// Check if the mission has already been claimed
+			const userMissions = await this.getUserMissions(username);
+	
+			if (userMissions !== null) {
+				// User has missions recorded; check for duplicates
+				const completedMission = userMissions.completedMissions.find(
+					(mission) => mission.missionName === name
+				);
+	
+				if (completedMission && completedMission.rewardClaimed) {
+					throw new ValidationError("Reward for this mission has already been claimed", "Reward already claimed");
+				}
+			}
+	
+			// Award the reward
+			await this.giveReward(username, missionData.requirement.criteria.reward, "BEATS");
+	
+			// Update the user's mission data
+			await this.updateUserMission(username, name);
+	
+			// Update Soul Metadata
+			// soulService.updateSoulMetaData(username, name, "daily");
+	
+			// Close the database connection
+			await client.close();
+	
+			return new SuccessMessage("Daily mission reward claimed successfully");
+		} catch (error: any) {
+			console.error("Error claiming daily mission reward:", error);
+			throw error;
+		}
+	}
 	
 	
 
@@ -382,13 +440,7 @@ class RewardService {
 	private async giveReward(username: string, rewardData: Reward, rewardType: string): Promise<void> {
 		const walletService = new WalletService(this.driver);
 		const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
-		const soulService: SoulService = new SoulService(this.driver);
 		try {
-			const soul: string = await walletService.getSoul(username);
-			if (soul === "") {
-				await soulService.createSoul(username, smartWalletAddress);
-			}
-
 			if (rewardType === "BEATS") {
 				await this.sendBeatsReward(smartWalletAddress, rewardData.amount.toString());
 			}
