@@ -11,6 +11,7 @@ class DailyRewardService {
 
 
       } catch(error: any) {
+        console.log(error);
         throw error
       }
     }
