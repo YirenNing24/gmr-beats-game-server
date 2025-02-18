@@ -315,9 +315,6 @@ class InventoryService {
                     groupName = "GREATGUYS";
                 }
     
-                // Remove spaces from slot name
-
-    
                 // Update the inventory node to unequip the specified slot
                 await session?.executeWrite(tx =>
                     tx.run(
@@ -342,10 +339,7 @@ class InventoryService {
     
     
     
-
-
-
-
+    
     // Retrieves inventory card data for a user based on the provided access token.
     public async upgradeInventoryOpen(token: string): Promise<StoreCardUpgradeData[]> {
       try {
