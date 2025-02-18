@@ -237,8 +237,6 @@ class InventoryService {
     }
     
     
-    
-
     // Retrieves inventory card data for a user based on the provided access token.
     private async getInventoryNFT(username: string, contractAddress: string) {
         try {
@@ -339,7 +337,7 @@ class InventoryService {
     
     
     
-    
+
     // Retrieves inventory card data for a user based on the provided access token.
     public async upgradeInventoryOpen(token: string): Promise<StoreCardUpgradeData[]> {
       try {
