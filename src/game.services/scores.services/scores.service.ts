@@ -24,6 +24,7 @@ class ScoreService {
     }   
 
     //** BEATS SERVER EXCLUSIVE SERVICE */
+	//TODO record reward in DB too
     public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
 		const tokenService: TokenService = new TokenService();
 		const songRewardService: SongRewardService = new SongRewardService();

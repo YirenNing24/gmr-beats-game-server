@@ -469,7 +469,7 @@ class RewardService {
 					if (retries === 0) {
 						throw new Error("Failed to set allowance after multiple attempts.");
 					}
-					await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+					await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 1 second before retrying
 				}
 			}
 	

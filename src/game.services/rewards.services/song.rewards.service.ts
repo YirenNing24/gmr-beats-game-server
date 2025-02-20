@@ -8,6 +8,8 @@ import RewardService from "./mission.rewards.service";
 
 class SongRewardService {
 
+
+	
     public async classicSongReward(apiKey: string, score: ClassicScoreStats): Promise<number> {
 		const tokenService: TokenService = new TokenService();
 		try {
@@ -40,7 +42,7 @@ class SongRewardService {
 			// Calculate total reward based on accuracy
 			const reward = baseReward * score.accuracy * multiplier;
 			var beatsRewardAmount: number = Math.round(reward)
-			this.sendBeatsReward(score.username, beatsRewardAmount)
+			await this.sendBeatsReward(score.username, beatsRewardAmount)
 
 			return beatsRewardAmount;
 		} catch (error: any) {
