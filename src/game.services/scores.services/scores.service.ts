@@ -91,6 +91,8 @@ class ScoreService {
 		} catch (error: any) {
 			console.error("Error fetching high scores:", error);
 			throw error;
+		} finally {
+			await mongoDBClient.close();
 		}
 	}
 
@@ -112,8 +114,6 @@ class ScoreService {
 		} catch (error: any) {
 			console.error("Error fetching highest score:", error);
 			throw error;
-		} finally {
-			await mongoDBClient.close();
 		}
 	}
 	
