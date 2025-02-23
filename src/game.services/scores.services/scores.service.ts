@@ -4,7 +4,7 @@ import { ClassicScoreStats, ScorePeerId } from "../leaderboard.services/leaderbo
 
 //** MONGODB IMPORT
 import { mongoDBClient } from "../../db/mongodb.client";
-import { MongoClient } from "mongodb";
+import { Db, MongoClient } from "mongodb";
 
 //** IMPORTED SERVICES
 import TokenService from "../../user.services/token.services/token.service";
@@ -25,39 +25,47 @@ class ScoreService {
 
     //** BEATS SERVER EXCLUSIVE SERVICE */
 	//TODO record reward in DB too
-    public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
-		const tokenService: TokenService = new TokenService();
-		const songRewardService: SongRewardService = new SongRewardService();
+	public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
+		const tokenService = new TokenService();
+		const songRewardService = new SongRewardService();
+		let client: MongoClient | null = null;
+	
 		try {
-			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
-
-			if (!isAuthorized) {
+			// Verify API key
+			if (!(await tokenService.verifyApiKey(apiKey))) {
 				throw new Error("Unauthorized");
 			}
-
-			// Add timestamp to score
-			const scoreWithTime = { ...score, timestamp: Date.now() };
-
+	
 			// Establish MongoDB connection
-			const client: MongoClient = await mongoDBClient.connect();
-			const collection = client.db("beats").collection("classicScores");
-
-			// Insert score into the collection
+			client = await mongoDBClient.connect();
+			const db = client.db("beats");
+			const collection = db.collection("classicScores");
+	
+			// Add timestamp to score and insert
+			const scoreWithTime = Object.assign(score, { timestamp: Date.now() });
 			await collection.insertOne(scoreWithTime);
-
-			// Calculate experience gain
-			const experienceGain: LevelUpResult = await this.calculateExperience(score.username, score.accuracy);
-			const beatsReward: number  = await songRewardService.classicSongReward(apiKey, score);
-
-			experienceGain.beatsReward = beatsReward
-			return experienceGain;	
+	
+			// Run experience calculation, beats reward, and high score retrieval in parallel
+			const [experienceGain, beatsReward, previousHighscore] = await Promise.all([
+				this.calculateExperience(score.username, score.accuracy),
+				songRewardService.classicSongReward(apiKey, score),
+				this.getHighScoreIndividual(score.songName, score.username, db) // Pass `db` to avoid extra connection
+			]);
+	
+			// Add rewards to the experience result
+			experienceGain.beatsReward = beatsReward;
+			experienceGain.previousHighscore = previousHighscore;
+	
+			return experienceGain;
 		} catch (error: any) {
 			console.error("Error saving classic score:", error);
 			throw error;
 		} finally {
-			await mongoDBClient.close();
+			// Ensure MongoDB connection is closed
+			if (client) await client.close();
 		}
 	}
+	
 
 
     //* CLASSIC GAME MODE RETRIEVE SCORE FUNCTION
@@ -83,10 +91,35 @@ class ScoreService {
 		} catch (error: any) {
 			console.error("Error fetching high scores:", error);
 			throw error;
+		}
+	}
+
+
+	private async getHighScoreIndividual(songName: string, username: string, db: Db): Promise<number> {
+		try {
+			// Establish MongoDB connection
+			const collection = db.collection<ClassicScoreStats>("classicScores");
+			// Find the highest score for the given song and username
+			const highestScore = await collection
+				.find({ songName, username }) // Filter by song name AND username
+				.sort({ score: -1 }) // Sort in descending order to get the highest score first
+				.limit(1) // Only retrieve one document
+				.project({ score: 1, _id: 0 }) // Only return the score field
+				.next(); // Get the first result
+	
+			// Ensure the function always returns a number (never null)
+			return highestScore?.score ?? 0;
+		} catch (error: any) {
+			console.error("Error fetching highest score:", error);
+			throw error;
 		} finally {
 			await mongoDBClient.close();
 		}
 	}
+	
+	
+	
+
 
 	//* CLASSIC GAME MODE RETRIEVE ALL SCORE FUNCTION
 	public async getPlayerHighScorePerSong(token: string): Promise<ClassicScoreStats[]> {
