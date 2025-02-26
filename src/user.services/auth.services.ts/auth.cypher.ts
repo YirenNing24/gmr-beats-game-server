@@ -1,22 +1,32 @@
-
-
-const inventorySchema: string = ''
-
 export const inventoryCypher: string = `
-WITH [
-	{label: "X_IN", members: ["Esha", "Nizz", "Nova", "Hannah", "Aria"]},
-	{label: "GREATGUYS", members: ["DongHwi", "HoRyeong", "BaekGyeol"]},
-	{label: "ICU", members: ["Abin", "Naye", "ChaeI", "Loa"]},
-	{label: "IROHM", members: ["Vocals", "Instrumental"]}
-] AS inventoryGroups
+ CREATE (x:X_IN {
+    Esha: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    Nizz: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    Nova: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    Hannah: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    Aria: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
+ })
 
-UNWIND inventoryGroups AS group
-CREATE (inv:Inventory {type: group.label})
-FOREACH (member IN group.members |
-	SET inv[member] = {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
-)
+ CREATE (g:GREATGUYS {
+    DongHwi: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    HoRyeong: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    BaekGyeol: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
+ })
 
-MATCH (u:User)
-MERGE (u)-[:INVENTORY]->(inv);
+ CREATE (i:ICU {
+    Abin: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    Naye: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    ChaeI: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    Loa: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
+ })
 
+ CREATE (r:IROHM {
+    Vocals: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
+    Instrumental: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
+ })
+
+ CREATE (u)-[:INVENTORY]->(x)
+ CREATE (u)-[:INVENTORY]->(g)
+ CREATE (u)-[:INVENTORY]->(i)
+ CREATE (u)-[:INVENTORY]->(r)
 `;
