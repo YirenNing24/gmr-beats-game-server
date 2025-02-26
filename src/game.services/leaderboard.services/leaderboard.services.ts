@@ -47,12 +47,12 @@ class LeaderboardService {
 	
 
 	private correctSongName(songName: string): string {
-		let songTItle: string = songName
-		if (songName == "NoDoubt") {
-			songTItle = "No Doubt"
-		}
-		return songTItle
+		// Insert a space before capital letters (except for the first letter)
+		let songTitle: string = songName.replace(/([a-z])([A-Z])/g, "$1 $2");
+	
+		return songTitle;
 	}
+	
 
 
 	private getPeriodDates(period: string): { startOfPeriod: Date; endOfPeriod: Date } {
