@@ -17,7 +17,7 @@ constructor(driver?: Driver) {
     this.driver = driver;
 }
     //Calculates the experience gain for a user based on their accuracy and experience needed for the next level.
-    public async calculateExperienceGain(username: string = "nashar4", accuracy: number = 0.9): Promise<LevelUpResult> {
+    public async calculateExperienceGain(username: string = "nashar4", accuracy: number): Promise<LevelUpResult> {
         try {
             // Retrieve user details
             const user: UserData = await this.getUserDetails(username);
