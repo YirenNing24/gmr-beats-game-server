@@ -37,9 +37,6 @@ class WalletService {
          // Extract the wallet address from the response
          const { walletAddress } = wallet.result;
 
-         const requestBody = { adminAddress: walletAddress }
-         engine.accountFactory.createAccount(CHAIN, "0x09c9C21E33DacCE2Fdd20911388Ee6Ddb7f784c9", ENGINE_ADMIN_WALLET_ADDRESS, requestBody)
-
          return walletAddress;
      } catch (error: any) {
          console.error("Error creating player wallet:", error);
