@@ -41,16 +41,24 @@ class ScoreService {
 			const db = client.db("beats");
 			const collection = db.collection("classicScores");
 	
-			// Add timestamp to score and insert
-			const scoreWithTime = Object.assign(score, { timestamp: Date.now() });
-			await collection.insertOne(scoreWithTime);
-	
 			// Run experience calculation, beats reward, and high score retrieval in parallel
 			const [experienceGain, beatsReward, previousHighscore] = await Promise.all([
 				this.calculateExperience(score.username, score.accuracy),
 				songRewardService.classicSongReward(apiKey, score),
 				this.getHighScoreIndividual(score.songName, score.username, db) // Pass `db` to avoid extra connection
 			]);
+	
+			// Add rewards and highscore info to the score object
+			const scoreWithRewards = {
+				...score,
+				timestamp: Date.now(),
+				experienceGain: experienceGain.experienceGained, // Store only experienceGained, not full object
+				beatsReward,
+				previousHighscore
+			};
+	
+			// Insert the updated score into MongoDB
+			await collection.insertOne(scoreWithRewards);
 	
 			// Add rewards to the experience result
 			experienceGain.beatsReward = beatsReward;
@@ -65,6 +73,7 @@ class ScoreService {
 			if (client) await client.close();
 		}
 	}
+	
 	
 
 
