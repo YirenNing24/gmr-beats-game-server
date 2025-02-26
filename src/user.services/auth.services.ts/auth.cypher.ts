@@ -30,3 +30,5 @@ export const inventoryCypher: string = `
  CREATE (u)-[:INVENTORY]->(i)
  CREATE (u)-[:INVENTORY]->(r)
 `;
+
+const badass: string = "bwisit"
