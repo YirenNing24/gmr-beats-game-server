@@ -247,7 +247,7 @@ export interface LocalWallet {
 export interface User {
   deviceId: string
   userName: string
-  password?: string
+  password: string | ""
   email?: string
 }
 

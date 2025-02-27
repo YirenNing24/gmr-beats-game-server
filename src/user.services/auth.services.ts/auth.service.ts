@@ -108,68 +108,59 @@ class AuthService {
 
     // Registers a user.
     public async register(userData: User, ipAddress: string): Promise<void> {
-      const walletService: WalletService = new WalletService();
-    
-      const userId: string = await nanoid();
-      const { userName, password, deviceId } = userData as User;
-
-      //@ts-ignore
-      const encrypted: string = await hash(password, parseInt(SALT_ROUNDS));
-    
-      const signupDate: number = Date.now();
+      const walletService = new WalletService();
+      const userId = nanoid();
+      const { userName, password, deviceId } = userData;
+  
+      const signupDate = Date.now();
       const suspended: Suspended = { until: null, reason: "" };
-    
-      const geo = geoip.lookup(ipAddress);
-      const country: string | undefined = geo?.country || "SOKOR";
-      const locKey: string = await hash(userName, parseInt(SALT_ROUNDS));
-      const smartWallet: string = await walletService.createWallet(userName)
-    
-      const smartWalletAddress: string = smartWallet;
-      const session: Session | undefined = this.driver?.session();
-    
+      const country = geoip.lookup(ipAddress)?.country || "SOKOR";
+  
+      // Run bcrypt hashing and wallet creation in parallel
+      const [encrypted, locKey, smartWalletAddress] = await Promise.all([
+          hash(password, 8), // Reduced salt rounds for performance
+          hash(userName, 8),
+          walletService.createWallet(userName)
+      ]);
+  
+      const session = this.driver?.session();
+      if (!session) throw new Error("Database session not available");
+  
       try {
-        await session?.executeWrite(
-          (tx: ManagedTransaction) =>
-            tx.run(
+          await session.run(
               `
               CREATE (u:User {
-                signupDate: $signupDate,
-                accountType: "beats",
-                userId: $userId,
-                username: $userName,
-                password: $encrypted,
-                smartWalletAddress: $smartWalletAddress,
-                playerStats: $playerStats,
-                suspended: $suspended,
-                country: $country,
-                deviceId: $deviceId,
-                inventorySize: 200,
-                soul: "",
-                preferredSerer: ""
+                  signupDate: $signupDate,
+                  accountType: "beats",
+                  userId: $userId,
+                  username: $userName,
+                  password: $encrypted,
+                  smartWalletAddress: $smartWalletAddress,
+                  playerStats: $playerStats,
+                  suspended: $suspended,
+                  country: $country,
+                  deviceId: $deviceId,
+                  inventorySize: 200,
+                  soul: "",
+                  preferredServer: ""
               })
-
               ${inventoryCypher}
-            `,
+              `,
               { signupDate, userId, userName, encrypted, locKey, smartWalletAddress, playerStats, suspended, country, deviceId }
-            )
-        );
-
-        
+          );
       } catch (error: any) {
-        // Handle unique constraints in the database
-        if (error.code === "Neo.ClientError.Schema.ConstraintValidationFailed") {
-          if (error.message.includes("username")) {
-            throw new ValidationError(
-              `An account already exists with the username ${userName}`,
-              "Username already taken"
-            );
+          console.error("Error in register:", error);
+  
+          if (error.code === "Neo.ClientError.Schema.ConstraintValidationFailed" && error.message.includes("username")) {
+              throw new ValidationError(`An account already exists with the username ${userName}`, "Username already taken");
           }
-        }
-        throw error;
+  
+          throw error;
       } finally {
-        await session?.close();
+          await session.close();
       }
-    }
+  }
+  
 
 
     // Authenticates a user with the provided username and unencrypted password.
@@ -234,71 +225,60 @@ class AuthService {
 
 
     public async passkeyRegister(userData: PasskeyUser, ipAddress: string = "") {
-      const walletService: WalletService = new WalletService();
-      
-      const userId: string = nanoid();
-      const signupDate: number = Date.now();
+      const walletService = new WalletService();
+      const userId = nanoid();
+      const signupDate = Date.now();
       const suspended: Suspended = { until: null, reason: "" };
-      
-      const { userName, deviceId, id, publicKey, counter } = userData;
-      const geo = geoip.lookup(ipAddress);
-      const country: string | undefined = geo?.country || "SOKOR";
-      const locKey: string = await hash(userName, parseInt(SALT_ROUNDS));
-      const smartWallet = await walletService.createWallet(userName);
-    
-      const smartWalletAddress: string = smartWallet;
-      const session: Session | undefined = this.driver?.session();
+      const { userName, deviceId = "debug", id, publicKey, counter } = userData;
+      const country = geoip.lookup(ipAddress)?.country || "SOKOR";
   
-      // Default deviceId to "debug" if it's null or undefined
-      const deviceIdToUse: string = deviceId || "debug"; 
+      // Run hashing and wallet creation in parallel
+      const [locKey, smartWalletAddress] = await Promise.all([
+          hash(userName, 8), // Reduced salt rounds for performance
+          walletService.createWallet(userName)
+      ]);
+  
+      const session = this.driver?.session();
+      if (!session) throw new Error("Database session not available");
   
       try {
-        await session?.executeWrite(
-          (tx: ManagedTransaction) =>
-            tx.run(
+          await session.run(
               `
               CREATE (u:User {
-                signupDate: $signupDate,
-                accountType: "passkey",
-                userId: $userId,
-                username: $userName,
-                locKey: $locKey,
-                smartWalletAddress: $smartWalletAddress,
-                playerStats: $playerStats,
-                suspended: $suspended,
-                country: $country,
-                deviceId: $deviceIdToUse,
-                passKeyId: $id,
-                publicKey: $publicKey,
-                counter: $counter,
-                inventorySize: 200,
-                soul: "",
-                preferredServer: ""
+                  signupDate: $signupDate,
+                  accountType: "passkey",
+                  userId: $userId,
+                  username: $userName,
+                  locKey: $locKey,
+                  smartWalletAddress: $smartWalletAddress,
+                  playerStats: $playerStats,
+                  suspended: $suspended,
+                  country: $country,
+                  deviceId: $deviceId,
+                  passKeyId: $id,
+                  publicKey: $publicKey,
+                  counter: $counter,
+                  inventorySize: 200,
+                  soul: "",
+                  preferredServer: ""
               })
-
-
               ${inventoryCypher}
-            `,
-              { signupDate, userId, userName, locKey, smartWalletAddress, playerStats, suspended, country, deviceIdToUse, id, publicKey, counter }
-            )
-        );
-  
+              `,
+              { signupDate, userId, userName, locKey, smartWalletAddress, playerStats, suspended, country, deviceId, id, publicKey, counter }
+          );
       } catch (error: any) {
-        console.log(error);
-        // Handle unique constraints in the database
-        if (error.code === "Neo.ClientError.Schema.ConstraintValidationFailed") {
-          if (error.message.includes("username")) {
-            throw new ValidationError(
-              `An account already exists with the username ${userName}`,
-              "Username already taken"
-            );
+          console.error("Error in passkeyRegister:", error);
+  
+          if (error.code === "Neo.ClientError.Schema.ConstraintValidationFailed" && error.message.includes("username")) {
+              throw new ValidationError(`An account already exists with the username ${userName}`, "Username already taken");
           }
-        }
-        throw error;
+  
+          throw error;
       } finally {
-        await session?.close();
+          await session.close();
       }
-    }
+  }
+  
 
 
     public async getPasskeyUserData(userName: string) {
