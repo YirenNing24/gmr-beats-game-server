@@ -256,13 +256,8 @@ class InventoryService {
         const session: Session | undefined = this.driver?.session();
         try {
             // Normalize group name
-            let group: string = groupName;
-            if (groupName === "X:IN") {
-                group = "X_IN";
-            } else if (groupName === "Great Guys") {
-                group = "GREATGUYS";
-            }
-    
+            let group: string = this.formatGroupName(groupName);
+
             // Fetch the inventory node for the group
             const result: QueryResult | undefined = await session?.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
@@ -306,13 +301,8 @@ class InventoryService {
                 let { group, slot } = item;
                 
                 // Normalize group names
-                let groupName: string = group;
-                if (group === "X:IN") {
-                    groupName = "X_IN";
-                } else if (group === "Great Guys") {
-                    groupName = "GREATGUYS";
-                }
-    
+                let groupName: string = this.formatGroupName(group);
+
                 // Update the inventory node to unequip the specified slot
                 await session?.executeWrite(tx =>
                     tx.run(
@@ -514,7 +504,7 @@ class InventoryService {
             }
     
             // Handle cases where group names need formatting
-            const group = groupName === "X:IN" ? "X_IN" : groupName;
+            const group: string = this.formatGroupName(groupName);
     
             const result = await session.executeRead((tx: ManagedTransaction) =>
                 tx.run(
@@ -525,7 +515,7 @@ class InventoryService {
                     { username }
                 )
             );
-    
+            
             await session.close();
     
             if (!result || result.records.length === 0) {
@@ -572,25 +562,20 @@ class InventoryService {
     }
     
     
-    
-    
-    
-    
-
-
-
     // Updates inventory data for a user based on the provided access token and update information.
     public async equippedGroupCard(token: string, groupName: string) {
+        const session = this.driver?.session();
         try {
             const tokenService: TokenService = new TokenService();
             const username: string = await tokenService.verifyAccessToken(token);
-            const session = this.driver?.session();
+
             if (!session) {
                 throw new Error("Database session could not be established.");
             }
     
             // Handle cases where group names need formatting
-            const group: string = groupName === "X:IN" ? "X_IN" : groupName;
+            let group: string = this.formatGroupName(groupName);
+
     
             const result = await session.executeRead((tx: ManagedTransaction) =>
                 tx.run(
@@ -602,23 +587,34 @@ class InventoryService {
                 )
             );
     
-            await session.close();
-    
             if (!result || result.records.length === 0) {
                 throw new Error(`No equipped card found for user: ${username} in group: ${groupName}`);
             }
-
     
             // Extracting equipped card metadata from the inventory node
             const equippedCards = result.records.map((record) => record.get("i").properties);
-
-
+    
             return equippedCards;
         } catch (error: any) {
             console.error(error);
             throw error;
+        } finally {
+            // Ensure the session is always closed to prevent memory leaks
+            await session?.close();
         }
     }
+
+
+    private formatGroupName(groupName: string): string {
+		const groupMap: Record<string, string> = {
+			"X:IN": "X_IN",
+			"Great Guys": "GREATGUYS",
+		};
+
+		// Return formatted group name or default to the original name
+		return groupMap[groupName] || groupName;
+	}
+    
 
 
 
