@@ -574,7 +574,7 @@ class InventoryService {
             }
     
             // Handle cases where group names need formatting
-            let group: string = this.formatGroupName(groupName);
+            const group: string = this.formatGroupName(groupName);
 
     
             const result = await session.executeRead((tx: ManagedTransaction) =>
