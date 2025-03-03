@@ -505,6 +505,8 @@ class InventoryService {
     
             // Handle cases where group names need formatting
             const group: string = this.formatGroupName(groupName);
+
+            console.log("card group log: ", group)
     
             const result = await session.executeRead((tx: ManagedTransaction) =>
                 tx.run(
@@ -609,6 +611,7 @@ class InventoryService {
 		const groupMap: Record<string, string> = {
 			"X:IN": "X_IN",
 			"Great Guys": "GREATGUYS",
+            "I-ROHM": "IROHM"
 		};
 
 		// Return formatted group name or default to the original name
