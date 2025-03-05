@@ -30,39 +30,32 @@ class ScoreService {
 		let client: MongoClient | null = null;
 	
 		try {
-			const username: string = await tokenService.verifyAccessToken(token);
+			const username: string = await tokenService.verifyAccessToken(token)
+
 	
 			// Establish MongoDB connection
 			client = await mongoDBClient.connect();
 			const db = client.db("beats");
 			const collection = db.collection("classicScores");
 	
-			// Execute async tasks in parallel
+			// Run experience calculation, beats reward, and high score retrieval in parallel
 			const [experienceGain, beatsReward, previousHighscore] = await Promise.all([
 				this.calculateExperience(username, score.accuracy),
 				songRewardService.classicSongReward(score),
-				this.getHighScoreIndividual(score.songName, username, db)
+				this.getHighScoreIndividual(score.songName, username, db) // Pass `db` to avoid extra connection
 			]);
 	
-			// Prepare the score object
+			// Add rewards and highscore info to the score object
 			const scoreWithRewards = {
 				...score,
 				timestamp: Date.now(),
-				experienceGain: experienceGain.experienceGained,
+				experienceGain: experienceGain.experienceGained, // Store only experienceGained, not full object
 				beatsReward,
 				previousHighscore
 			};
 	
-			// Use bulkWrite to insert the score and update highscore efficiently
-			await collection.bulkWrite([
-				{ insertOne: { document: scoreWithRewards } }, // Insert new score
-				{ 
-					updateOne: {
-						filter: { songName: score.songName, username },
-						update: { $max: { highscore: score.score } } // Update highscore only if it's higher
-					} 
-				}
-			]);
+			// Insert the updated score into MongoDB
+			await collection.insertOne(scoreWithRewards);
 	
 			// Add rewards to the experience result
 			experienceGain.beatsReward = beatsReward;
@@ -73,11 +66,10 @@ class ScoreService {
 			console.error("Error saving classic score:", error);
 			throw error;
 		} finally {
+			// Ensure MongoDB connection is closed
 			if (client) await client.close();
 		}
 	}
-	
-	
 	
 	
 

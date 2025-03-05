@@ -34,7 +34,7 @@ export interface ClassicScoreStats {
     bad: number;
     miss: number;
     username: string;
-    peerId: number;
+    // peerId: number;
 }
 
 export interface savedClassicScoreStats extends ClassicScoreStats {
