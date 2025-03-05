@@ -173,7 +173,8 @@ class ScoreService {
 							good: { $first: "$good" },
 							bad: { $first: "$bad" },
 							miss: { $first: "$miss" },
-							username: { $first: "$username" }
+							username: { $first: "$username" },
+							gameId: { $first: "$gameId"}
 						}
 					},
 					{ $sort: { score: -1 } } // Final sort to return highest scores first
