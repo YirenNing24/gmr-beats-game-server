@@ -22,11 +22,15 @@ import { LevelUpResult } from '../game.services/experience.services/experience.i
 const scores = (app: Elysia): void => {
     app.post('/api/save/score/classic', async ({ headers, body }): Promise<LevelUpResult> => {
         try {
-            const apiKeyHeader: string | null = headers['x-api-key'];
+          const authorizationHeader: string = headers.authorization;
+          if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+            throw new Error('Bearer token not found in Authorization header');
+          }
+          const jwtToken: string = authorizationHeader.substring(7);
 
             const driver: Driver = getDriver();
             const scoreService: ScoreService = new ScoreService(driver);
-            const result: LevelUpResult = await scoreService.saveScoreClassic(body, apiKeyHeader);
+            const result: LevelUpResult = await scoreService.saveScoreClassic(body, jwtToken);
 
             return result
         } catch (error: any) {

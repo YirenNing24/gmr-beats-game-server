@@ -8,16 +8,8 @@ import RewardService from "./mission.rewards.service";
 
 class SongRewardService {
 
-
-	
-    public async classicSongReward(apiKey: string, score: ClassicScoreStats): Promise<number> {
-		const tokenService: TokenService = new TokenService();
+    public async classicSongReward(score: ClassicScoreStats): Promise<number> {
 		try {
-			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
-			if (!isAuthorized) {
-				throw new Error("Unauthorized");
-			}
-
 			// Calculate reward based on accuracy and difficulty
 			const baseReward = 50; // Base BEATS token reward
 			let multiplier = 1; // Default multiplier for difficulty

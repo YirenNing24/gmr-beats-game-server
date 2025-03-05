@@ -4,7 +4,7 @@ import { t } from "elysia";
 
 export const classicScoreStatsSchema = {
     headers: t.Object({ 
-        "x-api-key": t.String()
+        authorization: t.String()
     }), 
     body: t.Object({
         difficulty: t.String(),

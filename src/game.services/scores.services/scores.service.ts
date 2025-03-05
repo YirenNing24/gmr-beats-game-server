@@ -24,41 +24,45 @@ class ScoreService {
     }   
 
     //** BEATS SERVER EXCLUSIVE SERVICE */
-	//TODO record reward in DB too
-	public async saveScoreClassic(score: ClassicScoreStats, apiKey: string): Promise<LevelUpResult> {
+	public async saveScoreClassic(score: ClassicScoreStats, token: string): Promise<LevelUpResult> {
 		const tokenService = new TokenService();
 		const songRewardService = new SongRewardService();
 		let client: MongoClient | null = null;
 	
 		try {
-			// Verify API key
-			if (!(await tokenService.verifyApiKey(apiKey))) {
-				throw new Error("Unauthorized");
-			}
+			const username: string = await tokenService.verifyAccessToken(token);
 	
 			// Establish MongoDB connection
 			client = await mongoDBClient.connect();
 			const db = client.db("beats");
 			const collection = db.collection("classicScores");
 	
-			// Run experience calculation, beats reward, and high score retrieval in parallel
+			// Execute async tasks in parallel
 			const [experienceGain, beatsReward, previousHighscore] = await Promise.all([
-				this.calculateExperience(score.username, score.accuracy),
-				songRewardService.classicSongReward(apiKey, score),
-				this.getHighScoreIndividual(score.songName, score.username, db) // Pass `db` to avoid extra connection
+				this.calculateExperience(username, score.accuracy),
+				songRewardService.classicSongReward(score),
+				this.getHighScoreIndividual(score.songName, username, db)
 			]);
 	
-			// Add rewards and highscore info to the score object
+			// Prepare the score object
 			const scoreWithRewards = {
 				...score,
 				timestamp: Date.now(),
-				experienceGain: experienceGain.experienceGained, // Store only experienceGained, not full object
+				experienceGain: experienceGain.experienceGained,
 				beatsReward,
 				previousHighscore
 			};
 	
-			// Insert the updated score into MongoDB
-			await collection.insertOne(scoreWithRewards);
+			// Use bulkWrite to insert the score and update highscore efficiently
+			await collection.bulkWrite([
+				{ insertOne: { document: scoreWithRewards } }, // Insert new score
+				{ 
+					updateOne: {
+						filter: { songName: score.songName, username },
+						update: { $max: { highscore: score.score } } // Update highscore only if it's higher
+					} 
+				}
+			]);
 	
 			// Add rewards to the experience result
 			experienceGain.beatsReward = beatsReward;
@@ -69,10 +73,11 @@ class ScoreService {
 			console.error("Error saving classic score:", error);
 			throw error;
 		} finally {
-			// Ensure MongoDB connection is closed
 			if (client) await client.close();
 		}
 	}
+	
+	
 	
 	
 
