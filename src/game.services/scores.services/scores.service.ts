@@ -131,54 +131,40 @@ class ScoreService {
 	//* CLASSIC GAME MODE RETRIEVE ALL SCORE FUNCTION
 	public async getPlayerHighScorePerSong(token: string): Promise<ClassicScoreStats[]> {
 		try {
-			const tokenService: TokenService = new TokenService();
-			const username: string = await tokenService.verifyAccessToken(token);
+			const tokenService = new TokenService();
+			const username = await tokenService.verifyAccessToken(token);
 	
 			// Establish MongoDB connection
-			const client: MongoClient = await mongoDBClient.connect();
+			const client = await mongoDBClient.connect();
 			const db = client.db("beats");
 			const collection = db.collection<ClassicScoreStats>("classicScores");
 	
-			// Aggregate query to get highest score per song for the user
+			// Aggregate query to get the highest score per song for the user
 			const highScores = await collection
 				.aggregate([
 					{ $match: { username } }, // Filter by username
-					{ $sort: { score: -1, timestamp: -1 } }, // Sort by highest score first, then latest timestamp
+					
+					{ $sort: { score: -1, timestamp: -1 } }, // Sort first: highest score, then latest timestamp
+	
 					{
 						$group: {
 							_id: "$songName", // Group by songName
-							songName: { $first: "$songName" }, // Take from highest score document
-							difficulty: { $first: "$difficulty" },
-							score: { $first: "$score" }, // Ensure we take the highest score
-							combo: { $first: "$combo" },
-							maxCombo: { $first: "$maxCombo" },
-							accuracy: { $first: "$accuracy" },
-							finished: { $first: "$finished" },
-							artist: { $first: "$artist" },
-							perfect: { $first: "$perfect" },
-							veryGood: { $first: "$veryGood" },
-							good: { $first: "$good" },
-							bad: { $first: "$bad" },
-							miss: { $first: "$miss" },
-							username: { $first: "$username" }
+							doc: { $first: "$$ROOT" } // Take the first document (the highest score)
 						}
 					},
-					{ $sort: { score: -1 } } // Final sort to return highest scores first
+	
+					{ $replaceRoot: { newRoot: "$doc" } }, // Replace root with the best document
 				])
 				.toArray();
 	
-			// Remove `_id` and ensure `songName` is present
-			const formattedScores = highScores.map(({ _id, ...rest }) => rest) as ClassicScoreStats[];
-	
-			// Close the database connection
 			await client.close();
-	
-			return formattedScores;
+			return highScores;
 		} catch (error: any) {
 			console.error("Error fetching high scores:", error);
 			throw error;
 		}
 	}
+	
 	
 	
 	
