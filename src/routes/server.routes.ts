@@ -34,7 +34,7 @@ const server = (app: Elysia): void => {
 
     .post('/api/save-preferred-server', async ({ headers, body }): Promise<SuccessMessage> => {
         try {
-            const authorizationHeader = headers.authorization;
+            const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
                 throw new Error('Bearer token not found in Authorization header');
             }

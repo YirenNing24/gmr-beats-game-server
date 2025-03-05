@@ -9,7 +9,6 @@ import { getDriver } from '../db/memgraph';
 import EnergyService from '../game.services/energy.services/energy.service';
 
 //** SCHEMA IMPORT
-import { useEnergySchema } from '../game.services/energy.services/energy.schema';
 import EnergyItemsService from '../game.services/energy.services/energy.items';
 import { authorizationBearerSchema } from './route.schema/schema.auth';
 import { EnergyBottleNFT } from '../game.services/energy.services/energy.interface';
@@ -17,19 +16,24 @@ import { EnergyBottleNFT } from '../game.services/energy.services/energy.interfa
 const energy = (app: Elysia): void => {
 
 
-    app.post('/api/energy/use', async ({ headers, body }): Promise<boolean> => {
+    app.post('/api/energy/use', async ({ headers }): Promise<boolean> => {
         try {
-            const apiKeyHeader: string | null = headers['x-api-key'];
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+              throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+
 
             const energyService: EnergyService = new EnergyService()
-            const result: boolean = await energyService.usePlayerEnergy(body.username, apiKeyHeader);
+            const result: boolean = await energyService.usePlayerEnergy(jwtToken);
 
             return result
         } catch (error: any) {
           console.log(error)
           throw error
         }
-      }, useEnergySchema
+      }, authorizationBearerSchema
     )
 
 

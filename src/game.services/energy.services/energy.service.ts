@@ -7,6 +7,7 @@ import { Driver, ManagedTransaction, QueryResult, Session } from "neo4j-driver-c
 //** SERVICE IMPORTS
 
 import TokenService from "../../user.services/token.services/token.service";
+import { nanoid } from "nanoid";
 
 class EnergyService {
 
@@ -50,32 +51,72 @@ class EnergyService {
 	
 
 	// Public function to use player energy
-	public async usePlayerEnergy(username: string, apiKey: string, amount: number = 1): Promise<boolean> {
+	// public async usePlayerEnergy(username: string, apiKey: string, amount: number = 1): Promise<boolean> {
+	// 	try {
+	// 		const tokenService: TokenService = new TokenService();
+	// 		const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
+	// 		if (!isAuthorized) {
+	// 			throw new Error("Unauthorized");
+	// 		}
+			
+	// 		const { energy: currentEnergy } = await this.getPlayerEnergyBeats(username);
+	
+	// 		if (currentEnergy >= amount) {
+	// 			await this.updatePlayerEnergy(username, {
+	// 				currentEnergy: currentEnergy - amount,
+	// 				lastEnergyUpdate: Date.now()
+	// 			});
+	// 			return true;
+	// 		}
+	// 		return false;
+	// 	} catch(error: any) {
+	// 	  console.log(error)
+	// 	  throw error
+
+	// 	}
+
+
+	// }
+
+
+	//TODO - IN THE FUTURE RETURN THE generated ID which the playet needs to send back for verification
+	public async usePlayerEnergy(token: string, amount: number = 1): Promise<boolean> {
 		try {
 			const tokenService: TokenService = new TokenService();
-			const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
-			if (!isAuthorized) {
-				throw new Error("Unauthorized");
-			}
-			
+			const username: string = await tokenService.verifyAccessToken(token);
+			const id: string = nanoid();
+	
+			// Fetch current energy
 			const { energy: currentEnergy } = await this.getPlayerEnergyBeats(username);
 	
 			if (currentEnergy >= amount) {
+				// Deduct energy and update the player’s energy status
 				await this.updatePlayerEnergy(username, {
 					currentEnergy: currentEnergy - amount,
 					lastEnergyUpdate: Date.now()
 				});
+	
+				// Store the generated ID in KeyDB
+				await keydb.HSET(`energy_usage:${id}`, {
+					username,
+					amountUsed: amount,
+					timestamp: Date.now()
+				});
+	
+				// Set TTL for 5 minutes (300 seconds)
+				await keydb.EXPIRE(`energy_usage:${id}`, 300);
+	
 				return true;
 			}
+	
 			return false;
-		} catch(error: any) {
-		  console.log(error)
-		  throw error
-
+		} catch (error: any) {
+			console.log(error);
+			throw error;
 		}
-
-
 	}
+
+
 
 	// Private helper function to get player data from Redis
 	private async getPlayerEnergyData(username: string): Promise<{ currentEnergy: number; lastEnergyUpdate: number }> {

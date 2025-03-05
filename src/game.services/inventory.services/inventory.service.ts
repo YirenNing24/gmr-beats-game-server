@@ -521,7 +521,7 @@ class InventoryService {
             await session.close();
     
             if (!result || result.records.length === 0) {
-                throw new Error(`No equipped card found for user: ${username} in group: ${groupName}`);
+                return []
             }
     
             const smartWalletAddress: string = result.records[0].get("smartWalletAddress") || "";
@@ -590,7 +590,7 @@ class InventoryService {
             );
     
             if (!result || result.records.length === 0) {
-                throw new Error(`No equipped card found for user: ${username} in group: ${groupName}`);
+                return [];
             }
     
             // Extracting equipped card metadata from the inventory node
