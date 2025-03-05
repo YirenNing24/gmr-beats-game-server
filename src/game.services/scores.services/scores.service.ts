@@ -160,7 +160,6 @@ class ScoreService {
 							bad: { $first: "$bad" },
 							miss: { $first: "$miss" },
 							username: { $first: "$username" },
-							peerId: { $first: "$peerId" }
 						}
 					},
 					{ $sort: { score: -1 } } // Sort by highest score first
