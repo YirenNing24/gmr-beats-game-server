@@ -13,6 +13,8 @@ import SongRewardService from "../rewards.services/song.rewards.service";
 
 //** INTERFACE IMPORT
 import { LevelUpResult } from "../experience.services/experience.interface";
+import EnergyService from "../energy.services/energy.service";
+import keydb from "../../db/keydb.client";
 
 
 
@@ -30,8 +32,15 @@ class ScoreService {
 		let client: MongoClient | null = null;
 	
 		try {
-			const username: string = await tokenService.verifyAccessToken(token)
-
+			const username: string = await tokenService.verifyAccessToken(token);
+	
+			// Validate gameId in KeyDB
+			const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
+	
+			// If no data found or username doesn't match, reject the request
+			if (!keydbData || keydbData.username !== username) {
+				throw new Error("Invalid or expired game session.");
+			}
 	
 			// Establish MongoDB connection
 			client = await mongoDBClient.connect();
@@ -60,7 +69,9 @@ class ScoreService {
 			// Add rewards to the experience result
 			experienceGain.beatsReward = beatsReward;
 			experienceGain.previousHighscore = previousHighscore;
-			experienceGain.score = score
+	
+			// Remove game session from KeyDB after successful validation
+			await keydb.DEL(`energy_usage:${score.gameId}`);
 	
 			return experienceGain;
 		} catch (error: any) {
@@ -71,6 +82,7 @@ class ScoreService {
 			if (client) await client.close();
 		}
 	}
+	
 	
 	
 

@@ -80,11 +80,11 @@ class EnergyService {
 
 
 	//TODO - IN THE FUTURE RETURN THE generated ID which the playet needs to send back for verification
-	public async usePlayerEnergy(token: string, amount: number = 1): Promise<boolean> {
+	public async usePlayerEnergy(token: string, amount: number = 1): Promise<{ energy: boolean; gameId: string }> {
 		try {
 			const tokenService: TokenService = new TokenService();
 			const username: string = await tokenService.verifyAccessToken(token);
-			const id: string = nanoid();
+			const gameId: string = nanoid();
 	
 			// Fetch current energy
 			const { energy: currentEnergy } = await this.getPlayerEnergyBeats(username);
@@ -97,29 +97,30 @@ class EnergyService {
 				});
 	
 				// Store the generated ID in KeyDB
-				await keydb.HSET(`energy_usage:${id}`, {
+				await keydb.HSET(`energy_usage:${gameId}`, {
 					username,
 					amountUsed: amount,
 					timestamp: Date.now()
 				});
 	
 				// Set TTL for 5 minutes (300 seconds)
-				await keydb.EXPIRE(`energy_usage:${id}`, 300);
+				await keydb.EXPIRE(`energy_usage:${gameId}`, 300);
 	
-				return true;
+				return { energy: true, gameId };
 			}
 	
-			return false;
+			return { energy: false, gameId: "" };
 		} catch (error: any) {
 			console.log(error);
 			throw error;
 		}
 	}
+	
 
 
 
 	// Private helper function to get player data from Redis
-	private async getPlayerEnergyData(username: string): Promise<{ currentEnergy: number; lastEnergyUpdate: number }> {
+	public async getPlayerEnergyData(username: string): Promise<{ currentEnergy: number; lastEnergyUpdate: number }> {
 		try {
 			const data = await keydb.HGETALL(`player:${username}`);
 			return {

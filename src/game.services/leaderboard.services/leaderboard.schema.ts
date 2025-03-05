@@ -21,6 +21,7 @@ export const classicScoreStatsSchema = {
         bad: t.Number(),
         miss: t.Number(),
         username: t.String(),
+        gameId: t.String()
     })
 };
 

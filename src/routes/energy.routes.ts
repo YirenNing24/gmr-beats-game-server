@@ -16,7 +16,7 @@ import { EnergyBottleNFT } from '../game.services/energy.services/energy.interfa
 const energy = (app: Elysia): void => {
 
 
-    app.post('/api/energy/use', async ({ headers }): Promise<boolean> => {
+    app.post('/api/energy/use', async ({ headers }) => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -26,7 +26,7 @@ const energy = (app: Elysia): void => {
 
 
             const energyService: EnergyService = new EnergyService()
-            const result: boolean = await energyService.usePlayerEnergy(jwtToken);
+            const result = await energyService.usePlayerEnergy(jwtToken);
 
             return result
         } catch (error: any) {
