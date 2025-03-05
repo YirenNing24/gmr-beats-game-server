@@ -143,12 +143,13 @@ class ScoreService {
 			const highScores = await collection
 				.aggregate([
 					{ $match: { username } }, // Filter by username
+					{ $sort: { score: -1, timestamp: -1 } }, // Sort by highest score first, then latest timestamp
 					{
 						$group: {
 							_id: "$songName", // Group by songName
-							songName: { $first: "$songName" }, // Keep songName explicitly
+							songName: { $first: "$songName" }, // Take from highest score document
 							difficulty: { $first: "$difficulty" },
-							score: { $max: "$score" }, // Get max score per song
+							score: { $first: "$score" }, // Ensure we take the highest score
 							combo: { $first: "$combo" },
 							maxCombo: { $first: "$maxCombo" },
 							accuracy: { $first: "$accuracy" },
@@ -159,15 +160,15 @@ class ScoreService {
 							good: { $first: "$good" },
 							bad: { $first: "$bad" },
 							miss: { $first: "$miss" },
-							username: { $first: "$username" },
+							username: { $first: "$username" }
 						}
 					},
-					{ $sort: { score: -1 } } // Sort by highest score first
+					{ $sort: { score: -1 } } // Final sort to return highest scores first
 				])
 				.toArray();
 	
 			// Remove `_id` and ensure `songName` is present
-			const formattedScores = highScores.map(({ _id, ...rest }) => rest) as unknown as ClassicScoreStats[];
+			const formattedScores = highScores.map(({ _id, ...rest }) => rest) as ClassicScoreStats[];
 	
 			// Close the database connection
 			await client.close();
@@ -178,6 +179,7 @@ class ScoreService {
 			throw error;
 		}
 	}
+	
 	
 
 	//* CLASSIC GAME MODE RETRIEVE ALL SCORE FUNCTION
@@ -209,3 +211,54 @@ export default ScoreService;
 //         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
 //         .join('');
 // }
+
+
+// {
+// 	"_id": {
+// 	  "$oid": "67c7deb9de3f466a2180e533"
+// 	},
+// 	"accuracy": 0.91260162601626,
+// 	"artist": "X:IN",
+// 	"bad": 3,
+// 	"combo": 79,
+// 	"difficulty": "easy",
+// 	"finished": true,
+// 	"good": 0,
+// 	"maxCombo": 79,
+// 	"miss": 0,
+// 	"perfect": 65,
+// 	"score": 2372100,
+// 	"songName": "",
+// 	"username": "nashar5",
+// 	"veryGood": 14,
+// 	"timestamp": 1741151929390,
+// 	"experienceGain": 7,
+// 	"beatsReward": 46,
+// 	"previousHighscore": 0
+//   }
+
+
+// {
+// 	"_id": {
+// 	  "$oid": "67c297853a6e708db8ed19d0"
+// 	},
+// 	"accuracy": 0.959349593495935,
+// 	"artist": "X:IN",
+// 	"bad": 0,
+// 	"combo": 82,
+// 	"difficulty": "easy",
+// 	"finished": true,
+// 	"good": 0,
+// 	"maxCombo": 82,
+// 	"miss": 0,
+// 	"peerId": 152611201,
+// 	"perfect": 72,
+// 	"score": 731088,
+// 	"songName": "No Doubt",
+// 	"username": "nashar5",
+// 	"veryGood": 10,
+// 	"timestamp": 1740806021472,
+// 	"experienceGain": 3,
+// 	"beatsReward": 48,
+// 	"previousHighscore": 676912
+//   }
