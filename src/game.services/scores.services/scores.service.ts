@@ -60,6 +60,7 @@ class ScoreService {
 			// Add rewards to the experience result
 			experienceGain.beatsReward = beatsReward;
 			experienceGain.previousHighscore = previousHighscore;
+			experienceGain.score = score
 	
 			return experienceGain;
 		} catch (error: any) {

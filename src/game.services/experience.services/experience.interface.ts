@@ -1,3 +1,5 @@
+import { ClassicScoreStats } from "../leaderboard.services/leaderboard.interface";
+
 /**
  * Represents the statistics of a player.
  *
@@ -45,4 +47,5 @@ export interface LevelUpResult {
     beatsReward?: number;
     stats: PlayerStats;
     previousHighscore?: number;
+    score: ClassicScoreStats
 }
