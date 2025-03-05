@@ -69,6 +69,7 @@ class ScoreService {
 			// Add rewards to the experience result
 			experienceGain.beatsReward = beatsReward;
 			experienceGain.previousHighscore = previousHighscore;
+			experienceGain.score = score
 	
 			// Remove game session from KeyDB after successful validation
 			await keydb.DEL(`energy_usage:${score.gameId}`);
