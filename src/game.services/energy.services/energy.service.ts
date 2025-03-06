@@ -19,35 +19,32 @@ class EnergyService {
 	
 	public async getPlayerEnergyBeats(username: string): Promise<{ energy: number; timeUntilNextRecharge: number | null; maxEnergy: number }> {
 		try {
-		// Ensure player energy data exists
-		await this.initializePlayerEnergyData(username);	
-		const { lastEnergyUpdate, currentEnergy } = await this.getPlayerEnergyData(username);
-		const currentTime = Date.now();
+			// Ensure player energy data exists
+			await this.initializePlayerEnergyData(username);	
+			const { lastEnergyUpdate, currentEnergy } = await this.getPlayerEnergyData(username);
+			const currentTime = Date.now();
 	
-		const ENERGY_GAIN_PER_HOUR: number = 2;
-		const MS_PER_HOUR: number = 1000 * 60 * 60;
-		const BASE_MAX_ENERGY: number = 15;
+			const ENERGY_GAIN_PER_HOUR: number = 10;
+			const MS_PER_HOUR: number = 1000 * 60 * 60;
+			const MAX_ENERGY: number = 50; // Hardcoded max energy
 	
-		const playerLevel: number = await this.getMaxEnergy(username);
-		const MAX_ENERGY: number = BASE_MAX_ENERGY + playerLevel;
+			const hoursPassed: number = Math.floor((currentTime - lastEnergyUpdate) / MS_PER_HOUR);
+			const energyToAdd: number = Math.min(ENERGY_GAIN_PER_HOUR * hoursPassed, MAX_ENERGY - currentEnergy);
+			const newEnergy: number = Math.min(currentEnergy + energyToAdd, MAX_ENERGY);
 	
-		const hoursPassed: number = Math.floor((currentTime - lastEnergyUpdate) / MS_PER_HOUR);
-		const energyToAdd: number = Math.min(ENERGY_GAIN_PER_HOUR * hoursPassed, MAX_ENERGY - currentEnergy);
-		const newEnergy: number = Math.min(currentEnergy + energyToAdd, MAX_ENERGY);
+			let timeUntilNextRecharge: number | null = null;
+			if (newEnergy < MAX_ENERGY) {
+				const nextRechargeTime = lastEnergyUpdate + (hoursPassed + 1) * MS_PER_HOUR;
+				timeUntilNextRecharge = nextRechargeTime - currentTime;
+			}
 	
-		let timeUntilNextRecharge: number | null = null;
-		if (newEnergy < MAX_ENERGY) {
-			const nextRechargeTime = lastEnergyUpdate + (hoursPassed + 1) * MS_PER_HOUR;
-			timeUntilNextRecharge = nextRechargeTime - currentTime;
+			return { energy: newEnergy, timeUntilNextRecharge, maxEnergy: MAX_ENERGY };
+		} catch(error: any) {
+			console.log(error);
+			throw error;
 		}
-	
-		return { energy: newEnergy, timeUntilNextRecharge, maxEnergy: MAX_ENERGY };
-	} catch(error: any) {
-		console.log(error)
-		throw error
-
-	  }
 	}
+	
 	
 
 	// Public function to use player energy
@@ -174,21 +171,21 @@ class EnergyService {
 	}
 
 
-    	// Function to initialize player energy data if it doesn't exist
+
+	// Function to initialize player energy data if it doesn't exist
 	private async initializePlayerEnergyData(username: string): Promise<void> {
 		const exists = await keydb.EXISTS(`player:${username}`);
 		if (!exists) {
-			const BASE_MAX_ENERGY = 15;
-			const playerLevel = await this.getMaxEnergy(username);
-			const maxEnergy = BASE_MAX_ENERGY + playerLevel;
+			const MAX_ENERGY = 50; // Hardcoded max energy
 
 			// Set initial energy to max energy and update the timestamp
 			await keydb.HSET(`player:${username}`, {
-				currentEnergy: maxEnergy,
+				currentEnergy: MAX_ENERGY,
 				lastEnergyUpdate: Date.now()
 			});
 		}
 	}
+
 }
 
 export default EnergyService;
