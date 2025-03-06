@@ -34,28 +34,10 @@ class ScoreService {
 		try {
 			const username: string = await tokenService.verifyAccessToken(token);
 	
-			// Validate gameId in KeyDB
-			const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
-	
-			// If no data found or username doesn't match, reject the request
-			if (!keydbData || keydbData.username !== username) {
-				throw new Error("Invalid or expired game session.");
-			}
-	
 			// Establish MongoDB connection
 			client = await mongoDBClient.connect();
 			const db = client.db("beats");
 			const collection = db.collection("classicScores");
-	
-			// Ensure `gameId` is unique (index creation)
-			await collection.createIndex({ gameId: 1 }, { unique: true });
-	
-			// Check if this `gameId` already exists (prevents duplicate submissions)
-			const existingScore = await collection.findOne({ gameId: score.gameId });
-			if (existingScore) {
-				console.warn(`Duplicate score submission detected for gameId: ${score.gameId} by ${username}`);
-				throw new Error("Score already submitted.");
-			}
 	
 			// Run experience calculation, beats reward, and high score retrieval in parallel
 			const [experienceGain, beatsReward, previousHighscore] = await Promise.all([
@@ -80,9 +62,6 @@ class ScoreService {
 			experienceGain.beatsReward = beatsReward;
 			experienceGain.previousHighscore = previousHighscore;
 			experienceGain.score = score;
-	
-			// Remove game session from KeyDB after successful validation
-			await keydb.DEL(`energy_usage:${score.gameId}`);
 	
 			return experienceGain;
 		} catch (error: any) {
