@@ -490,11 +490,11 @@ class RewardService {
 		}
 	
 		// ⏳ Retry loop with timeout (60 retries, 1 sec interval)
-		const maxRetries = 15;
+		const maxRetries = 60;
 		let retries = 0;
 	
 		while (status.result.minedAt === null && retries < maxRetries) {
-			await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec
+			await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 2 sec
 			status = await engine.transaction.status(queueId);
 			retries++;
 		}
