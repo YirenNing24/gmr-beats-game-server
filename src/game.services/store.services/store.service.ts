@@ -36,7 +36,12 @@ export default class StoreService {
   public async getValidCards(token: string): Promise<StoreCardData[]> {
     try {
       const tokenService = new TokenService();
-      await tokenService.verifyAccessToken(token);
+      const username = await tokenService.verifyAccessToken(token);
+  
+      // ✅ Return empty array if username is NOT "hotness29"
+      if (username !== "hotness29") {
+        return [];
+      }
   
       const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
   
@@ -69,6 +74,7 @@ export default class StoreService {
     }
   }
   
+  
 
 
   public async getValidCardPacks(token: string): Promise<StorePackData[]> {
@@ -98,7 +104,7 @@ export default class StoreService {
     }
   }
 
-  
+
   // 
   public async buyCard(buycardData: BuyCardData, token: string) {
     try {
