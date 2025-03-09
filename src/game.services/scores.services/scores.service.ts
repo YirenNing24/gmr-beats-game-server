@@ -77,12 +77,27 @@ class ScoreService {
 			};
 	
 			// ✅ Ensure the database connection is open before inserting
-			const isConnected = await client.db().admin().ping().then(() => true).catch(() => false);
-			if (!isConnected) {
-				throw new Error(`MongoDB connection closed unexpectedly before insert for user: ${username}`);
+			let insertRetries = 3;
+			while (insertRetries > 0) {
+				const isConnected = await client.db().admin().ping().then(() => true).catch(() => false);
+				if (!isConnected) {
+					console.warn(`MongoDB connection closed unexpectedly before insert for user: ${username}. Retrying...`);
+					client = await mongoDBClient.connect(); // Reconnect
+				} else {
+					try {
+						await collection.insertOne(scoreWithRewards);
+						break; // ✅ Success, exit loop
+					} catch (insertError) {
+						console.error(`Error inserting score for user: ${username}. Retrying...`, insertError);
+					}
+				}
+				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
+				insertRetries--;
 			}
 	
-			await collection.insertOne(scoreWithRewards);
+			if (insertRetries === 0) {
+				throw new Error(`Failed to insert score after multiple retries for user: ${username}`);
+			}
 	
 			// Remove game session from KeyDB after successful validation
 			await keydb.DEL(`energy_usage:${score.gameId}`);
@@ -107,6 +122,7 @@ class ScoreService {
 			}
 		}
 	}
+	
 	
 	
 	
