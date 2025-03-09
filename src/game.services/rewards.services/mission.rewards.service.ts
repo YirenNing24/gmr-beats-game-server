@@ -484,7 +484,7 @@ class RewardService {
 	
 		// 🛠 Retry only if the transaction is marked as "errored"
 		if (status.result.status === "errored") {
-			console.warn(`Transaction ${queueId} errored, retrying...`);
+			console.log(`Transaction ${queueId} errored, retrying...`);
 			await engine.transaction.retryFailed({ queueId });
 			status = await engine.transaction.status(queueId); // Re-fetch status
 		}

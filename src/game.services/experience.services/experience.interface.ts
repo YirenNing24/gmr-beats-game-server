@@ -44,7 +44,7 @@ export interface LevelUpResult {
     currentLevel: number;
     currentExperience: number;
     experienceGained: number;
-    beatsReward?: number;
+    beatsReward?: number | null;
     stats: PlayerStats;
     previousHighscore?: number;
     score: ClassicScoreStats

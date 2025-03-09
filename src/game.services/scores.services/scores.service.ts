@@ -32,6 +32,7 @@ class ScoreService {
 		let client: MongoClient | null = null;
 		let retries = 3; // Max retries for MongoDB connection
 		let username: string | null = null; // Store username for error logging
+		let beatsReward: number | null = null; // Allow reward failure
 	
 		try {
 			username = await tokenService.verifyAccessToken(token);
@@ -44,13 +45,14 @@ class ScoreService {
 	
 			// ✅ Retry MongoDB connection if closed
 			while (retries > 0) {
-				client = await mongoDBClient.connect();
-				if (client) {
-					break; // Exit loop if connection succeeds
+				try {
+					client = await mongoDBClient.connect();
+					break; // Success
+				} catch (error) {
+					console.warn(`MongoDB connection failed for user: ${username}. Retrying...`, error);
+					await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
+					retries--;
 				}
-				console.warn(`MongoDB connection failed for user: ${username}. Retrying...`);
-				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
-				retries--;
 			}
 	
 			if (!client) {
@@ -60,12 +62,19 @@ class ScoreService {
 			const db = client.db("beats");
 			const collection = db.collection("classicScores");
 	
-			// Run experience calculation, beats reward, and high score retrieval in parallel
-			const [experienceGain, beatsReward, previousHighscore] = await Promise.all([
+			// Run experience calculation and high score retrieval in parallel
+			const [experienceGain, previousHighscore] = await Promise.all([
 				this.calculateExperience(username, score.accuracy),
-				songRewardService.classicSongReward(score),
-				this.getHighScoreIndividual(score.songName, username, db)
+				this.getHighScoreIndividual(score.songName, username, db),
 			]);
+	
+			// 🚨 Wrap song reward in try-catch to allow score saving even if it fails
+			try {
+				beatsReward = await songRewardService.classicSongReward(score);
+			} catch (rewardError) {
+				console.error(`Error calculating song reward for user: ${username}`, rewardError);
+				// 🚨 Continue without crashing
+			}
 	
 			// Add rewards and highscore info to the score object
 			const scoreWithRewards = {
@@ -79,20 +88,14 @@ class ScoreService {
 			// ✅ Ensure the database connection is open before inserting
 			let insertRetries = 3;
 			while (insertRetries > 0) {
-				const isConnected = await client.db().admin().ping().then(() => true).catch(() => false);
-				if (!isConnected) {
-					console.warn(`MongoDB connection closed unexpectedly before insert for user: ${username}. Retrying...`);
-					client = await mongoDBClient.connect(); // Reconnect
-				} else {
-					try {
-						await collection.insertOne(scoreWithRewards);
-						break; // ✅ Success, exit loop
-					} catch (insertError) {
-						console.error(`Error inserting score for user: ${username}. Retrying...`, insertError);
-					}
+				try {
+					await collection.insertOne(scoreWithRewards);
+					break; // ✅ Success, exit loop
+				} catch (insertError) {
+					console.error(`Error inserting score for user: ${username}. Retrying...`, insertError);
+					await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
+					insertRetries--;
 				}
-				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
-				insertRetries--;
 			}
 	
 			if (insertRetries === 0) {
@@ -122,6 +125,7 @@ class ScoreService {
 			}
 		}
 	}
+	
 	
 	
 	
