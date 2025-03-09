@@ -490,7 +490,7 @@ class RewardService {
 		}
 	
 		// ⏳ Retry loop with timeout (60 retries, 1 sec interval)
-		const maxRetries = 10;
+		const maxRetries = 15;
 		let retries = 0;
 	
 		while (status.result.minedAt === null && retries < maxRetries) {
