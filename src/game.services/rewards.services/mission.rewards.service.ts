@@ -482,28 +482,36 @@ class RewardService {
 	public async ensureTransactionMined(queueId: string): Promise<void> {
 		let status = await engine.transaction.status(queueId);
 	
-		// 🛠 Retry only if the transaction is marked as "errored"
+		// 🛠 Retry if the transaction is marked as "errored"
 		if (status.result.status === "errored") {
 			console.log(`Transaction ${queueId} errored, retrying...`);
 			await engine.transaction.retryFailed({ queueId });
 			status = await engine.transaction.status(queueId); // Re-fetch status
 		}
 	
-		// ⏳ Retry loop with timeout (60 retries, 1 sec interval)
+		// ⏳ Retry loop with timeout (60 retries, 3 sec interval)
 		const maxRetries = 60;
 		let retries = 0;
 	
-		while (status.result.minedAt === null && retries < maxRetries) {
-			await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 2 sec
+		// ⏳ Wait while the transaction is still pending (queued or sent)
+		while ((status.result.status === "queued" || status.result.status === "sent") && retries < maxRetries) {
+			await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 3 sec before retrying
 			status = await engine.transaction.status(queueId);
 			retries++;
 		}
 	
-		// 🚨 Timeout handling
-		if (status.result.minedAt === null) {
+		// 🚨 Handle failure scenarios
+		if (status.result.status === "errored") {
+			throw new Error(`Transaction ${queueId} failed with status: errored.`);
+		} else if (status.result.status === "cancelled") {
+			throw new Error(`Transaction ${queueId} was cancelled.`);
+		} else if (status.result.minedAt === null) {
 			throw new Error(`Transaction ${queueId} not mined within the expected timeframe.`);
 		}
+	
+		console.log(`✅ Transaction ${queueId} successfully mined.`);
 	}
+	
 	
 	
 	
