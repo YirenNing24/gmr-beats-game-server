@@ -2,7 +2,7 @@
 import { Driver } from "neo4j-driver";
 
 //** VALIDATION ERROR
-import { ClassicScoreStats, LeaderboardQuery, savedClassicScoreStats } from "./leaderboard.interface";
+import { LeaderboardQuery, savedClassicScoreStats } from "./leaderboard.interface";
 
 //** SERVICE IMPORT
 import TokenService from "../../user.services/token.services/token.service";
@@ -54,40 +54,42 @@ class LeaderboardService {
 	}
 	
 
-
 	private getPeriodDates(period: string): { startOfPeriod: Date; endOfPeriod: Date } {
 		const now = new Date();
 		let startOfPeriod: Date;
 		let endOfPeriod: Date;
-
+	
 		switch (period) {
 			case "Daily":
-				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+				// Convert to KST (UTC+9) → Start at 00:00 KST (15:00 UTC of the previous day)
+				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0, 0));
 				endOfPeriod = new Date(startOfPeriod);
-				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1);
+				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1); // Add 1 day
 				break;
-
+	
 			case "Weekly":
 				const dayOfWeek = now.getUTCDay(); // Sunday - Saturday: 0 - 6
-				const diffToMonday = (dayOfWeek + 6) % 7; // Calculate how many days to subtract to get to Monday
-				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday, 0, 0, 0, 0));
+				const diffToMonday = (dayOfWeek + 6) % 7; // Adjust to Monday
+				// Start at 00:00 KST on Monday (15:00 UTC of the previous day)
+				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday, 15, 0, 0, 0));
 				endOfPeriod = new Date(startOfPeriod);
-				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 7); // Add 7 days to Monday to get the next Monday
+				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 7); // Add 7 days
 				break;
-
+	
 			case "Monthly":
-				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+				// Start at 00:00 KST on the 1st day of the month (15:00 UTC of the previous day)
+				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 15, 0, 0, 0));
 				endOfPeriod = new Date(startOfPeriod);
 				endOfPeriod.setUTCMonth(startOfPeriod.getUTCMonth() + 1); // Add 1 month
 				break;
-
+	
 			default:
 				throw new Error("Invalid period specified");
 		}
-
+	
 		return { startOfPeriod, endOfPeriod };
 	}
-
+	
 	
 	private async fetchScores(songName: string, difficulty: string): Promise<savedClassicScoreStats[]> {
 		try {
@@ -108,12 +110,7 @@ class LeaderboardService {
 		}
 	}
 
-	private filterScoresByPeriod(scores: savedClassicScoreStats[], startOfPeriod: Date, endOfPeriod: Date): ClassicScoreStats[] {
-		return scores.filter(score => {
-			const scoreDate = new Date(score.timestamp);
-			return scoreDate >= startOfPeriod && scoreDate < endOfPeriod;
-		});
-	}
+
 }
 
 export default LeaderboardService;
