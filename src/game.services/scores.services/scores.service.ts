@@ -36,8 +36,6 @@ class ScoreService {
 	
 			// Validate gameId in KeyDB
 			const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
-	
-			// If no data found or username doesn't match, reject the request
 			if (!keydbData || keydbData.username !== username) {
 				throw new Error("Invalid or expired game session.");
 			}
@@ -62,7 +60,7 @@ class ScoreService {
 			const scoreWithRewards = {
 				...score,
 				timestamp: Date.now(),
-				experienceGain: experienceGain.experienceGained, // Store only experienceGained, not full object
+				experienceGain: experienceGain.experienceGained,
 				beatsReward,
 				previousHighscore
 			};
@@ -88,12 +86,17 @@ class ScoreService {
 			console.error("Error saving classic score:", error);
 			throw error;
 		} finally {
-			// ✅ Always close the client if it's open
+			// ✅ Only close if client was opened and insertOne was attempted
 			if (client) {
-				await client.close();
+				try {
+					await client.close();
+				} catch (closeError) {
+					console.error("Error closing MongoDB client:", closeError);
+				}
 			}
 		}
 	}
+	
 	
 	
 	
