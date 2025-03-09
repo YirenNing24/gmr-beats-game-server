@@ -30,6 +30,7 @@ class ScoreService {
 		const tokenService = new TokenService();
 		const songRewardService = new SongRewardService();
 		let client: MongoClient | null = null;
+		let retries = 3; // Max retries for MongoDB connection
 	
 		try {
 			const username: string = await tokenService.verifyAccessToken(token);
@@ -40,10 +41,19 @@ class ScoreService {
 				throw new Error("Invalid or expired game session.");
 			}
 	
-			// ✅ Ensure MongoDB client is connected properly
-			client = await mongoDBClient.connect();
+			// ✅ Retry MongoDB connection if closed
+			while (retries > 0) {
+				client = await mongoDBClient.connect();
+				if (client) {
+					break; // Exit loop if connection succeeds
+				}
+				console.warn("MongoDB connection failed. Retrying...");
+				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
+				retries--;
+			}
+	
 			if (!client) {
-				throw new Error("Failed to connect to MongoDB.");
+				throw new Error("Failed to connect to MongoDB after multiple retries.");
 			}
 	
 			const db = client.db("beats");
@@ -96,6 +106,7 @@ class ScoreService {
 			}
 		}
 	}
+	
 	
 	
 	
