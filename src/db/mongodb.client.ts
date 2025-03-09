@@ -35,7 +35,6 @@ export const mongoDBClient = new MongoClient(uri, {
 	retryReads: true, // Auto-retry failed reads
 
 	// ✅ Automatic Compression (reduces network usage)
-	compressors: ["zstd", "snappy"], // Use best compression methods
 });
 
 
