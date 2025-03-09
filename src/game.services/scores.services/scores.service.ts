@@ -34,8 +34,20 @@ class ScoreService {
 		try {
 			const username: string = await tokenService.verifyAccessToken(token);
 	
-			// Establish MongoDB connection
+			// Validate gameId in KeyDB
+			const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
+	
+			// If no data found or username doesn't match, reject the request
+			if (!keydbData || keydbData.username !== username) {
+				throw new Error("Invalid or expired game session.");
+			}
+	
+			// ✅ Ensure MongoDB client is connected properly
 			client = await mongoDBClient.connect();
+			if (!client) {
+				throw new Error("Failed to connect to MongoDB.");
+			}
+	
 			const db = client.db("beats");
 			const collection = db.collection("classicScores");
 	
@@ -43,7 +55,7 @@ class ScoreService {
 			const [experienceGain, beatsReward, previousHighscore] = await Promise.all([
 				this.calculateExperience(username, score.accuracy),
 				songRewardService.classicSongReward(score),
-				this.getHighScoreIndividual(score.songName, username, db) // Pass `db` to avoid extra connection
+				this.getHighScoreIndividual(score.songName, username, db)
 			]);
 	
 			// Add rewards and highscore info to the score object
@@ -55,8 +67,16 @@ class ScoreService {
 				previousHighscore
 			};
 	
-			// Insert the updated score into MongoDB
+			// ✅ Ensure the database connection is open before inserting
+			const isConnected = await client.db().admin().ping().then(() => true).catch(() => false);
+			if (!isConnected) {
+				throw new Error("MongoDB connection closed unexpectedly before insert.");
+			}
+	
 			await collection.insertOne(scoreWithRewards);
+	
+			// Remove game session from KeyDB after successful validation
+			await keydb.DEL(`energy_usage:${score.gameId}`);
 	
 			// Add rewards to the experience result
 			experienceGain.beatsReward = beatsReward;
@@ -68,10 +88,13 @@ class ScoreService {
 			console.error("Error saving classic score:", error);
 			throw error;
 		} finally {
-			// Ensure MongoDB connection is closed
-			if (client) await client.close();
+			// ✅ Always close the client if it's open
+			if (client) {
+				await client.close();
+			}
 		}
 	}
+	
 	
 	
 	
