@@ -31,14 +31,15 @@ class ScoreService {
 		const songRewardService = new SongRewardService();
 		let client: MongoClient | null = null;
 		let retries = 3; // Max retries for MongoDB connection
+		let username: string | null = null; // Store username for error logging
 	
 		try {
-			const username: string = await tokenService.verifyAccessToken(token);
+			username = await tokenService.verifyAccessToken(token);
 	
 			// Validate gameId in KeyDB
 			const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
 			if (!keydbData || keydbData.username !== username) {
-				throw new Error("Invalid or expired game session.");
+				throw new Error(`Invalid or expired game session for user: ${username}`);
 			}
 	
 			// ✅ Retry MongoDB connection if closed
@@ -47,13 +48,13 @@ class ScoreService {
 				if (client) {
 					break; // Exit loop if connection succeeds
 				}
-				console.warn("MongoDB connection failed. Retrying...");
+				console.warn(`MongoDB connection failed for user: ${username}. Retrying...`);
 				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
 				retries--;
 			}
 	
 			if (!client) {
-				throw new Error("Failed to connect to MongoDB after multiple retries.");
+				throw new Error(`Failed to connect to MongoDB after multiple retries for user: ${username}`);
 			}
 	
 			const db = client.db("beats");
@@ -78,7 +79,7 @@ class ScoreService {
 			// ✅ Ensure the database connection is open before inserting
 			const isConnected = await client.db().admin().ping().then(() => true).catch(() => false);
 			if (!isConnected) {
-				throw new Error("MongoDB connection closed unexpectedly before insert.");
+				throw new Error(`MongoDB connection closed unexpectedly before insert for user: ${username}`);
 			}
 	
 			await collection.insertOne(scoreWithRewards);
@@ -93,19 +94,20 @@ class ScoreService {
 	
 			return experienceGain;
 		} catch (error: any) {
-			console.error("Error saving classic score:", error);
+			console.error(`Error saving classic score for user: ${username}`, error);
 			throw error;
 		} finally {
-			// ✅ Only close if client was opened and insertOne was attempted
+			// ✅ Only close if client was opened
 			if (client) {
 				try {
 					await client.close();
 				} catch (closeError) {
-					console.error("Error closing MongoDB client:", closeError);
+					console.error(`Error closing MongoDB client for user: ${username}`, closeError);
 				}
 			}
 		}
 	}
+	
 	
 	
 	
