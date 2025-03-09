@@ -458,32 +458,54 @@ class RewardService {
 	public async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
 		try {
 			const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
-			const transaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
+			const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
+			
+			// 🔄 Ensure the allowance transaction is successful
+			await this.ensureTransactionMined(allowanceTransaction.result.queueId);
 	
-			let status = await engine.transaction.status(transaction.result.queueId);
-	
-			// Retry loop with timeout
-			const maxRetries = 60; // Allow 30 seconds (60 * 500ms)
-			let retries = 0;
-	
-			while (status.result.minedAt === null && retries < maxRetries) {
-				await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 500ms
-				status = await engine.transaction.status(transaction.result.queueId);
-				retries++;
-			}
-	
-			if (status.result.minedAt === null) {
-				throw new Error("Transaction not mined within the expected timeframe.");
-			}
-	
+			// ✅ Proceed with transfer after successful allowance transaction
 			const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
-			await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
+			const transferTransaction = await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
+	
+			// 🔄 Ensure the transfer transaction is successful
+			await this.ensureTransactionMined(transferTransaction.result.queueId);
 	
 		} catch (error: any) {
 			console.error("Error in sendBeatsReward: ", error);
 			throw error;
 		}
 	}
+	
+	/**
+	 * Ensures a Thirdweb transaction is mined, with retry logic if it's "errored".
+	 */
+	public async ensureTransactionMined(queueId: string): Promise<void> {
+		let status = await engine.transaction.status(queueId);
+	
+		// 🛠 Retry only if the transaction is marked as "errored"
+		if (status.result.status === "errored") {
+			console.warn(`Transaction ${queueId} errored, retrying...`);
+			await engine.transaction.retryFailed({ queueId });
+			status = await engine.transaction.status(queueId); // Re-fetch status
+		}
+	
+		// ⏳ Retry loop with timeout (60 retries, 1 sec interval)
+		const maxRetries = 10;
+		let retries = 0;
+	
+		while (status.result.minedAt === null && retries < maxRetries) {
+			await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec
+			status = await engine.transaction.status(queueId);
+			retries++;
+		}
+	
+		// 🚨 Timeout handling
+		if (status.result.minedAt === null) {
+			throw new Error(`Transaction ${queueId} not mined within the expected timeframe.`);
+		}
+	}
+	
+	
 	
 	
 
