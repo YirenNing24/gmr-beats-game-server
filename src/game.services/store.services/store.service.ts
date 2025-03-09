@@ -98,6 +98,7 @@ export default class StoreService {
     }
   }
 
+  
   // 
   public async buyCard(buycardData: BuyCardData, token: string) {
     try {
@@ -132,14 +133,18 @@ export default class StoreService {
     try {
       const maxRetries = 3;
   
-      // Retry mechanism for setting allowance
+      // ✅ Retry mechanism for setting allowance
       let allowanceRetries = maxRetries;
+      let allowanceTransaction;
       while (allowanceRetries > 0) {
         try {
-          await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
+          allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
             spenderAddress: CARD_MARKETPLACE,
             amount: price,
           });
+  
+          // ✅ Ensure the allowance transaction is mined
+          await this.ensureTransactionMined(allowanceTransaction.result.queueId);
           break; // Break if successful
         } catch (error: any) {
           console.error("Error setting allowance: ", error);
@@ -157,11 +162,12 @@ export default class StoreService {
         buyer: buyerWalletAddress,
       };
   
-      // Retry mechanism for executing purchase
+      // ✅ Retry mechanism for executing purchase
       let purchaseRetries = maxRetries;
+      let transaction;
       while (purchaseRetries > 0) {
         try {
-          const transaction = (
+          transaction = (
             await engine.marketplaceDirectListings.buyFromListing(
               CHAIN,
               CARD_MARKETPLACE,
@@ -169,6 +175,9 @@ export default class StoreService {
               requestBody
             )
           ).result;
+  
+          // ✅ Ensure the purchase transaction is mined
+          await this.ensureTransactionMined(transaction.queueId);
           return transaction;
         } catch (error: any) {
           console.error("Error during card purchase attempt: ", error);
@@ -187,7 +196,6 @@ export default class StoreService {
   
   
   
-
   //Initiates a card pack purchase using the provided wallet information and listing ID.
   private async cardPackPurchase(buyerWalletAddress: string, listingId: number) {
     try {
@@ -245,113 +253,6 @@ export default class StoreService {
   }
   
 
-  //Creates a relationship between a user and a card based on provided parameters.
-  // private async createCardRelationship(username: string, uri: string, inventoryCurrentSize: number, inventorySize: number): Promise<void> {
-  //   try {
-
-  //     // const rewardService: RewardService = new RewardService()
-  //     // Determine the relationship type based on bag and inventory size
-  //     let relationship: string[];
-  //     if (inventorySize < inventoryCurrentSize + 1) {
-  //       relationship = ["BAGGED"];
-  //     } else {
-  //       relationship = ["INVENTORY"];
-  //     }
-      
-  //     // Get the card's name
-  //     const session: Session = this.driver.session();
-  //     for (const rel of relationship) {
-  //       await session.run(`
-  //         MATCH (u:User {username: $username}), (c:Card {uri: $uri})
-  //         MATCH (c)-[l:LISTED]->(cs:CardStore)
-  //         DELETE l
-  //         CREATE (u)-[:${rel}]->(c)
-  //         CREATE (c)-[:SOLD]->(cs)
-  //       `, { username, uri });
-  //     }
-  //     await session.close();
-  //   } catch (error: any) {
-  //     console.error("Error creating relationship:", error);
-  //     throw error;
-  //   }
-  // }
-  
-
-//   private async createCardPackRelationship(username: string, uri: string): Promise<void> {
-//     const session: Session = this.driver.session();
-
-//     try {
-//         // Step 1: Get the parent pack's properties
-//         const packNameResult = await session.run(`
-//             MATCH (p:Pack {uri: $uri})
-//             RETURN p.name AS name, p.quantity AS quantity, properties(p) AS props
-//         `, { uri });
-
-//         if (packNameResult.records.length === 0) {
-//             throw new Error(`Pack with URI ${uri} not found`);
-//         }
-
-//         const parentPackName: string = packNameResult.records[0].get("name");
-//         const parentPackProps: StorePackData = packNameResult.records[0].get("props");
-
-//         // Remove the quantity property from the parent pack's properties
-//         //@ts-ignore
-//         delete parentPackProps.quantity;
-
-//         // Step 2: Check if the user exists and already owns this pack
-//         const userOwnsPack = await session.run(`
-//             MATCH (u:User {username: $username})-[:OWNED]->(p:Pack {name: $name})
-//             RETURN p AS pack
-//         `, { username, name: parentPackName });
-
-//         if (userOwnsPack.records.length > 0) {
-//             // Update quantity of the owned pack
-//             await session.run(`
-//                 MATCH (u:User {username: $username})-[:OWNED]->(p:Pack {name: $name})
-//                 SET p.quantity = p.quantity + 1
-//             `, { username, name: parentPackName });
-
-//             // Decrease quantity of the parent pack
-//             await session.run(`
-//                 MATCH (p:Pack {name: $name})
-//                 WHERE p.child IS NULL OR p.child = false
-//                 SET p.quantity = p.quantity - 1
-//             `, { name: parentPackName });
-
-//         } else {
-//             // Step 3: Ensure the user exists before creating a new pack
-//             const userExists = await session.run(`
-//                 MATCH (u:User {username: $username})
-//                 RETURN u
-//             `, { username });
-
-//             if (userExists.records.length === 0) {
-//                 throw new Error(`User with username ${username} not found`);
-//             }
-
-//             // Create a new pack and associate it with the user
-//             await session.run(`
-//                 MATCH (u:User {username: $username})
-//                 CREATE (u)-[:OWNED]->(newPack:Pack)
-//                 SET newPack = $props, newPack.quantity = 1, newPack.child = true
-//             `, { username, props: parentPackProps });
-
-//             // Decrease quantity of the parent pack
-//             await session.run(`
-//                 MATCH (p:Pack {name: $name})
-//                 WHERE p.child IS NULL OR p.child = false
-//                 SET p.quantity = p.quantity - 1
-//             `, { name: parentPackName });
-//         }
-
-//     } catch (error: any) {
-//         console.error("Error creating relationship:", error);
-//         throw error;
-//     } finally {
-//         await session.close();
-//     }
-// }
-
 
   public async getvalidCardUpgrade(token: string): Promise<StoreCardUpgradeData[]> {
     try {
@@ -374,80 +275,45 @@ export default class StoreService {
   }
 
 
-  // public async buyCardUpgrade(buyCardUpgradeData: BuyCardUpgradeData, token: string): Promise<SuccessMessage> {
-  //   try {
-  //     const tokenService: TokenService = new TokenService();
-  //     const username: string = await tokenService.verifyAccessToken(token);
-  
-  //     const { listingId, quantity } = buyCardUpgradeData as BuyCardUpgradeData;
-  
-  //     const session: Session = this.driver.session();
-  //     const result: QueryResult<RecordShape> = await session.executeRead((tx: ManagedTransaction) =>
-  //       tx.run(buyCardUpgradeCypher, { username })
-  //     );
-
-  
-  //     if (result.records.length === 0) {
-  //       throw new ValidationError(`User with username '${username}' not found.`, '');
-  //     }
-  //     const userData: UserData = result.records[0].get("u");
-  //     const { localWallet, localWalletKey } = userData.properties;
-      
-  //     await this.cardUpgradePurchase(localWallet, localWalletKey, listingId, quantity);
-  //     await this.createCardUpgradeRelationship(username, listingId);
-      
-  //     return new SuccessMessage("Card Upgrade purchase successful")
-  //   } catch(error: any) {
-  //     return error;
-  //   }
-  // }
-  
-
-  // private async cardUpgradePurchase(localWallet: string, localWalletKey: string, listingId: number, quantity: string): Promise<void | Error> {
-  //   try {
-  //   const walletLocal: LocalWalletNode = new LocalWalletNode({ chain: CHAIN });
-  //   await walletLocal.import({
-  //     encryptedJson: localWallet,
-  //     password: localWalletKey,
-  //   });
-  //   const smartWallet: SmartWallet = new SmartWallet(SMART_WALLET_CONFIG);
-  //   await smartWallet.connect({
-  //     personalWallet: walletLocal,
-  //   });
-
-  //   const sdk: ThirdwebSDK = await ThirdwebSDK.fromWallet(smartWallet, CHAIN);
-  //   const contract: MarketplaceV3 = await sdk.getContract(CARD_UPGRADE_MARKETPLACE, "marketplace-v3");
-  //   await contract.directListings.buyFromListing(listingId, quantity);
+  public async ensureTransactionMined(queueId: string): Promise<void> {
+		let status = await engine.transaction.status(queueId);
+	
+		// 🛠 Retry if the transaction is marked as "errored"
+		if (status.result.status === "errored") {
+			console.log(`Transaction ${queueId} errored, retrying...`);
+			await engine.transaction.retryFailed({ queueId });
+			status = await engine.transaction.status(queueId); // Re-fetch status
+		}
+	
+		// ⏳ Retry loop with timeout (60 retries, 3 sec interval)
+		const maxRetries = 60;
+		let retries = 0;
+	
+		// ⏳ Wait while the transaction is still pending (queued or sent)
+		while ((status.result.status === "queued" || status.result.status === "sent") && retries < maxRetries) {
+			await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 3 sec before retrying
+			status = await engine.transaction.status(queueId);
+			retries++;
+		}
+	
+		// 🚨 Handle failure scenarios
+		if (status.result.status === "errored") {
+			throw new Error(`Transaction ${queueId} failed with status: errored.`);
+		} else if (status.result.status === "cancelled") {
+			throw new Error(`Transaction ${queueId} was cancelled.`);
+		} else if (status.result.status !== "mined") {
+			throw new Error(`Transaction ${queueId} did not reach 'mined' status within the expected timeframe.`);
+		}
+	
+		console.log(`✅ Transaction ${queueId} successfully mined.`);
+	}
 
 
 
 
-  // } catch(error: any) {
-  //   console.log(error)
-  //   return error
-  //     }
-  // }
 
 
-  // private async createCardUpgradeRelationship(username: string, listingId: number): Promise<void> {
-  // try {
-  //   const session: Session = this.driver.session();
 
-  //   await session.executeWrite((tx: ManagedTransaction) =>
-  //     tx.run(`
-  //       MATCH (u:User {username: "nashar4"}), (c:CardUpgrade {listingId: listingId}), (cu:CardUpgradeStore)
-  //       MATCH (c)-[l:LISTED]->(cu)
-  //       DELETE l
-  //       CREATE (u)-[:OWNED]->(c)
-  //       CREATE (c)-[:SOLD]->(cu)
-  //     `, { username, listingId }) 
-  //   );
-
-    
-  // } catch (error: any) {
-  //   console.error("Error creating relationship:", error);
-  //   throw error;
-  // }
   }
 
 
