@@ -505,12 +505,13 @@ class RewardService {
 			throw new Error(`Transaction ${queueId} failed with status: errored.`);
 		} else if (status.result.status === "cancelled") {
 			throw new Error(`Transaction ${queueId} was cancelled.`);
-		} else if (status.result.minedAt === null) {
-			throw new Error(`Transaction ${queueId} not mined within the expected timeframe.`);
+		} else if (status.result.status !== "mined") {
+			throw new Error(`Transaction ${queueId} did not reach 'mined' status within the expected timeframe.`);
 		}
 	
 		console.log(`✅ Transaction ${queueId} successfully mined.`);
 	}
+	
 	
 	
 	
