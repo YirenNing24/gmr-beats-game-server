@@ -471,8 +471,6 @@ class RewardService {
 	
 			// 🔄 Ensure the transfer transaction is mined
 			await this.ensureTransactionMined(transferTransaction.result.queueId);
-	
-			console.log(`✅ Transfer successful: ${beatsAmount} BEATS sent to ${smartWalletAddress}`);
 		} catch (error: any) {
 			console.error("🚨 Error in sendBeatsReward: ", error);
 			throw error;
@@ -498,7 +496,7 @@ class RewardService {
 	
 				// ✅ Log status changes instead of logging every retry
 				if (status.result.status !== lastStatus) {
-					console.log(`ℹ️ Transaction ${queueId} status changed: ${status.result.status}`);
+
 					lastStatus = status.result.status;
 				}
 	
@@ -524,7 +522,7 @@ class RewardService {
 	
 				// ✅ Log only every N retries instead of every retry
 				if (retries % logEvery === 0) {
-					console.log(`⏳ Waiting for transaction ${queueId} to be mined... (${retries}/${maxRetries})`);
+
 				}
 	
 				// Wait before checking status again

@@ -297,7 +297,6 @@ export default class StoreService {
   
         // ✅ Log status changes instead of logging every retry
         if (status.result.status !== lastStatus) {
-          console.log(`ℹ️ Transaction ${queueId} status changed: ${status.result.status}`);
           lastStatus = status.result.status;
         }
   
@@ -323,7 +322,7 @@ export default class StoreService {
   
         // ✅ Log only every N retries instead of every retry
         if (retries % logEvery === 0) {
-          console.log(`⏳ Waiting for transaction ${queueId} to be mined... (${retries}/${maxRetries})`);
+
         }
   
         // Wait before checking status again
