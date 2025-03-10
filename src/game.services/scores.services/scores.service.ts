@@ -36,10 +36,10 @@ class ScoreService {
 			username = await tokenService.verifyAccessToken(token);
 	
 			// ✅ Validate game session BEFORE connecting to MongoDB
-			const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
-			if (!keydbData || keydbData.username !== username) {
-				throw new Error(`Invalid or expired game session for user: ${username}`);
-			}
+			// const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
+			// if (!keydbData || keydbData.username !== username) {
+			// 	throw new Error(`Invalid or expired game session for user: ${username}`);
+			// }
 	
 			// ✅ Run heavy calculations **before** opening MongoDB
 			const [experienceGain, previousHighscore] = await Promise.all([
