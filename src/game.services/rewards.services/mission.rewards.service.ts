@@ -481,7 +481,7 @@ class RewardService {
 	 * Ensures a Thirdweb transaction is mined, with retry logic if it's "errored".
 	 */
 	public async ensureTransactionMined(queueId: string): Promise<void> {
-		const maxRetries = 60; // Max retries for transaction mining
+		const maxRetries = 15; // Max retries for transaction mining
 		const maxErrorRetries = 5; // Max retries for errored transactions
 		const retryInterval = 3000; // 3 seconds delay between retries
 		const logEvery = 5; // Log every N retries instead of every retry
