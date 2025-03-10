@@ -481,11 +481,11 @@ class RewardService {
 	 * Ensures a Thirdweb transaction is mined, with retry logic if it's "errored".
 	 */
 	public async ensureTransactionMined(queueId: string): Promise<void> {
-		const maxRetries = 15; // Max retries for transaction mining
+		const maxRetries = 15; // Number of immediate retries before background retry
 		const maxErrorRetries = 5; // Max retries for errored transactions
 		const retryInterval = 3000; // 3 seconds delay between retries
-		const logEvery = 5; // Log every N retries instead of every retry
-		
+		const logEvery = 5; // Log every N retries
+	
 		let retries = 0;
 		let errorRetries = 0;
 		let lastStatus = "";
@@ -494,9 +494,9 @@ class RewardService {
 			try {
 				const status = await engine.transaction.status(queueId);
 	
-				// ✅ Log status changes instead of logging every retry
+				// ✅ Log status changes only
 				if (status.result.status !== lastStatus) {
-
+					console.log(`🔄 Transaction ${queueId} status: ${status.result.status}`);
 					lastStatus = status.result.status;
 				}
 	
@@ -507,22 +507,24 @@ class RewardService {
 	
 				if (status.result.status === "errored") {
 					if (errorRetries >= maxErrorRetries) {
-						throw new Error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} retry attempts.`);
+						console.error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} attempts.`);
+						break; // Stop retries and move to background mode
 					}
 	
 					console.warn(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
 					await engine.transaction.retryFailed({ queueId });
-					await engine.transaction.syncRetry({ queueId }); // 🔄 Ensures the retry is synchronous
+					await engine.transaction.syncRetry({ queueId }); // 🔄 Ensures retry is synchronous
 					errorRetries++;
 				}
 	
 				if (status.result.status === "cancelled") {
-					throw new Error(`🚨 Transaction ${queueId} was cancelled.`);
+					console.error(`🚨 Transaction ${queueId} was cancelled.`);
+					return;
 				}
 	
-				// ✅ Log only every N retries instead of every retry
+				// ✅ Log every N retries
 				if (retries % logEvery === 0) {
-
+					console.log(`⏳ Still waiting for transaction ${queueId} to be mined...`);
 				}
 	
 				// Wait before checking status again
@@ -534,8 +536,57 @@ class RewardService {
 			retries++;
 		}
 	
-		throw new Error(`🚨 Transaction ${queueId} did not reach 'mined' status within ${maxRetries} attempts.`);
+		// 🚀 Start background retries after maxRetries is reached
+		console.warn(`⚠️ Moving transaction ${queueId} to background monitoring...`);
+		this.retryInBackground(queueId);
 	}
+	
+	/**
+	 * Retries a transaction in the background without blocking execution.
+	 */
+	private retryInBackground(queueId: string) {
+		const retryInterval = 5000; // Retry every 5 seconds
+		const maxBackgroundRetries = 100; // Give up after 100 background retries
+	
+		let retries = 0;
+	
+		const retryLoop = async () => {
+			while (retries < maxBackgroundRetries) {
+				try {
+					const status = await engine.transaction.status(queueId);
+	
+					if (status.result.status === "mined") {
+						console.log(`✅ (Background) Transaction ${queueId} successfully mined.`);
+						return;
+					}
+	
+					if (status.result.status === "errored") {
+						console.warn(`⚠️ (Background) Retrying errored transaction ${queueId}... (${retries + 1}/${maxBackgroundRetries})`);
+						await engine.transaction.retryFailed({ queueId });
+						await engine.transaction.syncRetry({ queueId });
+					}
+	
+					if (status.result.status === "cancelled") {
+						console.error(`🚨 (Background) Transaction ${queueId} was cancelled.`);
+						return;
+					}
+	
+					// Wait before the next retry
+					await new Promise((resolve) => setTimeout(resolve, retryInterval));
+				} catch (networkError) {
+					console.warn(`⚠️ (Background) Network error for transaction ${queueId}, retrying...`, networkError);
+				}
+	
+				retries++;
+			}
+	
+			console.error(`🚨 (Background) Transaction ${queueId} did not succeed after ${maxBackgroundRetries} retries.`);
+		};
+	
+		// Run the retry loop in the background
+		retryLoop();
+	}
+	
 	
 	
 
