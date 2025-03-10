@@ -285,40 +285,59 @@ export default class StoreService {
     const maxRetries = 60; // Max retries for transaction mining
     const maxErrorRetries = 5; // Max retries for errored transactions
     const retryInterval = 3000; // 3 seconds delay between retries
+    const logEvery = 5; // Log every N retries instead of every retry
     
     let retries = 0;
     let errorRetries = 0;
-    let status = await engine.transaction.status(queueId);
+    let lastStatus = "";
   
     while (retries < maxRetries) {
-      if (status.result.status === "mined") {
-        console.log(`✅ Transaction ${queueId} successfully mined.`);
-        return;
-      }
+      try {
+        const status = await engine.transaction.status(queueId);
   
-      if (status.result.status === "errored") {
-        if (errorRetries >= maxErrorRetries) {
-          throw new Error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} retry attempts.`);
+        // ✅ Log status changes instead of logging every retry
+        if (status.result.status !== lastStatus) {
+          console.log(`ℹ️ Transaction ${queueId} status changed: ${status.result.status}`);
+          lastStatus = status.result.status;
         }
   
-        console.log(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
-        await engine.transaction.retryFailed({ queueId });
-        await engine.transaction.syncRetry({ queueId });
-        errorRetries++;
+        if (status.result.status === "mined") {
+          console.log(`✅ Transaction ${queueId} successfully mined.`);
+          return;
+        }
+  
+        if (status.result.status === "errored") {
+          if (errorRetries >= maxErrorRetries) {
+            throw new Error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} retry attempts.`);
+          }
+  
+          console.warn(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
+          await engine.transaction.retryFailed({ queueId });
+          await engine.transaction.syncRetry({ queueId }); // 🔄 Ensures the retry is synchronous
+          errorRetries++;
+        }
+  
+        if (status.result.status === "cancelled") {
+          throw new Error(`🚨 Transaction ${queueId} was cancelled.`);
+        }
+  
+        // ✅ Log only every N retries instead of every retry
+        if (retries % logEvery === 0) {
+          console.log(`⏳ Waiting for transaction ${queueId} to be mined... (${retries}/${maxRetries})`);
+        }
+  
+        // Wait before checking status again
+        await new Promise((resolve) => setTimeout(resolve, retryInterval));
+      } catch (networkError) {
+        console.warn(`⚠️ Network error while checking transaction ${queueId}, retrying...`, networkError);
       }
   
-      if (status.result.status === "cancelled") {
-        throw new Error(`🚨 Transaction ${queueId} was cancelled.`);
-      }
-  
-      // Wait before checking status again
-      await new Promise((resolve) => setTimeout(resolve, retryInterval));
-      status = await engine.transaction.status(queueId);
       retries++;
     }
   
     throw new Error(`🚨 Transaction ${queueId} did not reach 'mined' status within ${maxRetries} attempts.`);
   }
+  
   
 
 
