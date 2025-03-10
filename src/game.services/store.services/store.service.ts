@@ -347,7 +347,7 @@ export default class StoreService {
 	 */
 	private retryInBackground(queueId: string) {
 		const retryInterval = 5000; // Retry every 5 seconds
-		const maxBackgroundRetries = 100; // Give up after 100 background retries
+		const maxBackgroundRetries = 10; // Give up after 100 background retries
 	
 		let retries = 0;
 	
