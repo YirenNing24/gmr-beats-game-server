@@ -4,7 +4,7 @@ import { cors } from '@elysiajs/cors'
 
 //* DATABASES
 import { initDriver } from './db/memgraph';
-
+import { mongoDBClient } from "./db/mongodb.client.js";
 //* INITIALIZERS
 import { NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME } from './config/constants.js';
 import routes from "./routes/index";
@@ -34,12 +34,27 @@ const app = new Elysia({
   }))
 
 
+  async function initMongoDB(): Promise<void> {
+    try {
+      console.log("🔄 Connecting to MongoDB...");
+      await mongoDBClient.connect();
+      console.log("✅ MongoDB connected successfully.");
+    } catch (error) {
+      console.error("❌ Failed to connect to MongoDB:", error);
+      process.exit(1); // Exit process if MongoDB is unreachable
+    }
+  }
 
 
-  
+  async function startServer() {
+    await initMongoDB(); // Ensure MongoDB is connected first
+  }
+
+
 
 routes(app)
 
 initDriver(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD);
+startServer()
 
 export default app
