@@ -60,35 +60,32 @@ class LeaderboardService {
 		const now = new Date();
 		let startOfPeriod: Date;
 		let endOfPeriod: Date;
-	
+
 		switch (period) {
 			case "Daily":
-				// Convert to KST (UTC+9) → Start at 00:00 KST (15:00 UTC of the previous day)
-				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0, 0));
+				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
 				endOfPeriod = new Date(startOfPeriod);
-				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1); // Add 1 day
+				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1);
 				break;
-	
+
 			case "Weekly":
 				const dayOfWeek = now.getUTCDay(); // Sunday - Saturday: 0 - 6
-				const diffToMonday = (dayOfWeek + 6) % 7; // Adjust to Monday
-				// Start at 00:00 KST on Monday (15:00 UTC of the previous day)
-				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday, 15, 0, 0, 0));
+				const diffToMonday = (dayOfWeek + 6) % 7; // Calculate how many days to subtract to get to Monday
+				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday, 0, 0, 0, 0));
 				endOfPeriod = new Date(startOfPeriod);
-				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 7); // Add 7 days
+				endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 7); // Add 7 days to Monday to get the next Monday
 				break;
-	
+
 			case "Monthly":
-				// Start at 00:00 KST on the 1st day of the month (15:00 UTC of the previous day)
-				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 15, 0, 0, 0));
+				startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
 				endOfPeriod = new Date(startOfPeriod);
 				endOfPeriod.setUTCMonth(startOfPeriod.getUTCMonth() + 1); // Add 1 month
 				break;
-	
+
 			default:
 				throw new Error("Invalid period specified");
 		}
-	
+
 		return { startOfPeriod, endOfPeriod };
 	}
 	
