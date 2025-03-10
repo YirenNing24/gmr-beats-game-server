@@ -29,54 +29,32 @@ class ScoreService {
 	public async saveScoreClassic(score: ClassicScoreStats, token: string): Promise<LevelUpResult> {
 		const tokenService = new TokenService();
 		const songRewardService = new SongRewardService();
-		let client: MongoClient | null = null;
-		let retries = 3; // Max retries for MongoDB connection
-		let username: string | null = null; // Store username for error logging
-		let beatsReward: number | null = null; // Allow reward failure
+		let username: string | null = null;
+		let beatsReward: number | null = null;
 	
 		try {
 			username = await tokenService.verifyAccessToken(token);
 	
-			// Validate gameId in KeyDB
+			// ✅ Validate game session BEFORE connecting to MongoDB
 			const keydbData = await keydb.HGETALL(`energy_usage:${score.gameId}`);
 			if (!keydbData || keydbData.username !== username) {
 				throw new Error(`Invalid or expired game session for user: ${username}`);
 			}
 	
-			// ✅ Retry MongoDB connection if closed
-			while (retries > 0) {
-				try {
-					client = await mongoDBClient.connect();
-					break; // Success
-				} catch (error) {
-					console.warn(`MongoDB connection failed for user: ${username}. Retrying...`, error);
-					await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
-					retries--;
-				}
-			}
-	
-			if (!client) {
-				throw new Error(`Failed to connect to MongoDB after multiple retries for user: ${username}`);
-			}
-	
-			const db = client.db("beats");
-			const collection = db.collection("classicScores");
-	
-			// Run experience calculation and high score retrieval in parallel
+			// ✅ Run heavy calculations **before** opening MongoDB
 			const [experienceGain, previousHighscore] = await Promise.all([
 				this.calculateExperience(username, score.accuracy),
-				this.getHighScoreIndividual(score.songName, username, db),
+				this.getHighScoreIndividual(score.songName, username),
 			]);
 	
-			// 🚨 Wrap song reward in try-catch to allow score saving even if it fails
+			// 🚨 Allow songReward to fail without affecting score saving
 			try {
 				beatsReward = await songRewardService.classicSongReward(score);
 			} catch (rewardError) {
 				console.error(`Error calculating song reward for user: ${username}`, rewardError);
-				// 🚨 Continue without crashing
 			}
 	
-			// Add rewards and highscore info to the score object
+			// ✅ Prepare score data **before** opening MongoDB connection
 			const scoreWithRewards = {
 				...score,
 				timestamp: Date.now(),
@@ -85,27 +63,13 @@ class ScoreService {
 				previousHighscore
 			};
 	
-			// ✅ Ensure the database connection is open before inserting
-			let insertRetries = 3;
-			while (insertRetries > 0) {
-				try {
-					await collection.insertOne(scoreWithRewards);
-					break; // ✅ Success, exit loop
-				} catch (insertError) {
-					console.error(`Error inserting score for user: ${username}. Retrying...`, insertError);
-					await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
-					insertRetries--;
-				}
-			}
+			// ✅ Open MongoDB **only when ready to insert**
+			await this.insertScoreToMongo(scoreWithRewards, username);
 	
-			if (insertRetries === 0) {
-				throw new Error(`Failed to insert score after multiple retries for user: ${username}`);
-			}
-	
-			// Remove game session from KeyDB after successful validation
+			// ✅ Remove game session from KeyDB only after successful DB insert
 			await keydb.DEL(`energy_usage:${score.gameId}`);
 	
-			// Add rewards to the experience result
+			// Add rewards to response
 			experienceGain.beatsReward = beatsReward;
 			experienceGain.previousHighscore = previousHighscore;
 			experienceGain.score = score;
@@ -114,17 +78,45 @@ class ScoreService {
 		} catch (error: any) {
 			console.error(`Error saving classic score for user: ${username}`, error);
 			throw error;
-		} finally {
-			// ✅ Only close if client was opened
-			if (client) {
-				try {
-					await client.close();
-				} catch (closeError) {
-					console.error(`Error closing MongoDB client for user: ${username}`, closeError);
+		}
+	}
+	
+	/**
+	 * Inserts the score into MongoDB with retry logic.
+	 */
+	private async insertScoreToMongo(scoreWithRewards: any, username: string | null): Promise<void> {
+		let retries = 3;
+		while (retries > 0) {
+			let client: MongoClient | null = null;
+			try {
+				client = await mongoDBClient.connect();
+				const db = client.db("beats");
+				const collection = db.collection("classicScores");
+	
+				await collection.insertOne(scoreWithRewards);
+				console.log(`✅ Score inserted successfully for user: ${username}`);
+				break; // ✅ Success, exit loop
+			} catch (insertError) {
+				console.error(`Error inserting score for user: ${username}. Retrying...`, insertError);
+				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
+				retries--;
+			} finally {
+				// ✅ Ensure MongoDB connection is closed
+				if (client) {
+					try {
+						await client.close();
+					} catch (closeError) {
+						console.error(`Error closing MongoDB client for user: ${username}`, closeError);
+					}
 				}
 			}
 		}
+	
+		if (retries === 0) {
+			throw new Error(`Failed to insert score after multiple retries for user: ${username}`);
+		}
 	}
+	
 	
 	
 	
@@ -167,10 +159,13 @@ class ScoreService {
 	}
 
 
-	private async getHighScoreIndividual(songName: string, username: string, db: Db): Promise<number> {
+	private async getHighScoreIndividual(songName: string, username: string): Promise<number> {
+		let client: MongoClient | null = null;
 		try {
-			// Establish MongoDB connection
+			client = await mongoDBClient.connect();
+			const db = client.db("beats");
 			const collection = db.collection<ClassicScoreStats>("classicScores");
+	
 			// Find the highest score for the given song and username
 			const highestScore = await collection
 				.find({ songName, username }) // Filter by song name AND username
@@ -184,8 +179,18 @@ class ScoreService {
 		} catch (error: any) {
 			console.error("Error fetching highest score:", error);
 			throw error;
+		} finally {
+			// ✅ Ensure the MongoDB connection is closed
+			if (client) {
+				try {
+					await client.close();
+				} catch (closeError) {
+					console.error("Error closing MongoDB client:", closeError);
+				}
+			}
 		}
 	}
+	
 	
 	
 	
