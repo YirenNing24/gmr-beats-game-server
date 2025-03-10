@@ -460,18 +460,21 @@ class RewardService {
 			const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
 			const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
 			
-			// 🔄 Ensure the allowance transaction is successful
+			// 🔄 Ensure the allowance transaction is mined before proceeding
 			await this.ensureTransactionMined(allowanceTransaction.result.queueId);
+	
+			console.log(`✅ Allowance set successfully. Proceeding with transfer...`);
 	
 			// ✅ Proceed with transfer after successful allowance transaction
 			const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
 			const transferTransaction = await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
 	
-			// 🔄 Ensure the transfer transaction is successful
+			// 🔄 Ensure the transfer transaction is mined
 			await this.ensureTransactionMined(transferTransaction.result.queueId);
 	
+			console.log(`✅ Transfer successful: ${beatsAmount} BEATS sent to ${smartWalletAddress}`);
 		} catch (error: any) {
-			console.error("Error in sendBeatsReward: ", error);
+			console.error("🚨 Error in sendBeatsReward: ", error);
 			throw error;
 		}
 	}
@@ -486,32 +489,43 @@ class RewardService {
 		
 		let retries = 0;
 		let errorRetries = 0;
-		let status = await engine.transaction.status(queueId);
 	
 		while (retries < maxRetries) {
-			if (status.result.status === "mined") {
-				console.log(`✅ Transaction ${queueId} successfully mined.`);
-				return;
-			}
+			try {
+				const status = await engine.transaction.status(queueId);
 	
-			if (status.result.status === "errored") {
-				if (errorRetries >= maxErrorRetries) {
-					throw new Error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} retry attempts.`);
+				if (status.result.status === "mined") {
+					console.log(`✅ Transaction ${queueId} successfully mined.`);
+					return;
 				}
-			
-				console.log(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
-				await engine.transaction.syncRetry({ queueId }); // ✅ Guarantees retry and waits
-				errorRetries++;
+	
+				if (status.result.status === "errored") {
+					if (errorRetries >= maxErrorRetries) {
+						throw new Error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} retry attempts.`);
+					}
+	
+					console.log(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
+					await engine.transaction.retryFailed({ queueId });
+					await engine.transaction.syncRetry({ queueId }); // 🔄 Ensures the retry is synchronous
+					errorRetries++;
+				}
+	
+				if (status.result.status === "cancelled") {
+					throw new Error(`🚨 Transaction ${queueId} was cancelled.`);
+				}
+	
+				// Wait before checking status again
+				await new Promise((resolve) => setTimeout(resolve, retryInterval));
+			} catch (networkError) {
+				console.warn(`⚠️ Network error while checking transaction ${queueId}, retrying...`, networkError);
 			}
 	
-			// Wait before checking status again
-			await new Promise((resolve) => setTimeout(resolve, retryInterval));
-			status = await engine.transaction.status(queueId);
 			retries++;
 		}
 	
 		throw new Error(`🚨 Transaction ${queueId} did not reach 'mined' status within ${maxRetries} attempts.`);
 	}
+	
 	
 	
 	
