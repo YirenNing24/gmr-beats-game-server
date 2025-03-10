@@ -300,9 +300,9 @@ export default class StoreService {
         if (errorRetries >= maxErrorRetries) {
           throw new Error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} retry attempts.`);
         }
-  
+      
         console.log(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
-        await engine.transaction.retryFailed({ queueId });
+        await engine.transaction.syncRetry({ queueId }); // ✅ Guarantees retry and waits
         errorRetries++;
       }
   

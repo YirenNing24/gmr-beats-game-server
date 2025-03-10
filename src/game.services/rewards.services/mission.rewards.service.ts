@@ -498,14 +498,10 @@ class RewardService {
 				if (errorRetries >= maxErrorRetries) {
 					throw new Error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} retry attempts.`);
 				}
-	
+			
 				console.log(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
-				await engine.transaction.retryFailed({ queueId });
+				await engine.transaction.syncRetry({ queueId }); // ✅ Guarantees retry and waits
 				errorRetries++;
-			}
-	
-			if (status.result.status === "cancelled") {
-				throw new Error(`🚨 Transaction ${queueId} was cancelled.`);
 			}
 	
 			// Wait before checking status again
