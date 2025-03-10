@@ -30,8 +30,6 @@ class LeaderboardService {
 			const { startOfPeriod, endOfPeriod } = this.getPeriodDates(period);
 			const scores: savedClassicScoreStats[] = await this.fetchScores(songTitle, difficulty.toLowerCase());
 
-			console.log(scores)
-	
 			// Apply filters and sort correctly
 			const filteredScores = scores
 				.filter(score => {
