@@ -22,17 +22,17 @@ export const mongoDBClient = new MongoClient(uri, {
 	// ✅ Increase timeouts to handle network fluctuations
 	connectTimeoutMS: 30000, // 30 sec to establish a connection
 	socketTimeoutMS: 60000, // 60 sec for socket operations
-	// serverSelectionTimeoutMS: 15000, // 15 sec to find a server
-	// heartbeatFrequencyMS: 10000, // Send heartbeats every 10s
+	serverSelectionTimeoutMS: 15000, // 15 sec to find a server
+	heartbeatFrequencyMS: 10000, // Send heartbeats every 10s
 
-	// // ✅ Connection Pooling (reuse instead of reconnecting)
-	// minPoolSize: 10, // Keep at least 10 connections
-	// maxPoolSize: 100, // Limit max connections
-	// maxIdleTimeMS: 60000, // Close idle connections after 60 sec
+	// ✅ Connection Pooling (reuse instead of reconnecting)
+	minPoolSize: 10, // Keep at least 10 connections
+	maxPoolSize: 100, // Limit max connections
+	maxIdleTimeMS: 60000, // Close idle connections after 60 sec
 
-	// // ✅ Retry Mechanisms for Better Stability
-	// retryWrites: true, // Auto-retry failed writes
-	// retryReads: true, // Auto-retry failed reads
+	// ✅ Retry Mechanisms for Better Stability
+	retryWrites: true, // Auto-retry failed writes
+	retryReads: true, // Auto-retry failed reads
 
 	// ✅ Automatic Compression (reduces network usage)
 });
