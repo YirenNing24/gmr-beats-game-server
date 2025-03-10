@@ -38,11 +38,6 @@ export default class StoreService {
       const tokenService = new TokenService();
       const username = await tokenService.verifyAccessToken(token);
   
-      // ✅ Return empty array if username is NOT "hotness29"
-      if (username !== "hotness29") {
-        return [];
-      }
-  
       const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
   
       // Transform listings into StoreCardData format
