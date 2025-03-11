@@ -121,15 +121,6 @@ class ScoreService {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-
-
     //* CLASSIC GAME MODE RETRIEVE SCORE FUNCTION
 	public async getHighScoreClassic(peerId: ScorePeerId, token: string): Promise<ClassicScoreStats[]> {
 		try {
@@ -194,8 +185,6 @@ class ScoreService {
 	
 	
 	
-
-
 	//* CLASSIC GAME MODE RETRIEVE ALL SCORE FUNCTION
 	public async getPlayerHighScorePerSong(token: string): Promise<ClassicScoreStats[]> {
 		try {
