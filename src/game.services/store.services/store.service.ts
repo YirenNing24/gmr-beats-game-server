@@ -131,69 +131,51 @@ export default class StoreService {
 
   //Initiates a card purchase using the provided wallet information and listing ID.
   private async cardPurchase(buyerWalletAddress: string, listingId: number, price: string) {
-    try {
-      const maxRetries = 3;
+    const maxRetries = 3;
+    const retryDelay = 3000; // 3 seconds delay before retry
   
-      // ✅ Retry mechanism for setting allowance
-      let allowanceRetries = maxRetries;
-      let allowanceTransaction;
-      while (allowanceRetries > 0) {
-        try {
-          allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
-            spenderAddress: CARD_MARKETPLACE,
-            amount: price,
-          });
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} - Setting Allowance`);
+        const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
+          spenderAddress: CARD_MARKETPLACE,
+          amount: price,
+        });
   
-          // ✅ Ensure the allowance transaction is mined
-          await this.ensureTransactionMined(allowanceTransaction.result.queueId);
-          break; // Break if successful
-        } catch (error: any) {
-          console.error("Error setting allowance: ", error);
-          allowanceRetries--;
-          if (allowanceRetries === 0) {
-            throw new Error("Failed to set allowance after multiple attempts.");
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait before retrying
+        // ✅ Ensure the allowance transaction is mined
+        await this.ensureTransactionMined(allowanceTransaction.result.queueId);
+  
+        console.log(`✅ Allowance successfully set. Proceeding with purchase.`);
+  
+        const requestBody = {
+          listingId: listingId.toString(),
+          quantity: "1",
+          buyer: buyerWalletAddress,
+        };
+  
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} - Buying From Listing`);
+        const transaction = (
+          await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_MARKETPLACE, buyerWalletAddress, requestBody)
+        ).result;
+  
+        // ✅ Ensure the purchase transaction is mined
+        await this.ensureTransactionMined(transaction.queueId);
+  
+        console.log(`✅ Card purchased successfully on attempt ${attempt}`);
+        return transaction; // Success, return transaction details
+      } catch (error: any) {
+        console.error(`❌ Attempt ${attempt} failed:`, error);
+  
+        if (attempt === maxRetries) {
+          throw new Error("🚨 Card purchase failed after all retry attempts.");
         }
+  
+        console.log(`⏳ Retrying in ${retryDelay / 1000} seconds...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
-  
-      const requestBody = {
-        listingId: listingId.toString(),
-        quantity: "1", // Default quantity for ERC721 tokens
-        buyer: buyerWalletAddress,
-      };
-  
-      // ✅ Retry mechanism for executing purchase
-      let purchaseRetries = maxRetries;
-      let transaction;
-      while (purchaseRetries > 0) {
-        try {
-          transaction = (
-            await engine.marketplaceDirectListings.buyFromListing(
-              CHAIN,
-              CARD_MARKETPLACE,
-              buyerWalletAddress,
-              requestBody
-            )
-          ).result;
-  
-          // ✅ Ensure the purchase transaction is mined
-          await this.ensureTransactionMined(transaction.queueId);
-          return transaction;
-        } catch (error: any) {
-          console.error("Error during card purchase attempt: ", error);
-          purchaseRetries--;
-          if (purchaseRetries === 0) {
-            throw new Error("Failed to complete the card purchase after multiple attempts.");
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait before retrying
-        }
-      }
-    } catch (error: any) {
-      console.error("Error during card purchase: ", error);
-      throw new Error("Failed to complete the card purchase.");
     }
   }
+  
   
   
   
@@ -276,66 +258,55 @@ export default class StoreService {
   }
 
 
-	public async ensureTransactionMined(queueId: string): Promise<void> {
-		const maxRetries = 15; // Number of immediate retries before background retry
-		const maxErrorRetries = 5; // Max retries for errored transactions
-		const retryInterval = 3000; // 3 seconds delay between retries
-		const logEvery = 5; // Log every N retries
-	
-		let retries = 0;
-		let errorRetries = 0;
-		let lastStatus = "";
-	
-		while (retries < maxRetries) {
-			try {
-				const status = await engine.transaction.status(queueId);
-	
-				// ✅ Log status changes only
-				if (status.result.status !== lastStatus) {
-					console.log(`🔄 Transaction ${queueId} status: ${status.result.status}`);
-					lastStatus = status.result.status;
-				}
-	
-				if (status.result.status === "mined") {
-					console.log(`✅ Transaction ${queueId} successfully mined.`);
-					return;
-				}
-	
-				if (status.result.status === "errored") {
-					if (errorRetries >= maxErrorRetries) {
-						console.error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} attempts.`);
-						break; // Stop retries and move to background mode
-					}
-	
-					console.warn(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
-					await engine.transaction.retryFailed({ queueId });
-					await engine.transaction.syncRetry({ queueId }); // 🔄 Ensures retry is synchronous
-					errorRetries++;
-				}
-	
-				if (status.result.status === "cancelled") {
-					console.error(`🚨 Transaction ${queueId} was cancelled.`);
-					return;
-				}
-	
-				// ✅ Log every N retries
-				if (retries % logEvery === 0) {
-					console.log(`⏳ Still waiting for transaction ${queueId} to be mined...`);
-				}
-	
-				// Wait before checking status again
-				await new Promise((resolve) => setTimeout(resolve, retryInterval));
-			} catch (networkError) {
-				console.warn(`⚠️ Network error while checking transaction ${queueId}, retrying...`, networkError);
-			}
-	
-			retries++;
-		}
-	
-		// 🚀 Start background retries after maxRetries is reached
-		console.warn(`⚠️ Moving transaction ${queueId} to background monitoring...`);
-		this.retryInBackground(queueId);
-	}
+  public async ensureTransactionMined(queueId: string): Promise<void> {
+    const maxImmediateRetries = 3; // Number of direct retries before restarting the transaction
+    const retryInterval = 3000; // 3 seconds delay
+    let retries = 0;
+    let errorRetries = 0;
+    let lastStatus = "";
+  
+    while (retries < maxImmediateRetries) {
+      try {
+        const status = await engine.transaction.status(queueId);
+  
+        if (status.result.status !== lastStatus) {
+          console.log(`🔄 Transaction ${queueId} status: ${status.result.status}`);
+          lastStatus = status.result.status;
+        }
+  
+        if (status.result.status === "mined") {
+          console.log(`✅ Transaction ${queueId} successfully mined.`);
+          return;
+        }
+  
+        if (status.result.status === "errored") {
+          if (errorRetries >= 5) {
+            console.error(`🚨 Transaction ${queueId} failed after max retries. Restarting transaction...`);
+            throw new Error("Transaction failed, restarting process.");
+          }
+  
+          console.warn(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/5)`);
+          await engine.transaction.retryFailed({ queueId });
+          await engine.transaction.syncRetry({ queueId });
+          errorRetries++;
+        }
+  
+        if (status.result.status === "cancelled") {
+          throw new Error(`🚨 Transaction ${queueId} was cancelled.`);
+        }
+  
+        await new Promise((resolve) => setTimeout(resolve, retryInterval));
+      } catch (networkError) {
+        console.warn(`⚠️ Network error for transaction ${queueId}, retrying...`, networkError);
+      }
+  
+      retries++;
+    }
+  
+    console.warn(`⚠️ Moving transaction ${queueId} to background monitoring...`);
+    this.retryInBackground(queueId);
+  }
+  
 	
 	/**
 	 * Retries a transaction in the background without blocking execution.
