@@ -48,7 +48,7 @@ class EnergyService {
 	
 
 	// Public function to use player energy
-	// public async usePlayerEnergy(username: string, apiKey: string, amount: number = 1): Promise<boolean> {
+	// public async usePlayerEnergy(usePlayerEnergyusername: string, apiKey: string, amount: number = 1): Promise<boolean> {
 	// 	try {
 	// 		const tokenService: TokenService = new TokenService();
 	// 		const isAuthorized: boolean = await tokenService.verifyApiKey(apiKey);
@@ -73,7 +73,7 @@ class EnergyService {
 	// 	}
 
 
-	// }
+	// } 
 
 
 	//TODO - IN THE FUTURE RETURN THE generated ID which the playet needs to send back for verification

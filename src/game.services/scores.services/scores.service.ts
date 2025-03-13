@@ -67,7 +67,7 @@ class ScoreService {
 			await this.insertScoreToMongo(scoreWithRewards, username);
 	
 			// ✅ Remove game session from KeyDB only after successful DB insert
-			await keydb.DEL(`energy_usage:${score.gameId}`);
+			// await keydb.DEL(`energy_usage:${score.gameId}`);
 	
 			// Add rewards to response
 			experienceGain.beatsReward = beatsReward;

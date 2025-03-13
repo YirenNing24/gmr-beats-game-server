@@ -456,35 +456,52 @@ class RewardService {
 
 
 	public async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
-		try {
-			const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
-			const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
-			
-			// 🔄 Ensure the allowance transaction is mined before proceeding
-			await this.ensureTransactionMined(allowanceTransaction.result.queueId);
+		const maxRetries = 3;
+		const retryDelay = 3000; // 3 seconds delay before retry
 	
-			console.log(`✅ Allowance set successfully. Proceeding with transfer...`);
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				console.log(`🔄 Attempt ${attempt}/${maxRetries} - Setting Allowance`);
+				const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
+				const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
+				
+				// ✅ Ensure the allowance transaction is mined before proceeding
+				await this.ensureTransactionMined(allowanceTransaction.result.queueId);
+		
+				console.log(`✅ Allowance set successfully. Proceeding with transfer...`);
+		
+				// ✅ Proceed with transfer after successful allowance transaction
+				console.log(`🔄 Attempt ${attempt}/${maxRetries} - Transferring Beats`);
+				const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
+				const transferTransaction = await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
+		
+				// ✅ Ensure the transfer transaction is mined
+				await this.ensureTransactionMined(transferTransaction.result.queueId);
 	
-			// ✅ Proceed with transfer after successful allowance transaction
-			const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
-			const transferTransaction = await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
+				console.log(`✅ Beats successfully sent on attempt ${attempt}`);
+				return; // Success, exit function
+			} catch (error: any) {
+				console.error(`❌ Attempt ${attempt} failed:`, error);
 	
-			// 🔄 Ensure the transfer transaction is mined
-			await this.ensureTransactionMined(transferTransaction.result.queueId);
-		} catch (error: any) {
-			console.error("🚨 Error in sendBeatsReward: ", error);
-			throw error;
+				if (attempt === maxRetries) {
+					throw new Error("🚨 Beats transfer failed after all retry attempts.");
+				}
+	
+				console.log(`⏳ Retrying in ${retryDelay / 1000} seconds...`);
+				await new Promise((resolve) => setTimeout(resolve, retryDelay));
+			}
 		}
 	}
+	
 	
 	/**
 	 * Ensures a Thirdweb transaction is mined, with retry logic if it's "errored".
 	 */
 	public async ensureTransactionMined(queueId: string): Promise<void> {
-		const maxRetries = 15; // Number of immediate retries before background retry
-		const maxErrorRetries = 5; // Max retries for errored transactions
+		const maxRetries = 3; // Number of immediate retries before background retry
+		const maxErrorRetries = 3; // Max retries for errored transactions
 		const retryInterval = 3000; // 3 seconds delay between retries
-		const logEvery = 5; // Log every N retries
+		const logEvery = 3; // Log every N retries
 	
 		let retries = 0;
 		let errorRetries = 0;
