@@ -500,7 +500,7 @@ class RewardService {
 	public async ensureTransactionMined(queueId: string): Promise<void> {
 		const maxRetries = 3; // Number of immediate retries before background retry
 		const maxErrorRetries = 3; // Max retries for errored transactions
-		const retryInterval = 3000; // 3 seconds delay between retries
+		const retryInterval = 5000; // 3 seconds delay between retries
 		const logEvery = 3; // Log every N retries
 	
 		let retries = 0;
