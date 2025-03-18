@@ -17,7 +17,7 @@ export const inventoryCypher: string = `
     Abin: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
     Naye: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
     ChaeI: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""},
-    Loa: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
+    Miku: {uri: "", tokenId: "", contractAddress: "", group: "", slot: ""}
  })
 
  CREATE (r:IROHM {

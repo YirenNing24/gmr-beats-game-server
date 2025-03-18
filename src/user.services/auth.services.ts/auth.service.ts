@@ -19,7 +19,6 @@ import { playerStats } from '../../noobs/noobs.js'
 //**  IMPORTED SERVICES
 import WalletService from '../wallet.services/wallet.service.js'
 import TokenService from '../token.services/token.service.js'
-import GoogleService from '../google.services/google.service.js'
 
 //** UUID GENERATOR
 import { nanoid } from "nanoid"
@@ -28,11 +27,10 @@ import { nanoid } from "nanoid"
 import { Driver, QueryResult, Session,  ManagedTransaction } from 'neo4j-driver-core'
 
 //** TYPE INTERFACES
-import { WalletData, UserData, ValidateSessionReturn, AuthenticateReturn, TokenScheme, PlayerInfo, User, Suspended, PreRegisterUser, PasskeyUser, PasskeyUserData } from '../user.service.interface.js'
+import { WalletData, UserData, ValidateSessionReturn, AuthenticateReturn, TokenScheme, User, Suspended, PreRegisterUser, PasskeyUser, PasskeyUserData } from '../user.service.interface.js'
 
 //** GEO IP IMPORT
 import geoip from 'geoip-lite2'
-import { GoogleRegister } from './auth.interface.js'
 import EnergyService from '../../game.services/energy.services/energy.service.js'
 import { inventoryCypher } from './auth.cypher.js'
 
