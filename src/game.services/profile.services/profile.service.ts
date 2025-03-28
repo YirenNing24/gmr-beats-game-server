@@ -85,8 +85,8 @@ class ProfileService {
       try {
         const tokenService: TokenService = new TokenService();
         const userName: string | Error = await tokenService.verifyAccessToken(token);
-  
-        const db = mongoDBClient.db("beats");
+        const client = await mongoDBClient.connect();
+        const db = client.db("beats");
         const profilePicCollection = db.collection("profilePic");
   
         // Check the number of existing profile pictures for the user
@@ -239,8 +239,9 @@ class ProfileService {
       try {
         const tokenService: TokenService = new TokenService();
         const userName: string | Error = await tokenService.verifyAccessToken(token);
-    
-        const db = mongoDBClient.db("beats");
+        const client = await mongoDBClient.connect();
+        
+        const db = client.db("beats");
         const profilePictures = await db
           .collection("profilePic")
           .find({ userName })
@@ -260,15 +261,16 @@ class ProfileService {
       try {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
-    
-        const db = mongoDBClient.db("beats");
+        const client = await mongoDBClient.connect();
+
+        const db = client.db("beats");
         const profilePictures = await db
           .collection("profilePic")
           .find({ userName: { $in: userNames } })
           .sort({ uploadedAt: -1 })
           .limit(1)
           .toArray();
-    
+        
         return profilePictures as unknown as ProfilePicture[];
       } catch (error: any) {
         console.error("Error getting profile pictures:", error);
@@ -281,9 +283,9 @@ class ProfileService {
       try {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
-    
+        const client = await mongoDBClient.connect();
         const { id } = newProfilePicture;
-        const db = mongoDBClient.db("beats");
+        const db = client.db("beats");
     
         // Retrieve the profile picture by ID
         const latestProfilePic = await db.collection("profilePic").findOne({ _id: new ObjectId(id) });
