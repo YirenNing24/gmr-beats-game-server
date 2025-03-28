@@ -1,9 +1,9 @@
 //** MEMGRAPH IMPORT
 import { Driver, ManagedTransaction, QueryResult, RecordShape, Session } from "neo4j-driver";
 
-//** RETHINK DB IMPORT
-import rt from "rethinkdb";
-import { getRethinkDB } from "../../db/rethink";
+//** MONGODB IMPORT
+import { mongoDBClient } from "../../db/mongodb.client";
+import { ObjectId } from "mongodb";
 
 //** OUTPUT IMPORTS
 import ValidationError from "../../outputs/validation.error";
@@ -16,12 +16,12 @@ import TokenService from "../../user.services/token.services/token.service";
 import { UpdateStatsFailed, ProfilePicture, StatPoints, SoulMetaData, CardCollection, PictureLikes, BufferData, MyNote } from "./profile.interface";
 import { PlayerStats } from "../../user.services/user.service.interface";
 
-
 //** IMPORT THIRDWEB
 import { CardMetaData } from "../inventory.services/inventory.interface";
 
 //** NANOID IMPORT
 import { nanoid } from "nanoid";
+
 
 
 class ProfileService {
@@ -85,36 +85,32 @@ class ProfileService {
       try {
         const tokenService: TokenService = new TokenService();
         const userName: string | Error = await tokenService.verifyAccessToken(token);
-    
+  
+        const db = mongoDBClient.db("beats");
+        const profilePicCollection = db.collection("profilePic");
+  
         // Check the number of existing profile pictures for the user
-        //@ts-ignore
-        const existingProfilePicsCount: number = await this.getProfilePicsCount(userName);
-
+        const existingProfilePicsCount: number = await profilePicCollection.countDocuments({ userName });
         if (existingProfilePicsCount >= 5) {
-          throw new ValidationError(`You already have 5 profile pictures.`, "");
+          throw new ValidationError("You already have 5 profile pictures.", "");
         }
-    
+  
         const uploadedAt: number = Date.now();
-        const fileFormat: string = 'png';
+        const fileFormat: string = "png";
         const fileSize: number = 100;
-        
-        // Assuming imageBuffer is already an array of numbers
-        const profilePicture: ProfilePicture = {
+  
+        const profilePicture = {
           profilePicture: imageBuffer.bufferData,
-          //@ts-ignore
           userName,
           uploadedAt,
           fileFormat,
           fileSize,
           likes: []
         };
-    
-        const connection: rt.Connection = await getRethinkDB();
-    
-        // Save the profile picture to the database
-        await rt.db('beats').table('profilePic').insert(profilePicture).run(connection);
-    
-
+  
+        // Insert the profile picture into MongoDB
+        await profilePicCollection.insertOne(profilePicture);
+  
         return new SuccessMessage("Profile picture upload successful");
       } catch (error: any) {
         console.error("Error updating profile picture:", error);
@@ -122,224 +118,214 @@ class ProfileService {
       }
     }
 
-  public async likeProfilePicture(token: string, likedProfilePicture: { id: string}) {
-      try {
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
+  // public async likeProfilePicture(token: string, likedProfilePicture: { id: string}) {
+  //     try {
+  //       const tokenService: TokenService = new TokenService();
+  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
 
-        const session: Session | undefined = this.driver?.session();
+  //       const session: Session | undefined = this.driver?.session();
     
-        const result: QueryResult<RecordShape> | undefined = await session?.executeRead(tx =>
-          tx.run(`MATCH (u:User {username: $userName}) RETURN u`, { userName })
-        );
+  //       const result: QueryResult<RecordShape> | undefined = await session?.executeRead(tx =>
+  //         tx.run(`MATCH (u:User {username: $userName}) RETURN u`, { userName })
+  //       );
     
-        if (!result?.records.length) throw new ValidationError(`User with username '${userName}' not found.`, "");
+  //       if (!result?.records.length) throw new ValidationError(`User with username '${userName}' not found.`, "");
     
-        const timestamp: number = Date.now();
-        const likeId: string = await nanoid();
+  //       const timestamp: number = Date.now();
+  //       const likeId: string = await nanoid();
         
-        //@ts-ignore
-        const likeData: PictureLikes = { userName, timestamp, likeId };
+  //       //@ts-ignore
+  //       const likeData: PictureLikes = { userName, timestamp, likeId };
     
-        const pictureId: string = likedProfilePicture.id || "";
+  //       const pictureId: string = likedProfilePicture.id || "";
     
-        const connection: rt.Connection = await getRethinkDB();
+  //       const connection: rt.Connection = await getRethinkDB();
         
-        // Get the profile picture from the database
-        const query: ProfilePicture = await rt.db('beats').table('profilePic').get(pictureId).run(connection) as ProfilePicture;
+  //       // Get the profile picture from the database
+  //       const query: ProfilePicture = await rt.db('beats').table('profilePic').get(pictureId).run(connection) as ProfilePicture;
     
-        if (!query) {
-          return new ValidationError(`Profile picture with ID '${pictureId}' not found.`, "");
-        }
+  //       if (!query) {
+  //         return new ValidationError(`Profile picture with ID '${pictureId}' not found.`, "");
+  //       }
     
-        // Check if the user already liked the picture
-        const alreadyLiked = query.likes.some(like => like.userName === userName);
+  //       // Check if the user already liked the picture
+  //       const alreadyLiked = query.likes.some(like => like.userName === userName);
     
-        if (!alreadyLiked) {
-          // Add the new like
-          query.likes.push(likeData);
+  //       if (!alreadyLiked) {
+  //         // Add the new like
+  //         query.likes.push(likeData);
     
-          // Update the profile picture in the database
-          await rt.db('beats').table('profilePic').get(pictureId).update({ likes: query.likes }).run(connection);
-        } else {
-          return new ValidationError(`User '${userName}' has already liked this picture.`, "");
-        }
+  //         // Update the profile picture in the database
+  //         await rt.db('beats').table('profilePic').get(pictureId).update({ likes: query.likes }).run(connection);
+  //       } else {
+  //         return new ValidationError(`User '${userName}' has already liked this picture.`, "");
+  //       }
     
-        return new SuccessMessage("Profile picture liked successfully");
-      } catch (error: any) {
-        console.error("Error liking profile picture:", error);
-        throw error;
-      }
-    }
+  //       return new SuccessMessage("Profile picture liked successfully");
+  //     } catch (error: any) {
+  //       console.error("Error liking profile picture:", error);
+  //       throw error;
+  //     }
+  //   }
 
-  public async unlikeProfilePicture(token: string, likedProfilePicture: { id: string}) {
-      try {
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
+  // public async unlikeProfilePicture(token: string, likedProfilePicture: { id: string}) {
+  //     try {
+  //       const tokenService: TokenService = new TokenService();
+  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
     
-        const session: Session | undefined = this.driver?.session();
+  //       const session: Session | undefined = this.driver?.session();
     
-        const result: QueryResult<RecordShape> | undefined = await session?.executeRead(tx =>
-          tx.run(`MATCH (u:User {username: $userName}) RETURN u`, { userName })
-        );
+  //       const result: QueryResult<RecordShape> | undefined = await session?.executeRead(tx =>
+  //         tx.run(`MATCH (u:User {username: $userName}) RETURN u`, { userName })
+  //       );
     
-        if (!result?.records.length) throw new ValidationError(`User with username '${userName}' not found.`, "");
+  //       if (!result?.records.length) throw new ValidationError(`User with username '${userName}' not found.`, "");
     
-        const pictureId: string = likedProfilePicture.id || "";
+  //       const pictureId: string = likedProfilePicture.id || "";
     
-        const connection: rt.Connection = await getRethinkDB();
+  //       const connection: rt.Connection = await getRethinkDB();
         
-        // Get the profile picture from the database
-        const query: ProfilePicture = await rt.db('beats').table('profilePic').get(pictureId).run(connection) as ProfilePicture;
+  //       // Get the profile picture from the database
+  //       const query: ProfilePicture = await rt.db('beats').table('profilePic').get(pictureId).run(connection) as ProfilePicture;
     
-        if (!query) {
-          return new ValidationError(`Profile picture with ID '${pictureId}' not found.`, "");
-        }
+  //       if (!query) {
+  //         return new ValidationError(`Profile picture with ID '${pictureId}' not found.`, "");
+  //       }
     
-        // Check if the user has already liked the picture
-        const likeIndex = query.likes.findIndex(like => like.userName === userName);
+  //       // Check if the user has already liked the picture
+  //       const likeIndex = query.likes.findIndex(like => like.userName === userName);
     
-        if (likeIndex !== -1) {
-          // Remove the like
-          query.likes.splice(likeIndex, 1);
+  //       if (likeIndex !== -1) {
+  //         // Remove the like
+  //         query.likes.splice(likeIndex, 1);
     
-          // Update the profile picture in the database
-          await rt.db('beats').table('profilePic').get(pictureId).update({ likes: query.likes }).run(connection);
-        } else {
-          return new ValidationError(`User '${userName}' has not liked this picture.`, "");
-        }
+  //         // Update the profile picture in the database
+  //         await rt.db('beats').table('profilePic').get(pictureId).update({ likes: query.likes }).run(connection);
+  //       } else {
+  //         return new ValidationError(`User '${userName}' has not liked this picture.`, "");
+  //       }
     
-        return new SuccessMessage("Profile picture unliked successfully");
-      } catch (error: any) {
-        console.error("Error unliking profile picture:", error);
-        throw error;
-      }
-    }
+  //       return new SuccessMessage("Profile picture unliked successfully");
+  //     } catch (error: any) {
+  //       console.error("Error unliking profile picture:", error);
+  //       throw error;
+  //     }
+  //   }
     
   public async getPlayerProfilePic(token: string, playerUsername: string): Promise<ProfilePicture[]> {
-      try {
-        const tokenService: TokenService = new TokenService();
-        await tokenService.verifyAccessToken(token);
-
-        const userName: string = playerUsername
-    
-        const connection: rt.Connection = await getRethinkDB();
-        const cursor: rt.Cursor = await rt
-          .db('beats')
-          .table('profilePic')
-          .filter({ userName })
-          .orderBy(rt.desc('uploadedAt'))
-          .limit(10)
-          .run(connection);
-    
-        const profilePictures: ProfilePicture[] = await cursor.toArray();
-
-        return profilePictures as ProfilePicture[];
-      } catch (error: any) {
-        console.error(`Error processing the image: ${error.message}`);
-        throw error;
-      }
-    }
-
-  public async getProfilePic(token: string): Promise<ProfilePicture[]> {
-      try {
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
-    
-        const connection: rt.Connection = await getRethinkDB();
-        const cursor: rt.Cursor = await rt
-          .db('beats')
-          .table('profilePic')
-          .filter({ userName })
-          .orderBy(rt.desc('uploadedAt'))
-          .limit(1)
-          .run(connection);
-    
-        const profilePictures: ProfilePicture[] = await cursor.toArray();
-        
-        return profilePictures as ProfilePicture[];
-      } catch (error: any) {
-        console.error(`Error processing the image: ${error.message}`);
-        throw error;
-      }
-    }
-    
-  public async getDisplayPic(token: string, userNames: (string | undefined)[]): Promise<ProfilePicture[]> {
     try {
       const tokenService: TokenService = new TokenService();
       await tokenService.verifyAccessToken(token);
-
-      const connection: rt.Connection = await getRethinkDB();
-      const cursor: rt.Cursor = await rt
-        .db('beats')
-        .table('profilePic')
-        .filter(userNames)
-        .orderBy(rt.desc('uploadedAt'))
-        .limit(1)
-        .run(connection);
-
-      const profilePictures: ProfilePicture[] = await cursor.toArray();
-
-      return profilePictures as ProfilePicture[]
+  
+      const db = mongoDBClient.db("beats");
+  
+      // Retrieve the latest 10 profile pictures for the player
+      const profilePictures = await db
+        .collection("profilePic")
+        .find({ userName: playerUsername })
+        .sort({ uploadedAt: -1 }) // Sort by latest uploadedAt timestamp
+        .limit(10)
+        .toArray();
+  
+      return profilePictures as unknown as ProfilePicture[];
     } catch (error: any) {
+      console.error(`Error processing the image: ${error.message}`);
+      throw error;
+    }
+  }
+  
+
+    public async getProfilePic(token: string): Promise<ProfilePicture[]> {
+      try {
+        const tokenService: TokenService = new TokenService();
+        const userName: string | Error = await tokenService.verifyAccessToken(token);
+    
+        const db = mongoDBClient.db("beats");
+        const profilePictures = await db
+          .collection("profilePic")
+          .find({ userName })
+          .sort({ uploadedAt: -1 })
+          .limit(1)
+          .toArray();
+    
+        return profilePictures as unknown as ProfilePicture[];
+      } catch (error: any) {
+        console.error(`Error processing the image: ${error.message}`);
+        throw error;
+      }
+    }
+    
+    
+    public async getDisplayPic(token: string, userNames: (string | undefined)[]): Promise<ProfilePicture[]> {
+      try {
+        const tokenService: TokenService = new TokenService();
+        await tokenService.verifyAccessToken(token);
+    
+        const db = mongoDBClient.db("beats");
+        const profilePictures = await db
+          .collection("profilePic")
+          .find({ userName: { $in: userNames } })
+          .sort({ uploadedAt: -1 })
+          .limit(1)
+          .toArray();
+    
+        return profilePictures as unknown as ProfilePicture[];
+      } catch (error: any) {
         console.error("Error getting profile pictures:", error);
         throw new ValidationError(`Error retrieving the profile pictures: ${error.message}.`, "");
+      }
     }
-    }
+    
 
-  public async changeProfilePic(token: string, newProfilePicture: { id: string }): Promise<SuccessMessage> {
+    public async changeProfilePic(token: string, newProfilePicture: { id: string }): Promise<SuccessMessage> {
       try {
-          const tokenService: TokenService = new TokenService();
-          await tokenService.verifyAccessToken(token);
-  
-          const { id } = newProfilePicture;
-          const connection: rt.Connection = await getRethinkDB();
-          const latestProfilePic = await rt
-              .db('beats')
-              .table('profilePic')
-              .get(id)
-              .run(connection);
-  
-          if (!latestProfilePic) {
-              throw new Error('No profile picture found for the user');
-          }
-  
-          // Update the user's profile picture to the latest one
-          const updateResult: rt.WriteResult = await rt
-              .db('beats')
-              .table('profilePic')
-              .get(id)
-              .update({ uploadedAt: Date.now() })
-              .run(connection);
-  
-          if (updateResult && updateResult.replaced === 1) {
-              return new SuccessMessage('Profile picture updated successfully');
-          } else {
-              throw new Error('Failed to update profile picture');
-          }
+        const tokenService: TokenService = new TokenService();
+        await tokenService.verifyAccessToken(token);
+    
+        const { id } = newProfilePicture;
+        const db = mongoDBClient.db("beats");
+    
+        // Retrieve the profile picture by ID
+        const latestProfilePic = await db.collection("profilePic").findOne({ _id: new ObjectId(id) });
+    
+        if (!latestProfilePic) {
+          throw new Error("No profile picture found for the user");
+        }
+    
+        // Update the profile picture's timestamp
+        const updateResult = await db.collection("profilePic").updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { uploadedAt: Date.now() } }
+        );
+    
+        if (updateResult.modifiedCount === 1) {
+          return new SuccessMessage("Profile picture updated successfully");
+        } else {
+          throw new Error("Failed to update profile picture");
+        }
       } catch (error: any) {
-          console.error('Error updating profile picture:', error);
-          throw error;
+        console.error("Error updating profile picture:", error);
+        throw error;
       }
     }
 
-  private async getProfilePicsCount(userName: string): Promise<number> {
-      const connection: rt.Connection = await getRethinkDB();
-      try {
-        // Count the number of profile pictures for the user using filter
-        const countResult: number = await rt
-          .db('beats')
-          .table('profilePic')
-          .filter({ userName })
-          .count()
-          .run(connection);
+  // private async getProfilePicsCount(userName: string): Promise<number> {
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     try {
+  //       // Count the number of profile pictures for the user using filter
+  //       const countResult: number = await rt
+  //         .db('beats')
+  //         .table('profilePic')
+  //         .filter({ userName })
+  //         .count()
+  //         .run(connection);
         
-        return countResult;
-      } catch (error: any) {
-        console.error(error);
-        throw error;
-    }
-    }
+  //       return countResult;
+  //     } catch (error: any) {
+  //       console.error(error);
+  //       throw error;
+  //   }
+  //   }
     
   public async createSoulPreferences(token: string, soulMetadata: SoulMetaData): Promise<SuccessMessage> {
       const session: Session | undefined = this.driver?.session();
@@ -579,117 +565,117 @@ class ProfileService {
       }
     }
 
-  public async updateMyNotes(token: string, myNotes: MyNote): Promise<SuccessMessage | Error> {
-      try {
-        const { note } = myNotes
-        if (note.length > 60) {
-          return new Error("Note exceeds the 60 character limit.");
-        }
+  // public async updateMyNotes(token: string, myNotes: MyNote): Promise<SuccessMessage | Error> {
+  //     try {
+  //       const { note } = myNotes
+  //       if (note.length > 60) {
+  //         return new Error("Note exceeds the 60 character limit.");
+  //       }
     
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
+  //       const tokenService: TokenService = new TokenService();
+  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
     
-        const connection: rt.Connection = await getRethinkDB();
+  //       const connection: rt.Connection = await getRethinkDB();
         
-        const timestamp: number = Date.now();
-        const noteData = { userName, note, createdAt: timestamp, updatedAt: timestamp };
+  //       const timestamp: number = Date.now();
+  //       const noteData = { userName, note, createdAt: timestamp, updatedAt: timestamp };
     
-        // Insert the new note or update the existing one
-        await rt.db('beats').table('myNotes').insert(noteData, { conflict: "replace" }).run(connection);
+  //       // Insert the new note or update the existing one
+  //       await rt.db('beats').table('myNotes').insert(noteData, { conflict: "replace" }).run(connection);
 
-        return new SuccessMessage("My notes updated");
-      } catch (error: any) {
-        console.error("Error updating note:", error);
-        throw error;
-      }
-    }
+  //       return new SuccessMessage("My notes updated");
+  //     } catch (error: any) {
+  //       console.error("Error updating note:", error);
+  //       throw error;
+  //     }
+  //   }
 
-  public async getMutualMyNotes(token: string,): Promise<MyNote | {}> {
-      try {
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
+  // public async getMutualMyNotes(token: string,): Promise<MyNote | {}> {
+  //     try {
+  //       const tokenService: TokenService = new TokenService();
+  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
     
-        const connection: rt.Connection = await getRethinkDB();
+  //       const connection: rt.Connection = await getRethinkDB();
         
-        // Retrieve the latest note for the user
-        const cursor: rt.Cursor = await rt
-          .db('beats')
-          .table('myNotes')
-          .filter({ userName })
-          .orderBy(rt.desc('createdAt')) // Order by createdAt timestamp in descending order
-          .limit(1) // Limit to one result
-          .run(connection);
+  //       // Retrieve the latest note for the user
+  //       const cursor: rt.Cursor = await rt
+  //         .db('beats')
+  //         .table('myNotes')
+  //         .filter({ userName })
+  //         .orderBy(rt.desc('createdAt')) // Order by createdAt timestamp in descending order
+  //         .limit(1) // Limit to one result
+  //         .run(connection);
         
-        const notesArray: MyNote[] = await cursor.toArray();
+  //       const notesArray: MyNote[] = await cursor.toArray();
         
-        if (notesArray.length === 0) {
-          return {}
-        }
+  //       if (notesArray.length === 0) {
+  //         return {}
+  //       }
     
-        const myNote: MyNote = notesArray[0];
+  //       const myNote: MyNote = notesArray[0];
     
-        return myNote;
-      } catch (error: any) {
-        console.error("Error retrieving note:", error);
-        throw error;
-      }
-    }
+  //       return myNote;
+  //     } catch (error: any) {
+  //       console.error("Error retrieving note:", error);
+  //       throw error;
+  //     }
+  //   }
 
-  public async getMyNotes(token: string,): Promise<MyNote | {}> {
-      try {
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
+  // public async getMyNotes(token: string,): Promise<MyNote | {}> {
+  //     try {
+  //       const tokenService: TokenService = new TokenService();
+  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
     
-        const connection: rt.Connection = await getRethinkDB();
+  //       const connection: rt.Connection = await getRethinkDB();
         
-        // Retrieve the latest note for the user
-        const cursor: rt.Cursor = await rt
-          .db('beats')
-          .table('myNotes')
-          .filter({ userName })
-          .orderBy(rt.desc('createdAt')) // Order by createdAt timestamp in descending order
-          .limit(1) // Limit to one result
-          .run(connection);
+  //       // Retrieve the latest note for the user
+  //       const cursor: rt.Cursor = await rt
+  //         .db('beats')
+  //         .table('myNotes')
+  //         .filter({ userName })
+  //         .orderBy(rt.desc('createdAt')) // Order by createdAt timestamp in descending order
+  //         .limit(1) // Limit to one result
+  //         .run(connection);
         
-        const notesArray: MyNote[] = await cursor.toArray();
+  //       const notesArray: MyNote[] = await cursor.toArray();
         
-        if (notesArray.length === 0) {
-          return {}
-        }
+  //       if (notesArray.length === 0) {
+  //         return {}
+  //       }
     
-        const myNote: MyNote = notesArray[0];
+  //       const myNote: MyNote = notesArray[0];
     
-        return myNote;
-      } catch (error: any) {
-        console.error("Error retrieving note:", error);
-        throw error;
-      }
-    }
+  //       return myNote;
+  //     } catch (error: any) {
+  //       console.error("Error retrieving note:", error);
+  //       throw error;
+  //     }
+  //   }
 
-  public async moments(token: string, myNotes: MyNote): Promise<SuccessMessage | Error> {
-      try {
-        const { note } = myNotes
-        if (note.length > 60) {
-          return new Error("Note exceeds the 60 character limit.");
-        }
+  // public async moments(token: string, myNotes: MyNote): Promise<SuccessMessage | Error> {
+  //     try {
+  //       const { note } = myNotes
+  //       if (note.length > 60) {
+  //         return new Error("Note exceeds the 60 character limit.");
+  //       }
     
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
+  //       const tokenService: TokenService = new TokenService();
+  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
     
-        const connection: rt.Connection = await getRethinkDB();
+  //       const connection: rt.Connection = await getRethinkDB();
         
-        const timestamp: number = Date.now();
-        const noteData = { userName, note, createdAt: timestamp, updatedAt: timestamp };
+  //       const timestamp: number = Date.now();
+  //       const noteData = { userName, note, createdAt: timestamp, updatedAt: timestamp };
     
-        // Insert the new note or update the existing one
-        await rt.db('beats').table('myNotes').insert(noteData, { conflict: "replace" }).run(connection);
+  //       // Insert the new note or update the existing one
+  //       await rt.db('beats').table('myNotes').insert(noteData, { conflict: "replace" }).run(connection);
 
-        return new SuccessMessage("My notes updated");
-      } catch (error: any) {
-        console.error("Error updating note:", error);
-        throw error;
-      }
-    }
+  //       return new SuccessMessage("My notes updated");
+  //     } catch (error: any) {
+  //       console.error("Error updating note:", error);
+  //       throw error;
+  //     }
+  //   }
 
 
 

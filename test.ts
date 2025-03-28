@@ -1,138 +1,148 @@
 import { mongoDBClient } from "./src/db/mongodb.client";
+import { Db } from "mongodb";
 
+function runRaffle(entries) {
+	// Remove users with 0 entries
+	const validEntries = Object.entries(entries).filter(([_, count]) => count > 0);
 
-const leaderboard = async () => {
-	try {
-
-
-const getPeriodDates = (period: string) => {
-	const now = new Date();
-	let startOfPeriod;
-	let endOfPeriod;
-
-	switch (period) {
-		case "Daily":
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1);
-			break;
-
-		case "Yesterday":
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1, 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1);
-			break;
-
-		case "TwoDaysAgo":
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 2, 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1);
-			break;
-
-		case "Weekly":
-			const dayOfWeek = now.getUTCDay();
-			const diffToMonday = (dayOfWeek + 6) % 7;
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday, 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 7);
-			break;
-
-		case "Monthly":
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCMonth(startOfPeriod.getUTCMonth() + 1);
-			break;
-
-		default:
-			throw new Error("Invalid period specified");
+	// Create a weighted pool of names
+	let pool = [];
+	for (const [name, count] of validEntries) {
+		for (let i = 0; i < count; i++) {
+			pool.push(name);
+		}
 	}
 
-	return { startOfPeriod, endOfPeriod };
-};
+	const winners = new Set();
 
-		const songTitle = correctSongName("The Chase");
-		const { startOfPeriod, endOfPeriod } = getPeriodDates("TwoDaysAgo");
-		const scores = await fetchScores(songTitle, "ultra hard");
+	while (winners.size < 1 && pool.length > 0) {
+		const randomIndex = Math.floor(Math.random() * pool.length);
+		const winner = pool[randomIndex];
+		winners.add(winner);
 
-		const filteredScores = scores
-			.filter(score => {
-				const scoreDate = new Date(score.timestamp);
-				return scoreDate >= startOfPeriod && scoreDate < endOfPeriod && score.score > 0;
-			})
-			.sort((a, b) => b.score - a.score);
-
-		return filteredScores;
-	} catch (error) {
-		console.log(error);
-		throw error;
-	}
-};
-
-const getPeriodDates = (period: string) => {
-	const now = new Date();
-	let startOfPeriod;
-	let endOfPeriod;
-
-	switch (period) {
-		case "Daily":
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1);
-			break;
-
-		case "Yesterday":
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1, 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 1);
-			break;
-
-		case "Weekly":
-			const dayOfWeek = now.getUTCDay();
-			const diffToMonday = (dayOfWeek + 6) % 7;
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - diffToMonday, 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCDate(startOfPeriod.getUTCDate() + 7);
-			break;
-
-		case "Monthly":
-			startOfPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-			endOfPeriod = new Date(startOfPeriod);
-			endOfPeriod.setUTCMonth(startOfPeriod.getUTCMonth() + 1);
-			break;
-
-		default:
-			throw new Error("Invalid period specified");
+		// Remove all instances of the winner from the pool
+		pool = pool.filter(name => name !== winner);
 	}
 
-	return { startOfPeriod, endOfPeriod };
-};
-
-
-const fetchScores = async (songName: string, difficulty: string) => {
-	try {
-		await mongoDBClient.connect();
-		const db = mongoDBClient.db("beats");
-		const collection = db.collection("classicScores");
-
-		const scores = await collection
-			.find({ songName: songName, difficulty: difficulty })
-			.toArray();
-		await mongoDBClient.close();
-		return scores;
-	} catch (error) {
-		console.error("Error fetching scores:", error);
-		throw error;
-	}
-};
-
-
-
-const correctSongName = (songName: string) =>{
-	// Insert a space before capital letters (except for the first letter)
-	let songTitle: string = songName.replace(/([a-z])([A-Z])/g, "$1 $2");
-
-	return songTitle;
+	return [...winners];
 }
 
+const entries = {
+	Able_Haeunie: 13,
+	Goddess: 15,
+	khaelrocks: 13,
+	Nacht18: 15,
+	Gelatine: 0,
+	c2nagreen: 14,
+	bbangyunha: 2,
+	chenry124: 13,
+	Arasqvs: 18,
+  }
+ console.log("Winners:", runRaffle(entries));
 
-console.log(await leaderboard())
+
+interface ClassicScoreStats {
+	difficulty: string;
+	score: number;
+	combo: number;
+	maxCombo: number;
+	accuracy: number;
+	finished: boolean;
+	songName: string;
+	artist: string;
+	perfect: number;
+	veryGood: number;
+	good: number;
+	bad: number;
+	miss: number;
+	username: string;
+	gameId: string;
+	timestamp: number; // UNIX timestamp in milliseconds
+}
+
+async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
+	try {
+		const collection = db.collection<ClassicScoreStats>("classicScores");
+
+		// List of usernames to check
+		const validUsernames = [
+			"Able_Haeunie",
+			"Goddess",
+			"khaelrocks",
+			"gelatine",
+			"Nacht18",
+			"c2nagreen",
+			"bbangyunha",
+			"chenry124",
+			"Arasqvs"
+		]
+
+		// Aggregate to count scores per username per day
+		const scoresPerUser = await collection
+			.aggregate([
+				{
+					$match: {
+						username: { $in: validUsernames } // Filter only selected usernames
+					}
+				},
+				{
+					$project: {
+						username: 1,
+						date: {
+							// Convert timestamp to YYYY-MM-DD format
+							$toDate: "$timestamp"
+						}
+					}
+				},
+				{
+					$group: {
+						_id: {
+							username: "$username",
+							day: {
+								$dateToString: { format: "%Y-%m-%d", date: "$date" } // Group by day
+							}
+						},
+						scoreCount: { $sum: 1 }
+					}
+				},
+				{
+					$match: {
+						scoreCount: { $gte: 3 } // Only count if at least 3 scores in a day
+					}
+				},
+				{
+					$group: {
+						_id: "$_id.username",
+						entries: { $sum: 1 } // Count unique days where 3+ scores exist
+					}
+				},
+				{
+					$project: {
+						_id: 0,
+						username: "$_id",
+						entries: 1
+					}
+				}
+			])
+			.toArray();
+
+		// Convert to a record format { username: entries }, default to 0 if user has no scores
+		const raffleEntries: Record<string, number> = {};
+		for (const username of validUsernames) {
+			const userEntry = scoresPerUser.find(user => user.username === username);
+			raffleEntries[username] = userEntry ? userEntry.entries : 0;
+		}
+
+		return raffleEntries;
+	} catch (error) {
+		console.error("Error fetching raffle entries:", error);
+		throw error;
+	}
+}
+
+// Usage example
+// (async () => {
+// 	const db: Db = mongoDBClient.db("beats");
+// 	const raffleEntries = await getRaffleEntries(db);
+// 	console.log(raffleEntries);
+// })();

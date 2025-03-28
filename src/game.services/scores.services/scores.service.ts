@@ -4,7 +4,7 @@ import { ClassicScoreStats, ScorePeerId } from "../leaderboard.services/leaderbo
 
 //** MONGODB IMPORT
 import { mongoDBClient } from "../../db/mongodb.client";
-import { Db, MongoClient } from "mongodb";
+import { MongoClient } from "mongodb";
 
 //** IMPORTED SERVICES
 import TokenService from "../../user.services/token.services/token.service";
