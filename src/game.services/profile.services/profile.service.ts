@@ -216,8 +216,8 @@ class ProfileService {
     try {
       const tokenService: TokenService = new TokenService();
       await tokenService.verifyAccessToken(token);
-  
-      const db = mongoDBClient.db("beats");
+      const client = await mongoDBClient.connect();
+      const db = client.db("beats");
   
       // Retrieve the latest 10 profile pictures for the player
       const profilePictures = await db
