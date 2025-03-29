@@ -35,10 +35,13 @@ export interface ClassicScoreStats {
     miss: number;
     username: string;
     gameId: string;
+
 }
 
 export interface savedClassicScoreStats extends ClassicScoreStats {
     timestamp: string
+    image: string
+
 }
 
 /**

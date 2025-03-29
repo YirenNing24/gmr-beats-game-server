@@ -10,6 +10,8 @@ import TokenService from "../../user.services/token.services/token.service";
 //** MONGO DB CLIENT
 import { mongoDBClient } from "../../db/mongodb.client";
 import { Db } from "mongodb";
+import ProfileService from "../profile.services/profile.service";
+import { ProfilePicture } from "../profile.services/profile.interface";
 
 
 
@@ -22,6 +24,7 @@ class LeaderboardService {
 	public async leaderboard(token: string, query: LeaderboardQuery): Promise<savedClassicScoreStats[]> {
 		try {
 			const tokenService: TokenService = new TokenService();
+			const profileService: ProfileService = new ProfileService();
 			await tokenService.verifyAccessToken(token);
 		
 			const { songName, difficulty, period } = query;
@@ -29,21 +32,50 @@ class LeaderboardService {
 	
 			const { startOfPeriod, endOfPeriod } = this.getPeriodDates(period);
 			const scores: savedClassicScoreStats[] = await this.fetchScores(songTitle, difficulty.toLowerCase());
-
-			// Apply filters and sort correctly
+	
+			// Apply filters
 			const filteredScores = scores
 				.filter(score => {
 					const scoreDate = new Date(score.timestamp);
 					return scoreDate >= startOfPeriod && scoreDate < endOfPeriod && score.score > 0;
 				})
-				.sort((a, b) => b.score - a.score); // Ensure highest score is first
+				.sort((a, b) => b.score - a.score); // Sort highest score first
 	
-			return filteredScores;
+			// Ensure only the highest score per username is included
+			const bestScoresMap = new Map<string, savedClassicScoreStats>();
+	
+			for (const score of filteredScores) {
+				if (!bestScoresMap.has(score.username)) {
+					bestScoresMap.set(score.username, score);
+				}
+			}
+	
+			// Fetch profile pictures for unique users
+			const uniqueUsernames = Array.from(bestScoresMap.keys());
+			const profilePics: ProfilePicture[] = await profileService.getDisplayPic("", uniqueUsernames, "leaderboard");
+	
+			// Convert profile pictures to a map for easy lookup
+			const profilePicMap = new Map<string, string>();
+			profilePics.forEach(pic => {
+				profilePicMap.set(pic.userName, pic.profilePicture || "");
+			});
+	
+			// Attach profile picture to each user's score
+			const finalLeaderboard = Array.from(bestScoresMap.values()).map(score => ({
+				...score,
+				image: profilePicMap.get(score.username) || "" // Assign default if not found
+			}));
+	
+			return finalLeaderboard;
 		} catch (error: any) {
 			console.log(error);
 			throw error;
 		}
 	}
+	
+	
+	
+	
 	
 
 	private correctSongName(songName: string): string {

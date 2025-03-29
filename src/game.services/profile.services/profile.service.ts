@@ -157,6 +157,7 @@ class ProfileService {
         // Add the new like to the picture
         await profilePicCollection.updateOne(
           { _id: pictureId },
+          //@ts-ignore
           { $push: { likes: likeData } }
         );
     
@@ -266,26 +267,31 @@ class ProfileService {
   
     
     
-    public async getDisplayPic(token: string, userNames: (string | undefined)[]): Promise<ProfilePicture[]> {
-      try {
+  public async getDisplayPic(token: string, userNames: string[], origin: string): Promise<ProfilePicture[]> {
+    try {
+      if (origin !== "leaderboard") {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
-        const client = await mongoDBClient.connect();
-
-        const db = client.db("beats");
-        const profilePictures = await db
-          .collection("profilePic")
-          .find({ userName: { $in: userNames } })
-          .sort({ uploadedAt: -1 })
-          .limit(1)
-          .toArray();
-        
-        return profilePictures as unknown as ProfilePicture[];
-      } catch (error: any) {
-        console.error("Error getting profile pictures:", error);
-        throw new ValidationError(`Error retrieving the profile pictures: ${error.message}.`, "");
       }
+  
+      const client = await mongoDBClient.connect();
+      const db = client.db("beats");
+  
+      // Fetch latest profile pictures for all usernames
+      const profilePictures = await db
+        .collection("profilePic")
+        .find({ userName: { $in: userNames } })
+        .sort({ uploadedAt: -1 })
+        .toArray();
+  
+      return profilePictures as unknown as ProfilePicture[];
+    } catch (error: any) {
+      console.error("Error getting profile pictures:", error);
+      throw new ValidationError(`Error retrieving the profile pictures: ${error.message}.`, "");
     }
+  }
+  
+  
     
 
     public async changeProfilePic(token: string, newProfilePicture: { _id: string }): Promise<SuccessMessage> {
