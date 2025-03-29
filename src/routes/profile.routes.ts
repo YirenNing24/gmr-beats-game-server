@@ -88,6 +88,27 @@ const profile = (app: Elysia) => {
     }, authorizationBearerSchema
   )
 
+
+    .post('/api/open/profilepics', async ({ headers, body }): Promise<ProfilePicture[]> => {
+    try {
+      const authorizationHeader: string | null = headers.authorization;
+      if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+        throw new Error('Bearer token not found in Authorization header');
+      }
+      const jwtToken: string = authorizationHeader.substring(7);
+
+      const driver: Driver = getDriver();
+      const profileService: ProfileService = new ProfileService(driver);
+
+      const output: ProfilePicture[] = await profileService.getDisplayPic(jwtToken, body)
+
+      return output as ProfilePicture[]
+    } catch(error: any) {
+      throw error
+    }
+    }, getProfilePicsSchema
+  )
+
   .get('/api/open/playerprofilepic/:player_username', async ({ headers, params }): Promise<ProfilePicture[] | Error> => {
     try {
       const authorizationHeader: string | null = headers.authorization;
@@ -129,25 +150,7 @@ const profile = (app: Elysia) => {
     }, uploadDpBufferSchema
   )
 
-  .post('/api/open/profilepics', async ({ headers, body }): Promise<ProfilePicture[]> => {
-    try {
-      const authorizationHeader: string | null = headers.authorization;
-      if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-        throw new Error('Bearer token not found in Authorization header');
-      }
-      const jwtToken: string = authorizationHeader.substring(7);
 
-      const driver: Driver = getDriver();
-      const profileService: ProfileService = new ProfileService(driver);
-
-      const output: ProfilePicture[] = await profileService.getDisplayPic(jwtToken, body)
-
-      return output as ProfilePicture[]
-    } catch(error: any) {
-      throw error
-    }
-    }, getProfilePicsSchema
-  )
 
   // .post('/api/like/profilepic', async ({ headers, body }): Promise<SuccessMessage | ValidationError> => {
   //   try {

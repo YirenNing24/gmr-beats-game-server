@@ -235,26 +235,26 @@ class ProfileService {
   }
   
 
-    public async getProfilePic(token: string): Promise<ProfilePicture[]> {
-      try {
-        const tokenService: TokenService = new TokenService();
-        const userName: string | Error = await tokenService.verifyAccessToken(token);
-        const client = await mongoDBClient.connect();
-        
-        const db = client.db("beats");
-        const profilePictures = await db
-          .collection("profilePic")
-          .find({ userName })
-          .sort({ uploadedAt: -1 })
-          .limit(1)
-          .toArray();
-    
-        return profilePictures as unknown as ProfilePicture[];
-      } catch (error: any) {
-        console.error(`Error processing the image: ${error.message}`);
-        throw error;
-      }
+  public async getProfilePic(token: string): Promise<ProfilePicture[]> {
+    try {
+      const tokenService: TokenService = new TokenService();
+      const userName: string | Error = await tokenService.verifyAccessToken(token);
+      const client = await mongoDBClient.connect();
+      
+      const db = client.db("beats");
+      const profilePictures = await db
+        .collection("profilePic")
+        .find({ userName })
+        .sort({ uploadedAt: -1 }) // Ensures newest profile pictures appear first
+        .toArray();
+  
+      return profilePictures as unknown as ProfilePicture[];
+    } catch (error: any) {
+      console.error(`Error retrieving profile pictures: ${error.message}`);
+      throw error;
     }
+  }
+  
     
     
     public async getDisplayPic(token: string, userNames: (string | undefined)[]): Promise<ProfilePicture[]> {
