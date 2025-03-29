@@ -152,50 +152,50 @@ const profile = (app: Elysia) => {
 
 
 
-  // .post('/api/like/profilepic', async ({ headers, body }): Promise<SuccessMessage | ValidationError> => {
-  //   try {
-  //     const authorizationHeader: string | null = headers.authorization;
-  //     if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-  //       throw new Error('Bearer token not found in Authorization header');
-  //     }
-  //     const jwtToken: string = authorizationHeader.substring(7);
+  .post('/api/like/profilepic', async ({ headers, body }): Promise<SuccessMessage | ValidationError> => {
+    try {
+      const authorizationHeader: string | null = headers.authorization;
+      if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+        throw new Error('Bearer token not found in Authorization header');
+      }
+      const jwtToken: string = authorizationHeader.substring(7);
 
-  //     const driver: Driver = getDriver();
-  //     const profileService: ProfileService = new ProfileService(driver);
+      const driver: Driver = getDriver();
+      const profileService: ProfileService = new ProfileService(driver);
 
 
-  //     const output: SuccessMessage | ValidationError = await profileService.likeProfilePicture(jwtToken, body);
+      const output: SuccessMessage | ValidationError = await profileService.likeProfilePicture(jwtToken, body);
 
-  //     console.log(output)
+      console.log(output)
 
-  //     return output as SuccessMessage
-  //   } catch (error: any) {
-  //     return error;
-  //     }
-  //   }, likeProfilePicturePicSchema
-  // )
+      return output as SuccessMessage
+    } catch (error: any) {
+      return error;
+      }
+    }, likeProfilePicturePicSchema
+  )
 
-  // .post('/api/unlike/profilepic', async ({ headers, body }): Promise<SuccessMessage | ValidationError > => {
-  //   try {
-  //     const authorizationHeader: string | null = headers.authorization;
-  //     if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-  //       throw new Error('Bearer token not found in Authorization header');
-  //     }
-  //     const jwtToken: string = authorizationHeader.substring(7);
+  .post('/api/unlike/profilepic', async ({ headers, body }): Promise<SuccessMessage | ValidationError > => {
+    try {
+      const authorizationHeader: string | null = headers.authorization;
+      if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+        throw new Error('Bearer token not found in Authorization header');
+      }
+      const jwtToken: string = authorizationHeader.substring(7);
 
-  //     const driver: Driver = getDriver();
-  //     const profileService: ProfileService = new ProfileService(driver);
+      const driver: Driver = getDriver();
+      const profileService: ProfileService = new ProfileService(driver);
 
-  //     const output: SuccessMessage  | ValidationError = await profileService.unlikeProfilePicture(jwtToken, body);
+      const output: SuccessMessage  | ValidationError = await profileService.unlikeProfilePicture(jwtToken, body);
 
-  //     console.log(output)
+      console.log(output)
 
-  //     return output as SuccessMessage
-  //   } catch (error: any) {
-  //     return error;
-  //     }
-  //   }, likeProfilePicturePicSchema
-  // )
+      return output as SuccessMessage
+    } catch (error: any) {
+      return error;
+      }
+    }, likeProfilePicturePicSchema
+  )
 
   .post('/api/change/profilepic', async ({ headers, body }): Promise<SuccessMessage | ValidationError > => {
     try {

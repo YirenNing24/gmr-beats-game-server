@@ -118,99 +118,108 @@ class ProfileService {
       }
     }
 
-  // public async likeProfilePicture(token: string, likedProfilePicture: { id: string}) {
-  //     try {
-  //       const tokenService: TokenService = new TokenService();
-  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
+    public async likeProfilePicture(token: string, likedProfilePicture: { _id: string }): Promise<SuccessMessage> {
+      try {
+        const tokenService: TokenService = new TokenService();
+        const userName: string | Error = await tokenService.verifyAccessToken(token);
+    
+        const client = await mongoDBClient.connect();
+        const db = client.db("beats");
+        const profilePicCollection = db.collection("profilePic");
+    
+        // Convert pictureId to ObjectId once
+        const pictureId = new ObjectId(likedProfilePicture._id);
+    
+        // Get the profile picture from MongoDB
+        const picture = await profilePicCollection.findOne({ _id: pictureId });
+    
+        if (!picture) {
+          throw new ValidationError(`Profile picture with ID '${likedProfilePicture._id}' not found.`, "");
+        }
+    
+        // Ensure likes array exists
+        const likes = picture.likes ?? [];
+    
+        // Check if the user already liked the picture
+        const alreadyLiked = likes.some((like: any) => like.userName === userName);
+    
+        if (alreadyLiked) {
+          throw new ValidationError(`User '${userName}' has already liked this picture.`, "");
+        }
+    
+        // Create a new like object
+        const likeData = {
+          userName,
+          timestamp: Date.now(),
+          likeId: nanoid(),
+        };
+    
+        // Add the new like to the picture
+        await profilePicCollection.updateOne(
+          { _id: pictureId },
+          { $push: { likes: likeData } }
+        );
+    
+        // Close the DB connection
+        await client.close();
+    
+        return new SuccessMessage("Profile picture liked successfully");
+      } catch (error: any) {
+        console.error("Error liking profile picture:", error);
+        throw error;
+      }
+    }
+    
+    
 
-  //       const session: Session | undefined = this.driver?.session();
+    public async unlikeProfilePicture(token: string, likedProfilePicture: { _id: string }): Promise<SuccessMessage> {
+      try {
+        const tokenService: TokenService = new TokenService();
+        const userName: string | Error = await tokenService.verifyAccessToken(token);
     
-  //       const result: QueryResult<RecordShape> | undefined = await session?.executeRead(tx =>
-  //         tx.run(`MATCH (u:User {username: $userName}) RETURN u`, { userName })
-  //       );
+        const client = await mongoDBClient.connect();
+        const db = client.db("beats");
+        const profilePicCollection = db.collection("profilePic");
     
-  //       if (!result?.records.length) throw new ValidationError(`User with username '${userName}' not found.`, "");
+        // Convert pictureId to ObjectId once
+        const pictureId = new ObjectId(likedProfilePicture._id);
     
-  //       const timestamp: number = Date.now();
-  //       const likeId: string = await nanoid();
-        
-  //       //@ts-ignore
-  //       const likeData: PictureLikes = { userName, timestamp, likeId };
+        // Get the profile picture from MongoDB
+        const picture = await profilePicCollection.findOne({ _id: pictureId });
     
-  //       const pictureId: string = likedProfilePicture.id || "";
+        if (!picture) {
+          throw new ValidationError(`Profile picture with ID '${likedProfilePicture._id}' not found.`, "");
+        }
     
-  //       const connection: rt.Connection = await getRethinkDB();
-        
-  //       // Get the profile picture from the database
-  //       const query: ProfilePicture = await rt.db('beats').table('profilePic').get(pictureId).run(connection) as ProfilePicture;
+        // Ensure likes array exists
+        const likes = picture.likes ?? [];
     
-  //       if (!query) {
-  //         return new ValidationError(`Profile picture with ID '${pictureId}' not found.`, "");
-  //       }
+        // Check if the user has already liked the picture
+        const likeIndex = likes.findIndex((like: any) => like.userName === userName);
     
-  //       // Check if the user already liked the picture
-  //       const alreadyLiked = query.likes.some(like => like.userName === userName);
+        if (likeIndex === -1) {
+          throw new ValidationError(`User '${userName}' has not liked this picture.`, "");
+        }
     
-  //       if (!alreadyLiked) {
-  //         // Add the new like
-  //         query.likes.push(likeData);
+        // Remove the like
+        likes.splice(likeIndex, 1);
     
-  //         // Update the profile picture in the database
-  //         await rt.db('beats').table('profilePic').get(pictureId).update({ likes: query.likes }).run(connection);
-  //       } else {
-  //         return new ValidationError(`User '${userName}' has already liked this picture.`, "");
-  //       }
+        // Update the profile picture in the database
+        await profilePicCollection.updateOne(
+          { _id: pictureId },
+          { $set: { likes } }
+        );
     
-  //       return new SuccessMessage("Profile picture liked successfully");
-  //     } catch (error: any) {
-  //       console.error("Error liking profile picture:", error);
-  //       throw error;
-  //     }
-  //   }
-
-  // public async unlikeProfilePicture(token: string, likedProfilePicture: { id: string}) {
-  //     try {
-  //       const tokenService: TokenService = new TokenService();
-  //       const userName: string | Error = await tokenService.verifyAccessToken(token);
+        // Close the DB connection
+        await client.close();
     
-  //       const session: Session | undefined = this.driver?.session();
+        return new SuccessMessage("Profile picture unliked successfully");
+      } catch (error: any) {
+        console.error("Error unliking profile picture:", error);
+        throw error;
+      }
+    }
     
-  //       const result: QueryResult<RecordShape> | undefined = await session?.executeRead(tx =>
-  //         tx.run(`MATCH (u:User {username: $userName}) RETURN u`, { userName })
-  //       );
-    
-  //       if (!result?.records.length) throw new ValidationError(`User with username '${userName}' not found.`, "");
-    
-  //       const pictureId: string = likedProfilePicture.id || "";
-    
-  //       const connection: rt.Connection = await getRethinkDB();
-        
-  //       // Get the profile picture from the database
-  //       const query: ProfilePicture = await rt.db('beats').table('profilePic').get(pictureId).run(connection) as ProfilePicture;
-    
-  //       if (!query) {
-  //         return new ValidationError(`Profile picture with ID '${pictureId}' not found.`, "");
-  //       }
-    
-  //       // Check if the user has already liked the picture
-  //       const likeIndex = query.likes.findIndex(like => like.userName === userName);
-    
-  //       if (likeIndex !== -1) {
-  //         // Remove the like
-  //         query.likes.splice(likeIndex, 1);
-    
-  //         // Update the profile picture in the database
-  //         await rt.db('beats').table('profilePic').get(pictureId).update({ likes: query.likes }).run(connection);
-  //       } else {
-  //         return new ValidationError(`User '${userName}' has not liked this picture.`, "");
-  //       }
-    
-  //       return new SuccessMessage("Profile picture unliked successfully");
-  //     } catch (error: any) {
-  //       console.error("Error unliking profile picture:", error);
-  //       throw error;
-  //     }
-  //   }
     
   public async getPlayerProfilePic(token: string, playerUsername: string): Promise<ProfilePicture[]> {
     try {
@@ -368,103 +377,7 @@ class ProfileService {
       }
     }
 
-  // private async createSoul(userName: string, walletAddress: string | undefined, soulMetadata: SoulMetaData) {
-  //     const session: Session | undefined = this.driver?.session();
 
-  //     try {
-  //       const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
-  //         secretKey: SECRET_KEY,
-  //       });
-    
-  //       // Update metadata using ERC1155 contract
-  //       const soul: NFTCollection = await sdk.getContract(SOUL_ADDRESS, "nft-collection");
-
-  //       const lastUpdated: string = new Date().toISOString();
-
-  //       const ownership: String[] = [];
-  //       const horoscopeMatch: String[] = [];
-  //       const animalMatch: String[] = []
-  //       const likedGroups: String[] = [];
-  //       const weeklyFirst: String [] = [];
-
-  //       const metadata = {...soulMetadata, lastUpdated, ownership, horoscopeMatch, likedGroups, animalMatch, weeklyFirst}
-  //       //@ts-ignore
-  //       await soul.erc721.mintTo(walletAddress, metadata);
-
-  //       const ownedSouls = await soul.getOwned(walletAddress);
-
-  //       ///@ts-ignore
-  //       const newSoulMetadata: SoulMetaData = ownedSouls[ownedSouls.length - 1].metadata;
-  //       await session?.executeWrite(tx =>
-  //         tx.run(
-  //           `
-  //           MATCH (u:User { username: $userName })
-  //           CREATE (s:Soul)
-  //           MERGE (u)-[:SOUL]->(s)
-  //           SET s = $newSoulMetadata
-  //           `,
-  //           { userName, newSoulMetadata }
-  //         )
-  //       );
-
-  //       await session?.close();
-  
-  //     } catch (error: any) {
-  //       throw error;
-  //   }
-  //   }
-
-  // private async saveSoul(userName: string, soulMetadata: SoulMetaData): Promise<void> {
-  //     const session: Session | undefined = this.driver?.session();
-  //     try {
-  //       const result: QueryResult | undefined = await session?.executeRead(tx =>
-  //         tx.run(
-  //           `
-  //           MATCH (u:User {username: $userName})-[:SOUL]->(s:Soul) 
-  //           RETURN s.id as id`,
-  //           { userName }
-  //         )
-  //       );
-    
-  //       if (!result || result.records.length === 0) {
-  //         throw new Error(`No tokenId found for user: ${userName}`);
-  //       }
-    
-  //       const tokenId: string = result.records[0].get('id');
-        
-  //       await session?.close(); 
-    
-  //       const sdk: ThirdwebSDK = ThirdwebSDK.fromPrivateKey(PRIVATE_KEY, CHAIN, {
-  //         secretKey: SECRET_KEY,
-  //       });
-  //       const lastUpdated: string = new Date().toISOString();
-  //       const metadata = { ...soulMetadata, lastUpdated, };
-
-        
-  //       // Update metadata using ERC1155 contract
-  //       const edition: NFTCollection = await sdk.getContract(SOUL_ADDRESS, "nft-collection");
-  //       await edition.erc721.updateMetadata(tokenId, metadata);
-
-
-  //       const sessionWrite: Session | undefined = this.driver?.session(); 
-  //       await sessionWrite?.executeWrite(tx =>
-  //         tx.run(
-  //           `
-  //           MATCH (u:User {username: $userName})-[:SOUL]->(s:Soul) 
-  //           SET s += $metadata`,
-  //           { userName, metadata }
-  //         )
-  //       );
-    
-  //       await sessionWrite?.close();
-    
-  //     } catch (error: any) {
-  //       throw error;
-  //     } finally {
-  //       await session?.close();
-  //   }
-    
-  //   }
 
   public async getSoul(token: string): Promise<SoulMetaData> {
       const tokenService: TokenService = new TokenService();
