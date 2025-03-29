@@ -56,7 +56,7 @@ export const newStatPointsSchema = {
 export const likeProfilePicturePicSchema = { 
     headers: t.Object({ authorization: t.String() }), 
     body: t.Object({ 
-        id: t.String()
+_id: t.String()
     })
 };
 
