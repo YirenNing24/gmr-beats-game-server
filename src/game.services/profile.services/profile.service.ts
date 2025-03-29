@@ -288,25 +288,40 @@ class ProfileService {
     }
     
 
-    public async changeProfilePic(token: string, newProfilePicture: { id: string }): Promise<SuccessMessage> {
+    public async changeProfilePic(token: string, newProfilePicture: { _id: string }): Promise<SuccessMessage> {
       try {
         const tokenService: TokenService = new TokenService();
-        await tokenService.verifyAccessToken(token);
-        const client = await mongoDBClient.connect();
-        const { id } = newProfilePicture;
-        const db = client.db("beats");
-    
-        // Retrieve the profile picture by ID
-        const latestProfilePic = await db.collection("profilePic").findOne({ _id: new ObjectId(id) });
-    
-        if (!latestProfilePic) {
-          throw new Error("No profile picture found for the user");
+        const userName: string | Error = await tokenService.verifyAccessToken(token);
+        if (typeof userName !== "string") {
+          throw new Error("Invalid token");
         }
     
-        // Update the profile picture's timestamp
-        const updateResult = await db.collection("profilePic").updateOne(
-          { _id: new ObjectId(id) },
-          { $set: { uploadedAt: Date.now() } }
+        const client = await mongoDBClient.connect();
+        const db = client.db("beats");
+        const profilePicCollection = db.collection("profilePic");
+        
+        const pictureId: string = newProfilePicture._id;
+    
+        // Retrieve the profile picture by ID and check ownership
+        const latestProfilePic = await profilePicCollection.findOne({
+          _id: new ObjectId(pictureId),
+          userName, // Ensure the user owns the picture
+        });
+    
+        if (!latestProfilePic) {
+          throw new ValidationError("No profile picture found for this user", "");
+        }
+    
+        // Set all profile pictures of this user to inactive
+        await profilePicCollection.updateMany(
+          { userName },
+          { $set: { isActive: false } }
+        );
+    
+        // Set the new profile picture as active
+        const updateResult = await profilePicCollection.updateOne(
+          { _id: new ObjectId(pictureId) },
+          { $set: { isActive: true, uploadedAt: Date.now() } }
         );
     
         if (updateResult.modifiedCount === 1) {
@@ -319,6 +334,7 @@ class ProfileService {
         throw error;
       }
     }
+    
 
   // private async getProfilePicsCount(userName: string): Promise<number> {
   //     const connection: rt.Connection = await getRethinkDB();
