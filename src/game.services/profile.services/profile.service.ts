@@ -234,7 +234,7 @@ class ProfileService {
         .collection("profilePic")
         .find({ userName: playerUsername })
         .sort({ uploadedAt: -1 }) // Sort by latest uploadedAt timestamp
-        .limit(10)
+        .limit(5)
         .toArray();
   
       return profilePictures as unknown as ProfilePicture[];
@@ -277,11 +277,19 @@ class ProfileService {
       const client = await mongoDBClient.connect();
       const db = client.db("beats");
   
-      // Fetch latest profile pictures for all usernames
-      const profilePictures = await db
-        .collection("profilePic")
-        .find({ userName: { $in: userNames } })
-        .sort({ uploadedAt: -1 })
+      // Fetch only the latest profile picture per user
+      const profilePictures = await db.collection("profilePic")
+        .aggregate([
+          { $match: { userName: { $in: userNames } } }, // Match usernames
+          { $sort: { uploadedAt: -1 } }, // Sort by newest first
+          {
+            $group: {
+              _id: "$userName",
+              profilePicture: { $first: "$profilePicture" }, // Get latest image only
+              userName: { $first: "$userName" } // Preserve username
+            }
+          }
+        ])
         .toArray();
   
       return profilePictures as unknown as ProfilePicture[];
@@ -290,6 +298,7 @@ class ProfileService {
       throw new ValidationError(`Error retrieving the profile pictures: ${error.message}.`, "");
     }
   }
+  
   
   
     
