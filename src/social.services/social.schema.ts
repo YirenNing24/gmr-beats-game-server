@@ -55,14 +55,14 @@ export const postFanMomentSchema = {
 
 export const likeFanMomentSchema= {
 	headers: t.Object({ authorization: t.String() }),
-	body: t.Object({ id: t.String()
+	body: t.Object({ _id: t.String()
 
 	})
 };
 export const commentFanMomentSchema= {
 	headers: t.Object({ authorization: t.String() }),
 	body: t.Object({ 
-		id: t.String(),
+		_id: t.String(),
 		comment: t.String()
 	})
 };

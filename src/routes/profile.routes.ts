@@ -58,7 +58,6 @@ const profile = (app: Elysia) => {
       const driver: Driver = getDriver();
       const profileService: ProfileService = new ProfileService(driver);
 
-
       const output: SuccessMessage = await profileService.uploadProfilePic(body, jwtToken);
 
       return output as SuccessMessage
