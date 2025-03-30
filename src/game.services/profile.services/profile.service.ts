@@ -245,7 +245,7 @@ class ProfileService {
   }
   
 
-  public async getProfilePic(token: string, origin: string = ""): Promise<ProfilePicture[]> {
+  public async getProfilePic(token: string, username: string origin: string = ""): Promise<ProfilePicture[]> {
     try {
       let userName: string | Error = "";
   
