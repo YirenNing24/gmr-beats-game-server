@@ -135,12 +135,10 @@ class SocialService {
           MATCH (v:User {username: $viewUsername})
           OPTIONAL MATCH (u:User {username: $userName})-[:FOLLOW]->(v)
           OPTIONAL MATCH (v)-[:FOLLOW]->(u)
-          OPTIONAL MATCH (v)-[:SOUL]->(s:Soul)
           RETURN v AS user, 
                v.smartWalletAddress AS smartWalletAddress,
                COUNT(u) > 0 AS followsUser, 
                COUNT(v) > 0 AS followedByUser,
-               s AS Soul
           `,
           { userName, viewUsername }
         );
