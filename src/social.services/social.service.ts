@@ -132,9 +132,9 @@ class SocialService {
           OPTIONAL MATCH (u:User {username: $userName})-[r1:FOLLOW]->(v)
           OPTIONAL MATCH (v)-[r2:FOLLOW]->(u)
           RETURN v AS user, 
-               v.smartWalletAddress AS smartWalletAddress,
-               CASE WHEN r1 IS NOT NULL THEN true ELSE false END AS followsUser, 
-               CASE WHEN r2 IS NOT NULL THEN true ELSE false END AS followedByUser
+            v.smartWalletAddress AS smartWalletAddress,
+            CASE WHEN r1 IS NOT NULL THEN true ELSE false END AS followsUser, 
+            CASE WHEN r2 IS NOT NULL THEN true ELSE false END AS followedByUser
           `,
           { userName, viewUsername }
         );
@@ -156,7 +156,19 @@ class SocialService {
         // Fetch profile picture
         const profilePics: ProfilePicture[] = await profileService.getProfilePic(token, viewUsername);
   
-        return { username, playerStats, followsUser, followedByUser, smartWalletAddress, profilePics } as ViewProfileData;
+        // Fetch follower & following counts
+        const { followerCount, followingCount } = await this.getFollowersFollowingCount(token, viewUsername);
+  
+        return {
+          username,
+          playerStats,
+          followsUser,
+          followedByUser,
+          smartWalletAddress,
+          profilePics,
+          followerCount,
+          followingCount
+        } as ViewProfileData;
       });
   
       return result;
@@ -167,6 +179,7 @@ class SocialService {
       await session.close();
     }
   }
+  
   
   
   
@@ -237,8 +250,8 @@ class SocialService {
     
       await session.close();
     
-      const followingCount = result.records[0].get("followingCount").toNumber();
-      const followerCount = result.records[0].get("followerCount").toNumber();
+      const followingCount: number = result.records[0].get("followingCount").toNumber();
+      const followerCount: number = result.records[0].get("followerCount").toNumber();
     
       return { followingCount, followerCount };
     } catch (error) {
