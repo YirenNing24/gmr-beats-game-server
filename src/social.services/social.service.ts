@@ -1,10 +1,6 @@
 //** MEMGRAPH DRIVER AND TYPES
 import { Driver, ManagedTransaction, QueryResult, Session } from "neo4j-driver";
 
-//** RETHINK DB
-import rt from "rethinkdb";
-import { getRethinkDB } from "../db/rethink";
-
 //**THIRDWEB IMPORT
 import { engine } from "../user.services/wallet.services/wallet.service";
 import { Arbitrum } from "@thirdweb-dev/chains";
@@ -178,51 +174,51 @@ class SocialService {
   
 
   //** Retrieves a list of users who are mutual followers with the specified user.
-  public async getMutual(token: string): Promise<MutualData[]> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const username: string = await tokenService.verifyAccessToken(token);
+  // public async getMutual(token: string): Promise<MutualData[]> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const username: string = await tokenService.verifyAccessToken(token);
   
-      const session: Session = this.driver.session();
-      const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-        tx.run(
-          `
-          MATCH (u1:User {username: $username})-[:FOLLOW]->(u2),
-              (u2)-[:FOLLOW]->(u1)
-          RETURN u2.username as username, u2.playerStats as playerStats
-          `,
-          { username }
-        )
-      );
-      await session.close();
+  //     const session: Session = this.driver.session();
+  //     const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+  //       tx.run(
+  //         `
+  //         MATCH (u1:User {username: $username})-[:FOLLOW]->(u2),
+  //             (u2)-[:FOLLOW]->(u1)
+  //         RETURN u2.username as username, u2.playerStats as playerStats
+  //         `,
+  //         { username }
+  //       )
+  //     );
+  //     await session.close();
   
-      const users: MutualData[] = result.records.map(record => ({
-        username: record.get("username") || "",
-        playerStats: record.get("playerStats") || ""
-      })) as MutualData[];
+  //     const users: MutualData[] = result.records.map(record => ({
+  //       username: record.get("username") || "",
+  //       playerStats: record.get("playerStats") || ""
+  //     })) as MutualData[];
   
-      const usernames: string[] = users.map(user => user.username);
+  //     const usernames: string[] = users.map(user => user.username);
   
-      const profileService: ProfileService = new ProfileService();
-      const profilePics: ProfilePicture[] = await profileService.getDisplayPic("", usernames);
-      const myNotes: MyNote[] = await this.getMutualMyNotes(usernames);
+  //     const profileService: ProfileService = new ProfileService();
+  //     const profilePics: ProfilePicture[] = await profileService.getDisplayPic("", usernames);
+  //     const myNotes: MyNote[] = await this.getMutualMyNotes(usernames);
   
-      const usersWithProfilePics = users.map(user => {
-        const profilePic: ProfilePicture | undefined = profilePics.find(pic => pic.userName === user.username);
-        const note: MyNote | undefined = myNotes.find(note => note.userName === user.username);
-        return {
-          ...user,
-          profilePicture: profilePic || null, // Add profilePicture data or null if not found
-          myNote: note || null // Add myNote data or null if not found
-        };
-      });
+  //     const usersWithProfilePics = users.map(user => {
+  //       const profilePic: ProfilePicture | undefined = profilePics.find(pic => pic.userName === user.username);
+  //       const note: MyNote | undefined = myNotes.find(note => note.userName === user.username);
+  //       return {
+  //         ...user,
+  //         profilePicture: profilePic || null, // Add profilePicture data or null if not found
+  //         myNote: note || null // Add myNote data or null if not found
+  //       };
+  //     });
   
-      return usersWithProfilePics as MutualData[];
-    } catch (error: any) {
-      console.error("Something went wrong: ", error);
-      throw error;
-    }
-  }
+  //     return usersWithProfilePics as MutualData[];
+  //   } catch (error: any) {
+  //     console.error("Something went wrong: ", error);
+  //     throw error;
+  //   }
+  // }
 
 
   public async getFollowersFollowingCount(token: string, username: string = "") {
@@ -253,65 +249,65 @@ class SocialService {
   
 
 
-  public async getFollowersFollowing(token: string, username: string = "") {
-    try {
-      const tokenService: TokenService = new TokenService();
+  // public async getFollowersFollowing(token: string, username: string = "") {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
   
-      // Use the passed username if it's not an empty string or null, otherwise verify the token
-      const resolvedUsername: string = username && username.trim() !== "" ? username : await tokenService.verifyAccessToken(token);
+  //     // Use the passed username if it's not an empty string or null, otherwise verify the token
+  //     const resolvedUsername: string = username && username.trim() !== "" ? username : await tokenService.verifyAccessToken(token);
   
-      const session: Session = this.driver.session();
-      const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-        tx.run(
-          `
-            MATCH (u:User {username: $username})
-            OPTIONAL MATCH (u)-[:FOLLOW]->(following:User)
-            OPTIONAL MATCH (follower:User)-[:FOLLOW]->(u)
-            RETURN 
-              COLLECT(DISTINCT { username: following.username, level: following.level, playerStats: following.playerStats }) as followingUsers,
-              COLLECT(DISTINCT { username: follower.username, level: follower.level, playerStats: follower.playerStats }) as followerUsers
-          `,
-          { username: resolvedUsername }
-        )
-      );
+  //     const session: Session = this.driver.session();
+  //     const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+  //       tx.run(
+  //         `
+  //           MATCH (u:User {username: $username})
+  //           OPTIONAL MATCH (u)-[:FOLLOW]->(following:User)
+  //           OPTIONAL MATCH (follower:User)-[:FOLLOW]->(u)
+  //           RETURN 
+  //             COLLECT(DISTINCT { username: following.username, level: following.level, playerStats: following.playerStats }) as followingUsers,
+  //             COLLECT(DISTINCT { username: follower.username, level: follower.level, playerStats: follower.playerStats }) as followerUsers
+  //         `,
+  //         { username: resolvedUsername }
+  //       )
+  //     );
   
-      await session.close();
+  //     await session.close();
   
-      const followingUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followingUsers"));
-      const followerUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followerUsers"));
+  //     const followingUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followingUsers"));
+  //     const followerUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followerUsers"));
   
-      const profileService: ProfileService = new ProfileService();
+  //     const profileService: ProfileService = new ProfileService();
   
-      // Combine both following and followers usernames
-      const allUsernames = [...new Set([...followingUsers.map(user => user.username), ...followerUsers.map(user => user.username)])];
+  //     // Combine both following and followers usernames
+  //     const allUsernames = [...new Set([...followingUsers.map(user => user.username), ...followerUsers.map(user => user.username)])];
   
-      // Fetch profile pictures in a batch
-      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, allUsernames);
+  //     // Fetch profile pictures in a batch
+  //     const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, allUsernames);
   
-      // Map profile pictures by username
-      const profilePicMap: { [key: string]: string | null } = {};
-      for (const profile of profilePics) {
-        profilePicMap[profile.userName] = profile.profilePicture;
-      }
+  //     // Map profile pictures by username
+  //     const profilePicMap: { [key: string]: string | null } = {};
+  //     for (const profile of profilePics) {
+  //       profilePicMap[profile.userName] = profile.profilePicture;
+  //     }
   
-      // Assign profile pictures to following users
-      for (const user of followingUsers) {
-        //@ts-ignore
-        user.profilePicture = profilePicMap[user.username] || null;
-      }
+  //     // Assign profile pictures to following users
+  //     for (const user of followingUsers) {
+  //       //@ts-ignore
+  //       user.profilePicture = profilePicMap[user.username] || null;
+  //     }
   
-      // Assign profile pictures to follower users
-      for (const user of followerUsers) {
-        //@ts-ignore
-        user.profilePicture = profilePicMap[user.username] || null;
-      }
+  //     // Assign profile pictures to follower users
+  //     for (const user of followerUsers) {
+  //       //@ts-ignore
+  //       user.profilePicture = profilePicMap[user.username] || null;
+  //     }
   
-      return { following: followingUsers, followers: followerUsers };
-    } catch (error) {
-      console.error("Error fetching followers and following users with profile pictures:", error);
-      throw error;
-    }
-  }
+  //     return { following: followingUsers, followers: followerUsers };
+  //   } catch (error) {
+  //     console.error("Error fetching followers and following users with profile pictures:", error);
+  //     throw error;
+  //   }
+  // }
   
   
   // Helper method to remove duplicates based on username
@@ -324,100 +320,100 @@ class SocialService {
   }
   
   
-  public async getMutualMyNotes(usernames: string[]): Promise<MyNote[]> {
-    try {
+  // // public async getMutualMyNotes(usernames: string[]): Promise<MyNote[]> {
+  // //   try {
 
-      setInterval
-      const connection: rt.Connection = await getRethinkDB();
+  // //     setInterval
+  // //     const connection: rt.Connection = await getRethinkDB();
       
-      // Retrieve the latest note for the user
-      const cursor: rt.Cursor = await rt
-        .db('beats')
-        .table('myNotes')
-        .filter(usernames)
-        .orderBy(rt.desc('createdAt'))
-        .limit(1)
-        .run(connection);
+  // //     // Retrieve the latest note for the user
+  // //     const cursor: rt.Cursor = await rt
+  // //       .db('beats')
+  // //       .table('myNotes')
+  // //       .filter(usernames)
+  // //       .orderBy(rt.desc('createdAt'))
+  // //       .limit(1)
+  // //       .run(connection);
       
-      const notesArray: MyNote[] = await cursor.toArray();
+  // //     const notesArray: MyNote[] = await cursor.toArray();
       
-      const myNote: MyNote[] = notesArray;
+  // //     const myNote: MyNote[] = notesArray;
   
-      return myNote;
-    } catch (error: any) {
-      console.error("Error retrieving note:", error);
-      throw error;
-    }
-  }
+  // //     return myNote;
+  // //   } catch (error: any) {
+  // //     console.error("Error retrieving note:", error);
+  // //     throw error;
+  // //   }
+  // // }
   
 
-  //** Retrieves the online status of mutual followers for the specified user.
-  public async mutualStatus(token: string): Promise<PlayerStatus[]> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const username: string = await tokenService.verifyAccessToken(token);
+  // //** Retrieves the online status of mutual followers for the specified user.
+  // public async mutualStatus(token: string): Promise<PlayerStatus[]> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const username: string = await tokenService.verifyAccessToken(token);
 
-      const session: Session = this.driver.session();
-      const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-        tx.run(
-          `
-          MATCH (u1:User {username: $username})-[:FOLLOW]->(u2),
-                (u2)-[:FOLLOW]->(u1)
-          RETURN COLLECT(u2.username) AS mutualFollowers
-          `,
-          { username }
-        )
-      );
+  //     const session: Session = this.driver.session();
+  //     const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+  //       tx.run(
+  //         `
+  //         MATCH (u1:User {username: $username})-[:FOLLOW]->(u2),
+  //               (u2)-[:FOLLOW]->(u1)
+  //         RETURN COLLECT(u2.username) AS mutualFollowers
+  //         `,
+  //         { username }
+  //       )
+  //     );
 
-      const mutualFollowers: string[] = result.records[0].get('mutualFollowers');
+  //     const mutualFollowers: string[] = result.records[0].get('mutualFollowers');
 
-      // Close the Neo4j session
-      await session.close();
+  //     // Close the Neo4j session
+  //     await session.close();
 
-      // RethinkDB query using the mutual followers' usernames
-      const connection: rt.Connection = await getRethinkDB();
-      const onlineMutuals: rt.Cursor = await rt
-        .db('beats')
-        .table('status')
-        .getAll(...mutualFollowers)
-        .limit(1)
-        .orderBy(rt.desc('lastOnline'))
-        .run(connection);
+  //     // RethinkDB query using the mutual followers' usernames
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     const onlineMutuals: rt.Cursor = await rt
+  //       .db('beats')
+  //       .table('status')
+  //       .getAll(...mutualFollowers)
+  //       .limit(1)
+  //       .orderBy(rt.desc('lastOnline'))
+  //       .run(connection);
 
-      const mutualsOnline = await onlineMutuals.toArray() as PlayerStatus[];
-      return mutualsOnline;
-    } catch (error: any) {
-      throw error;
-    }
-  }
+  //     const mutualsOnline = await onlineMutuals.toArray() as PlayerStatus[];
+  //     return mutualsOnline;
+  //   } catch (error: any) {
+  //     throw error;
+  //   }
+  // }
 
 
   //** Sets the online status for a user in the system.
-  public async setStatusOnline(activity: string, userAgent: string, osName: string, ipAddress: string, token: string): Promise<void> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const username: string = await tokenService.verifyAccessToken(token);
+  // public async setStatusOnline(activity: string, userAgent: string, osName: string, ipAddress: string, token: string): Promise<void> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const username: string = await tokenService.verifyAccessToken(token);
 
-      const playerStatus: SetPlayerStatus = {
-        username,
-        status: true,
-        activity,
-        lastOnline: Date.now(),
-        userAgent,
-        osName,
-        ipAddress,
-      };
+  //     const playerStatus: SetPlayerStatus = {
+  //       username,
+  //       status: true,
+  //       activity,
+  //       lastOnline: Date.now(),
+  //       userAgent,
+  //       osName,
+  //       ipAddress,
+  //     };
 
-      const connection: rt.Connection = await getRethinkDB();
-      await rt
-        .db('beats')
-        .table('status')
-        .insert(playerStatus)
-        .run(connection);
-    } catch (error: any) {
-      throw error;
-    }
-  }
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     await rt
+  //       .db('beats')
+  //       .table('status')
+  //       .insert(playerStatus)
+  //       .run(connection);
+  //   } catch (error: any) {
+  //     throw error;
+  //   }
+  // }
 
 
   public async sendCardGift(token: string, cardGiftData: CardGiftData): Promise<SuccessMessage> {
@@ -507,223 +503,223 @@ class SocialService {
   }
 
 
-  public async postFanMoments(token: string, postFanMoment: PostFanMoment): Promise<SuccessMessage | Error> {
+  // public async postFanMoments(token: string, postFanMoment: PostFanMoment): Promise<SuccessMessage | Error> {
 
-    try {
-      const tokenService: TokenService = new TokenService();
-      const userName: string = await tokenService.verifyAccessToken(token);
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const userName: string = await tokenService.verifyAccessToken(token);
   
-      const createdAt: number = Date.now();
-      const postId: string = await nanoid();
+  //     const createdAt: number = Date.now();
+  //     const postId: string = await nanoid();
   
-      // Check if both caption and image are empty
-      if (!(postFanMoment.image || (postFanMoment.caption && postFanMoment.caption.trim() !== ""))) {
-        return new ValidationError("Post is empty", "Either caption or image is required.");
-      }
+  //     // Check if both caption and image are empty
+  //     if (!(postFanMoment.image || (postFanMoment.caption && postFanMoment.caption.trim() !== ""))) {
+  //       return new ValidationError("Post is empty", "Either caption or image is required.");
+  //     }
   
-      const post: PostFanMoment = { ...postFanMoment, userName, postId, createdAt, likes: [], comments: [], shares: [] };
+  //     const post: PostFanMoment = { ...postFanMoment, userName, postId, createdAt, likes: [], comments: [], shares: [] };
   
-      const connection: rt.Connection = await getRethinkDB();
-      await rt
-        .db('beats')
-        .table('fanZone')
-        .insert(post)
-        .run(connection);
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .insert(post)
+  //       .run(connection);
   
-      return new SuccessMessage("Fanzone post success");
-    } catch (error: any) {
-      console.error("Error posting fan moment:", error);
-      throw new Error(`Failed to post fan moment: ${error.message}`);
-    }
-  }
-
-
-  public async getHotFanMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const profileService: ProfileService = new ProfileService();
-  
-      await tokenService.verifyAccessToken(token);
-  
-      const connection: rt.Connection = await getRethinkDB();
-      const cursor = await rt
-        .db('beats')
-        .table('fanZone')
-        .orderBy(rt.desc('createdAt')) // Ensure that the data is ordered before pagination
-        .slice(offset, offset + limit) // Use slice for pagination
-        .run(connection);
-  
-      const posts: PostFanMoment[] = await cursor.toArray();
-  
-      const postsWithTrendScore = posts.map(post => ({
-        ...post,
-        trendScore: this.calculateTrendScore(post),
-        formattedTime: this.formatTimeDifference(post.createdAt || 0)
-      }));
-  
-      // Extract unique usernames from the posts
-      const userNames: (string | undefined)[] = [...new Set(postsWithTrendScore.map(post => post.userName))];
-      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
-  
-      // Map profile pictures to the corresponding posts
-      const postsWithProfilePics = postsWithTrendScore.map(post => {
-        const profilePic = profilePics.find(pic => pic.userName === post.userName);
-        return {
-          ...post,
-          profilePic: profilePic ? profilePic.profilePicture : null
-        };
-      });
-  
-      // Sort posts by trend score in descending order
-      postsWithProfilePics.sort((a, b) => b.trendScore - a.trendScore);
-  
-      return postsWithProfilePics;
-    } catch (error: any) {
-      console.error('Error retrieving hot fan moment posts:', error);
-      throw new Error('Failed to retrieve hot fan moment posts');
-    }
-  }
-  
-
-  public async getMyFanMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const profileService: ProfileService = new ProfileService();
-  
-      const userName: string = await tokenService.verifyAccessToken(token);
-  
-      const connection: rt.Connection = await getRethinkDB();
-      const cursor = await rt
-        .db('beats')
-        .table('fanZone')
-        .filter({ userName })
-        .orderBy(rt.desc('createdAt')) // Ensure that the data is ordered before pagination
-        .slice(offset, offset + limit) // Use slice for pagination
-        .run(connection);
-  
-      const posts: PostFanMoment[] = await cursor.toArray();
-  
-      const userNames: (string | undefined)[] = [...new Set(posts.map(post => post.userName))];
-      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
-  
-      const profilePicMap: { [key: string]: ProfilePicture } = {};
-      profilePics.forEach(pic => {
-        if (pic.userName) {
-          profilePicMap[pic.userName] = pic;
-        }
-      });
-  
-      const postsWithProfilePics = posts.map(post => ({
-        ...post,
-        profilePicture: post.userName ? profilePicMap[post.userName] : undefined,
-        formattedTime: this.formatTimeDifference(post.createdAt || 0)
-      }));
-  
-      return postsWithProfilePics;
-    } catch (error: any) {
-      console.error('Error retrieving my fan moment posts:', error);
-      throw new Error('Failed to retrieve my fan moment posts');
-    }
-  }
+  //     return new SuccessMessage("Fanzone post success");
+  //   } catch (error: any) {
+  //     console.error("Error posting fan moment:", error);
+  //     throw new Error(`Failed to post fan moment: ${error.message}`);
+  //   }
+  // }
 
 
-  public async getLatestFanMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const profileService: ProfileService = new ProfileService();
+  // public async getHotFanMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const profileService: ProfileService = new ProfileService();
   
-      await tokenService.verifyAccessToken(token);
+  //     await tokenService.verifyAccessToken(token);
   
-      const connection: rt.Connection = await getRethinkDB();
-      const cursor = await
-        rt.db('beats')
-        .table('fanZone')
-        .orderBy(rt.asc('createdAt')) // Ensure that the data is ordered before pagination
-        .slice(offset, offset + limit) // Use slice for pagination
-        .run(connection);
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     const cursor = await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .orderBy(rt.desc('createdAt')) // Ensure that the data is ordered before pagination
+  //       .slice(offset, offset + limit) // Use slice for pagination
+  //       .run(connection);
   
-      const posts: PostFanMoment[] = await cursor.toArray();
+  //     const posts: PostFanMoment[] = await cursor.toArray();
   
-      const userNames: (string | undefined)[] = [...new Set(posts.map(post => post.userName))];
-      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
+  //     const postsWithTrendScore = posts.map(post => ({
+  //       ...post,
+  //       trendScore: this.calculateTrendScore(post),
+  //       formattedTime: this.formatTimeDifference(post.createdAt || 0)
+  //     }));
   
-      const profilePicMap: { [key: string]: ProfilePicture } = {};
-      profilePics.forEach(pic => {
-        if (pic.userName) {
-          profilePicMap[pic.userName] = pic;
-        }
-      });
+  //     // Extract unique usernames from the posts
+  //     const userNames: (string | undefined)[] = [...new Set(postsWithTrendScore.map(post => post.userName))];
+  //     const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
   
-      const postsWithProfilePics = posts.map(post => ({
-        ...post,
-        profilePicture: post.userName ? profilePicMap[post.userName] : undefined,
-        formattedTime: this.formatTimeDifference(post.createdAt || 0)
-      }));
+  //     // Map profile pictures to the corresponding posts
+  //     const postsWithProfilePics = postsWithTrendScore.map(post => {
+  //       const profilePic = profilePics.find(pic => pic.userName === post.userName);
+  //       return {
+  //         ...post,
+  //         profilePic: profilePic ? profilePic.profilePicture : null
+  //       };
+  //     });
   
-      return postsWithProfilePics;
-    } catch (error: any) {
-      console.error('Error retrieving my fan moment posts:', error);
-      throw new Error('Failed to retrieve my fan moment posts');
-    }
-  }
+  //     // Sort posts by trend score in descending order
+  //     postsWithProfilePics.sort((a, b) => b.trendScore - a.trendScore);
+  
+  //     return postsWithProfilePics;
+  //   } catch (error: any) {
+  //     console.error('Error retrieving hot fan moment posts:', error);
+  //     throw new Error('Failed to retrieve hot fan moment posts');
+  //   }
+  // }
   
 
-  public async getFollowingMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const profileService: ProfileService = new ProfileService();
-      const userName: string = await tokenService.verifyAccessToken(token);
+  // public async getMyFanMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const profileService: ProfileService = new ProfileService();
   
-      const session: Session = this.driver.session();
-      const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-        tx.run(
-          `
-          MATCH (u1:User {username: $userName})-[:FOLLOW]->(u2)
-          RETURN COLLECT(u2.username) AS followingUsernames
-          `,
-          { userName }
-        )
-      );
+  //     const userName: string = await tokenService.verifyAccessToken(token);
   
-      const followingUsernames = result.records[0].get('followingUsernames') as string[];
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     const cursor = await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .filter({ userName })
+  //       .orderBy(rt.desc('createdAt')) // Ensure that the data is ordered before pagination
+  //       .slice(offset, offset + limit) // Use slice for pagination
+  //       .run(connection);
   
-      if (followingUsernames.length === 0) {
-        return [];
-      }
+  //     const posts: PostFanMoment[] = await cursor.toArray();
   
-      const connection: rt.Connection = await getRethinkDB();
-      const cursor = await rt
-        .db('beats')
-        .table('fanZone')
-        .filter(followingUsernames)
-        .orderBy(rt.desc('uploadedAt')) // Ensure that the data is ordered before pagination
-        .slice(offset, offset + limit) // Use slice for pagination
-        .run(connection);
+  //     const userNames: (string | undefined)[] = [...new Set(posts.map(post => post.userName))];
+  //     const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
   
-      const posts: PostFanMoment[] = await cursor.toArray();
+  //     const profilePicMap: { [key: string]: ProfilePicture } = {};
+  //     profilePics.forEach(pic => {
+  //       if (pic.userName) {
+  //         profilePicMap[pic.userName] = pic;
+  //       }
+  //     });
   
-      const userNames: (string | undefined)[] = [...new Set(posts.map(post => post.userName))];
-      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
+  //     const postsWithProfilePics = posts.map(post => ({
+  //       ...post,
+  //       profilePicture: post.userName ? profilePicMap[post.userName] : undefined,
+  //       formattedTime: this.formatTimeDifference(post.createdAt || 0)
+  //     }));
   
-      const profilePicMap: { [key: string]: ProfilePicture } = {};
-      profilePics.forEach(pic => {
-        if (pic.userName) {
-          profilePicMap[pic.userName] = pic;
-        }
-      });
+  //     return postsWithProfilePics;
+  //   } catch (error: any) {
+  //     console.error('Error retrieving my fan moment posts:', error);
+  //     throw new Error('Failed to retrieve my fan moment posts');
+  //   }
+  // }
+
+
+  // public async getLatestFanMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const profileService: ProfileService = new ProfileService();
   
-      const postsWithProfilePics = posts.map(post => ({
-        ...post,
-        profilePicture: post.userName ? profilePicMap[post.userName] : undefined,
-        formattedTime: this.formatTimeDifference(post.createdAt || 0)
-      }));
+  //     await tokenService.verifyAccessToken(token);
   
-      return postsWithProfilePics;
-    } catch (error: any) {
-      console.error('Error retrieving following moment posts:', error);
-      throw new Error('Failed to retrieve following moment posts');
-    }
-  }
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     const cursor = await
+  //       rt.db('beats')
+  //       .table('fanZone')
+  //       .orderBy(rt.asc('createdAt')) // Ensure that the data is ordered before pagination
+  //       .slice(offset, offset + limit) // Use slice for pagination
+  //       .run(connection);
+  
+  //     const posts: PostFanMoment[] = await cursor.toArray();
+  
+  //     const userNames: (string | undefined)[] = [...new Set(posts.map(post => post.userName))];
+  //     const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
+  
+  //     const profilePicMap: { [key: string]: ProfilePicture } = {};
+  //     profilePics.forEach(pic => {
+  //       if (pic.userName) {
+  //         profilePicMap[pic.userName] = pic;
+  //       }
+  //     });
+  
+  //     const postsWithProfilePics = posts.map(post => ({
+  //       ...post,
+  //       profilePicture: post.userName ? profilePicMap[post.userName] : undefined,
+  //       formattedTime: this.formatTimeDifference(post.createdAt || 0)
+  //     }));
+  
+  //     return postsWithProfilePics;
+  //   } catch (error: any) {
+  //     console.error('Error retrieving my fan moment posts:', error);
+  //     throw new Error('Failed to retrieve my fan moment posts');
+  //   }
+  // }
+  
+
+  // public async getFollowingMomentPosts(token: string, limit: number, offset: number): Promise<PostFanMoment[]> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const profileService: ProfileService = new ProfileService();
+  //     const userName: string = await tokenService.verifyAccessToken(token);
+  
+  //     const session: Session = this.driver.session();
+  //     const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+  //       tx.run(
+  //         `
+  //         MATCH (u1:User {username: $userName})-[:FOLLOW]->(u2)
+  //         RETURN COLLECT(u2.username) AS followingUsernames
+  //         `,
+  //         { userName }
+  //       )
+  //     );
+  
+  //     const followingUsernames = result.records[0].get('followingUsernames') as string[];
+  
+  //     if (followingUsernames.length === 0) {
+  //       return [];
+  //     }
+  
+  //     const connection: rt.Connection = await getRethinkDB();
+  //     const cursor = await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .filter(followingUsernames)
+  //       .orderBy(rt.desc('uploadedAt')) // Ensure that the data is ordered before pagination
+  //       .slice(offset, offset + limit) // Use slice for pagination
+  //       .run(connection);
+  
+  //     const posts: PostFanMoment[] = await cursor.toArray();
+  
+  //     const userNames: (string | undefined)[] = [...new Set(posts.map(post => post.userName))];
+  //     const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, userNames);
+  
+  //     const profilePicMap: { [key: string]: ProfilePicture } = {};
+  //     profilePics.forEach(pic => {
+  //       if (pic.userName) {
+  //         profilePicMap[pic.userName] = pic;
+  //       }
+  //     });
+  
+  //     const postsWithProfilePics = posts.map(post => ({
+  //       ...post,
+  //       profilePicture: post.userName ? profilePicMap[post.userName] : undefined,
+  //       formattedTime: this.formatTimeDifference(post.createdAt || 0)
+  //     }));
+  
+  //     return postsWithProfilePics;
+  //   } catch (error: any) {
+  //     console.error('Error retrieving following moment posts:', error);
+  //     throw new Error('Failed to retrieve following moment posts');
+  //   }
+  // }
   
 
 	private calculateTrendScore(post: PostFanMoment): number {
@@ -757,133 +753,133 @@ class SocialService {
   }
 
 
-  public async likeFanMoment(token: string, fanMomentId: FanMomentId) {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const userName: string = await tokenService.verifyAccessToken(token);
+  // public async likeFanMoment(token: string, fanMomentId: FanMomentId) {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const userName: string = await tokenService.verifyAccessToken(token);
 
-      const connection: rt.Connection = await getRethinkDB();
+  //     const connection: rt.Connection = await getRethinkDB();
 
-      const query: PostFanMoment = await rt
-        .db('beats')
-        .table('fanZone')
-        .get(fanMomentId.id)
-        .run(connection) as PostFanMoment;
+  //     const query: PostFanMoment = await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .get(fanMomentId.id)
+  //       .run(connection) as PostFanMoment;
 
-      if (!query) {
-        throw new ValidationError(`Fan moment with ID '${fanMomentId.id}' not found.`, "");
-      }
+  //     if (!query) {
+  //       throw new ValidationError(`Fan moment with ID '${fanMomentId.id}' not found.`, "");
+  //     }
 
-      const likeIndex: number = query.likes ? query.likes.findIndex(like => like === userName) : -1;
+  //     const likeIndex: number = query.likes ? query.likes.findIndex(like => like === userName) : -1;
 
-      if (likeIndex === -1) {
-        // User has not liked this post yet, add the like
-        await rt
-          .db('beats')
-          .table('fanZone')
-          .get(fanMomentId.id)
-          .update({
-            likes: rt.row('likes').default([]).append(userName)
-          })
-          .run(connection);
+  //     if (likeIndex === -1) {
+  //       // User has not liked this post yet, add the like
+  //       await rt
+  //         .db('beats')
+  //         .table('fanZone')
+  //         .get(fanMomentId.id)
+  //         .update({
+  //           likes: rt.row('likes').default([]).append(userName)
+  //         })
+  //         .run(connection);
 
-        return new SuccessMessage("Fan moment liked successfully")
-      } else {
-        return new Error('User has already liked this fan moment')
-      }
-    } catch (error: any) {
-      console.error('Error liking fan moment:', error);
-      throw new Error(`Failed to like fan moment: ${error.message}`);
-    }
-  }
+  //       return new SuccessMessage("Fan moment liked successfully")
+  //     } else {
+  //       return new Error('User has already liked this fan moment')
+  //     }
+  //   } catch (error: any) {
+  //     console.error('Error liking fan moment:', error);
+  //     throw new Error(`Failed to like fan moment: ${error.message}`);
+  //   }
+  // }
 
 
-  public async unlikeFanMoment(token: string, fanMomentId: FanMomentId) {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const userName: string = await tokenService.verifyAccessToken(token);
+  // public async unlikeFanMoment(token: string, fanMomentId: FanMomentId) {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const userName: string = await tokenService.verifyAccessToken(token);
 
-      const connection: rt.Connection = await getRethinkDB();
+  //     const connection: rt.Connection = await getRethinkDB();
 
-      const query: PostFanMoment = await rt
-        .db('beats')
-        .table('fanZone')
-        .get(fanMomentId.id)
-        .run(connection) as PostFanMoment;
+  //     const query: PostFanMoment = await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .get(fanMomentId.id)
+  //       .run(connection) as PostFanMoment;
 
-      if (!query) {
-        throw new ValidationError(`Fan moment with ID '${fanMomentId.id}' not found.`, "");
-      }
+  //     if (!query) {
+  //       throw new ValidationError(`Fan moment with ID '${fanMomentId.id}' not found.`, "");
+  //     }
 
-      const likes = query.likes || [];
-      const likeIndex = likes.findIndex(like => like === userName);
+  //     const likes = query.likes || [];
+  //     const likeIndex = likes.findIndex(like => like === userName);
 
-      if (likeIndex !== -1) {
-        // User has liked this post, remove the like
-        likes.splice(likeIndex, 1);
+  //     if (likeIndex !== -1) {
+  //       // User has liked this post, remove the like
+  //       likes.splice(likeIndex, 1);
 
-        await rt
-          .db('beats')
-          .table('fanZone')
-          .get(fanMomentId.id)
-          .update({ likes: likes })
-          .run(connection);
+  //       await rt
+  //         .db('beats')
+  //         .table('fanZone')
+  //         .get(fanMomentId.id)
+  //         .update({ likes: likes })
+  //         .run(connection);
 
-        return new SuccessMessage('Fan moment unliked successfully')
-      } else {
-        return new Error('User has not liked this fan moment');
-      }
-    } catch (error: any) {
-      console.error('Error unliking fan moment:', error);
-      throw new Error(`Failed to unlike fan moment: ${error.message}`);
-    }
-  }
+  //       return new SuccessMessage('Fan moment unliked successfully')
+  //     } else {
+  //       return new Error('User has not liked this fan moment');
+  //     }
+  //   } catch (error: any) {
+  //     console.error('Error unliking fan moment:', error);
+  //     throw new Error(`Failed to unlike fan moment: ${error.message}`);
+  //   }
+  // }
 
   
-  public async commentFanMoment(token: string, fanMomentComment: FanMomentComment): Promise<SuccessMessage> {
-    try {
-      const tokenService: TokenService = new TokenService();
-      const userName: string = await tokenService.verifyAccessToken(token);
+  // public async commentFanMoment(token: string, fanMomentComment: FanMomentComment): Promise<SuccessMessage> {
+  //   try {
+  //     const tokenService: TokenService = new TokenService();
+  //     const userName: string = await tokenService.verifyAccessToken(token);
   
-      const connection: rt.Connection = await getRethinkDB();
+  //     const connection: rt.Connection = await getRethinkDB();
   
-      const { id, comment } = fanMomentComment;
-      const query: PostFanMoment = await rt
-        .db('beats')
-        .table('fanZone')
-        .get(id)
-        .run(connection) as PostFanMoment;
+  //     const { id, comment } = fanMomentComment;
+  //     const query: PostFanMoment = await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .get(id)
+  //       .run(connection) as PostFanMoment;
   
-      if (!query) {
-        throw new ValidationError(`Fan moment with ID '${fanMomentComment.id}' not found.`, "");
-      }
+  //     if (!query) {
+  //       throw new ValidationError(`Fan moment with ID '${fanMomentComment.id}' not found.`, "");
+  //     }
   
-      const timestamp: number = Date.now();
-      const commentId: string = await nanoid();
-      const newComment: PostComment = { userName, timestamp, commentId, comment };
+  //     const timestamp: number = Date.now();
+  //     const commentId: string = await nanoid();
+  //     const newComment: PostComment = { userName, timestamp, commentId, comment };
   
-      // If the comments array does not exist, initialize it
-      if (!query.comments) {
-        query.comments = [];
-      }
+  //     // If the comments array does not exist, initialize it
+  //     if (!query.comments) {
+  //       query.comments = [];
+  //     }
   
-      // Add the new comment to the comments array
-      query.comments.push(newComment);
+  //     // Add the new comment to the comments array
+  //     query.comments.push(newComment);
   
-      // Update the fan moment with the new comments array
-      await rt
-        .db('beats')
-        .table('fanZone')
-        .get(id)
-        .update({ comments: query.comments })
-        .run(connection);
+  //     // Update the fan moment with the new comments array
+  //     await rt
+  //       .db('beats')
+  //       .table('fanZone')
+  //       .get(id)
+  //       .update({ comments: query.comments })
+  //       .run(connection);
       
-      return new SuccessMessage("Comment has been added")
-    } catch (error: any) {
-      console.error("Error commenting on fan moment:", error);
-      throw error;
-    }
-  }
+  //     return new SuccessMessage("Comment has been added")
+  //   } catch (error: any) {
+  //     console.error("Error commenting on fan moment:", error);
+  //     throw error;
+  //   }
+  // }
   
 
 }
