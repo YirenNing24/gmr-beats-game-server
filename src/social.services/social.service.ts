@@ -138,7 +138,7 @@ class SocialService {
           RETURN v AS user, 
                v.smartWalletAddress AS smartWalletAddress,
                COUNT(u) > 0 AS followsUser, 
-               COUNT(v) > 0 AS followedByUser,
+               COUNT(v) > 0 AS followedByUser
           `,
           { userName, viewUsername }
         );
@@ -171,6 +171,7 @@ class SocialService {
       await session.close();
     }
   }
+  
   
   
   
