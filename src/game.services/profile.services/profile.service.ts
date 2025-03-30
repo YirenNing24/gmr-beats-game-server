@@ -246,8 +246,6 @@ class ProfileService {
   
 
   public async getProfilePic(token: string, username?: string): Promise<ProfilePicture[]> {
-    console.log(token)
-    console.log(username)
     try {
       let userName: string = username || "";
   
