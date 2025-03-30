@@ -155,7 +155,7 @@ class SocialService {
         const { username, playerStats } = user.properties as ViewedUserData;
   
         // Fetch profile picture
-        const profilePics: ProfilePicture[] = await profileService.getProfilePic("", viewUsername, "social");
+        const profilePics: ProfilePicture[] = await profileService.getProfilePic(token, viewUsername);
   
         return { username, playerStats, followsUser, followedByUser, profilePics } as ViewProfileData;
       });

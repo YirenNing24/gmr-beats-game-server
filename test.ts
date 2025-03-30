@@ -15,7 +15,7 @@ function runRaffle(entries) {
 
 	const winners = new Set();
 
-	while (winners.size < 1 && pool.length > 0) {
+	while (winners.size < 3 && pool.length > 0) {
 		const randomIndex = Math.floor(Math.random() * pool.length);
 		const winner = pool[randomIndex];
 		winners.add(winner);
@@ -28,15 +28,29 @@ function runRaffle(entries) {
 }
 
 const entries = {
-	Able_Haeunie: 13,
-	Goddess: 15,
-	khaelrocks: 13,
-	Nacht18: 15,
-	Gelatine: 0,
-	c2nagreen: 14,
-	bbangyunha: 2,
+	khaelrocks: 15,
+	laurence27: 16,
+	mirajane: 29,
 	chenry124: 13,
-	Arasqvs: 18,
+	Chuna: 14,
+	Goddess: 13,
+	CieloQ281993: 5,
+	Raquel_05: 9,
+	chabechabs: 11,
+	Ampot: 10,
+	jjanee: 15,
+	dnicanics05: 17,
+	wena: 26,
+	belen: 21,
+	jenelyn: 15,
+	map02: 1,
+	edz5: 3,
+	kateyyy: 0,
+	ken_ken: 1,
+	kaye: 2,
+	karl: 1,
+	Gabo: 2,
+	rodalyn23: 3,
   }
  console.log("Winners:", runRaffle(entries));
 
@@ -62,20 +76,17 @@ interface ClassicScoreStats {
 
 async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 	try {
+		
 		const collection = db.collection<ClassicScoreStats>("classicScores");
 
 		// List of usernames to check
 		const validUsernames = [
-			"Able_Haeunie",
-			"Goddess",
-			"khaelrocks",
-			"gelatine",
-			"Nacht18",
-			"c2nagreen",
-			"bbangyunha",
-			"chenry124",
-			"Arasqvs"
-		]
+			"khaelrocks", "laurence27", "mirajane", "chenry124", "Chuna", "Goddess",
+			"CieloQ281993", "Raquel_05", "chabechabs", "Ampot", "jjanee", "dnicanics05",
+			"wena", "belen", "jenelyn", "map02", "edz5", "kateyyy", "ken_ken", "kaye",
+			"karl", "Seng", "Gabo", "rodalyn23"
+		];
+		
 
 		// Aggregate to count scores per username per day
 		const scoresPerUser = await collection
@@ -140,9 +151,10 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 	}
 }
 
-// Usage example
-// (async () => {
-// 	const db: Db = mongoDBClient.db("beats");
-// 	const raffleEntries = await getRaffleEntries(db);
-// 	console.log(raffleEntries);
-// })();
+
+
+// // Usage example
+//  (async () => {
+//  	const db: Db = mongoDBClient.db("beats");
+//  	const raffleEntries = await getRaffleEntries(db);
+//  	console.log(raffleEntries); })();
