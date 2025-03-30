@@ -277,7 +277,8 @@ class ProfileService {
     
   public async getDisplayPic(token: string, userNames: string[], origin: string): Promise<ProfilePicture[]> {
     try {
-      if (origin !== "leaderboard") {
+      // Skip token verification if origin is "leaderboard" or "social"
+      if (origin !== "leaderboard" && origin !== "social") {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
       }
@@ -306,6 +307,7 @@ class ProfileService {
       throw new ValidationError(`Error retrieving the profile pictures: ${error.message}.`, "");
     }
   }
+  
   
   
   

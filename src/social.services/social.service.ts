@@ -262,65 +262,65 @@ class SocialService {
   
 
 
-  // public async getFollowersFollowing(token: string, username: string = "") {
-  //   try {
-  //     const tokenService: TokenService = new TokenService();
+  public async getFollowersFollowing(token: string, username: string = "") {
+    try {
+      const tokenService: TokenService = new TokenService();
   
-  //     // Use the passed username if it's not an empty string or null, otherwise verify the token
-  //     const resolvedUsername: string = username && username.trim() !== "" ? username : await tokenService.verifyAccessToken(token);
+      // Use the passed username if it's not an empty string or null, otherwise verify the token
+      const resolvedUsername: string = username && username.trim() !== "" ? username : await tokenService.verifyAccessToken(token);
   
-  //     const session: Session = this.driver.session();
-  //     const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-  //       tx.run(
-  //         `
-  //           MATCH (u:User {username: $username})
-  //           OPTIONAL MATCH (u)-[:FOLLOW]->(following:User)
-  //           OPTIONAL MATCH (follower:User)-[:FOLLOW]->(u)
-  //           RETURN 
-  //             COLLECT(DISTINCT { username: following.username, level: following.level, playerStats: following.playerStats }) as followingUsers,
-  //             COLLECT(DISTINCT { username: follower.username, level: follower.level, playerStats: follower.playerStats }) as followerUsers
-  //         `,
-  //         { username: resolvedUsername }
-  //       )
-  //     );
+      const session: Session = this.driver.session();
+      const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+        tx.run(
+          `
+            MATCH (u:User {username: $username})
+            OPTIONAL MATCH (u)-[:FOLLOW]->(following:User)
+            OPTIONAL MATCH (follower:User)-[:FOLLOW]->(u)
+            RETURN 
+              COLLECT(DISTINCT { username: following.username, level: following.level, playerStats: following.playerStats }) as followingUsers,
+              COLLECT(DISTINCT { username: follower.username, level: follower.level, playerStats: follower.playerStats }) as followerUsers
+          `,
+          { username: resolvedUsername }
+        )
+      );
   
-  //     await session.close();
+      await session.close();
   
-  //     const followingUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followingUsers"));
-  //     const followerUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followerUsers"));
+      const followingUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followingUsers"));
+      const followerUsers: { username: string, level: number, playerStats: any }[] = this.removeDuplicates(result.records[0].get("followerUsers"));
   
-  //     const profileService: ProfileService = new ProfileService();
+      const profileService: ProfileService = new ProfileService();
   
-  //     // Combine both following and followers usernames
-  //     const allUsernames = [...new Set([...followingUsers.map(user => user.username), ...followerUsers.map(user => user.username)])];
+      // Combine both following and followers usernames
+      const allUsernames = [...new Set([...followingUsers.map(user => user.username), ...followerUsers.map(user => user.username)])];
   
-  //     // Fetch profile pictures in a batch
-  //     const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, allUsernames);
+      // Fetch profile pictures in a batch
+      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, allUsernames, "social");
   
-  //     // Map profile pictures by username
-  //     const profilePicMap: { [key: string]: string | null } = {};
-  //     for (const profile of profilePics) {
-  //       profilePicMap[profile.userName] = profile.profilePicture;
-  //     }
+      // Map profile pictures by username
+      const profilePicMap: { [key: string]: string | null } = {};
+      for (const profile of profilePics) {
+        profilePicMap[profile.userName] = profile.profilePicture;
+      }
   
-  //     // Assign profile pictures to following users
-  //     for (const user of followingUsers) {
-  //       //@ts-ignore
-  //       user.profilePicture = profilePicMap[user.username] || null;
-  //     }
+      // Assign profile pictures to following users
+      for (const user of followingUsers) {
+        //@ts-ignore
+        user.profilePicture = profilePicMap[user.username] || null;
+      }
   
-  //     // Assign profile pictures to follower users
-  //     for (const user of followerUsers) {
-  //       //@ts-ignore
-  //       user.profilePicture = profilePicMap[user.username] || null;
-  //     }
+      // Assign profile pictures to follower users
+      for (const user of followerUsers) {
+        //@ts-ignore
+        user.profilePicture = profilePicMap[user.username] || null;
+      }
   
-  //     return { following: followingUsers, followers: followerUsers };
-  //   } catch (error) {
-  //     console.error("Error fetching followers and following users with profile pictures:", error);
-  //     throw error;
-  //   }
-  // }
+      return { following: followingUsers, followers: followerUsers };
+    } catch (error) {
+      console.error("Error fetching followers and following users with profile pictures:", error);
+      throw error;
+    }
+  }
   
   
   // Helper method to remove duplicates based on username
