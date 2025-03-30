@@ -133,12 +133,12 @@ class SocialService {
         const profileDataQuery = await tx.run(
           `
           MATCH (v:User {username: $viewUsername})
-          OPTIONAL MATCH (u:User {username: $userName})-[:FOLLOW]->(v)
-          OPTIONAL MATCH (v)-[:FOLLOW]->(u)
+          OPTIONAL MATCH (u:User {username: $userName})-[r1:FOLLOW]->(v)
+          OPTIONAL MATCH (v)-[r2:FOLLOW]->(u)
           RETURN v AS user, 
                v.smartWalletAddress AS smartWalletAddress,
-               COUNT(u) > 0 AS followsUser, 
-               COUNT(v) > 0 AS followedByUser
+               CASE WHEN r1 IS NOT NULL THEN true ELSE false END AS followsUser, 
+               CASE WHEN r2 IS NOT NULL THEN true ELSE false END AS followedByUser
           `,
           { userName, viewUsername }
         );
@@ -171,6 +171,7 @@ class SocialService {
       await session.close();
     }
   }
+  
   
   
   
