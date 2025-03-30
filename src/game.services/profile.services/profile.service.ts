@@ -245,30 +245,41 @@ class ProfileService {
   }
   
 
-  public async getProfilePic(token: string, username: string origin: string = ""): Promise<ProfilePicture[]> {
+  public async getProfilePic(token: string, username: string = "", origin: string = ""): Promise<ProfilePicture[]> {
+    let client;
     try {
-      let userName: string | Error = "";
-  
-      if (origin !== "social") {
-        const tokenService: TokenService = new TokenService();
-        userName = await tokenService.verifyAccessToken(token);
+      if (!username) {
+        // If username is not provided, fetch from token unless it's "social"
+        if (origin !== "social") {
+          const tokenService: TokenService = new TokenService();
+          username = await tokenService.verifyAccessToken(token);
+        } else {
+          throw new Error("Username is required when origin is 'social'.");
+        }
       }
   
-      const client = await mongoDBClient.connect();
+      client = await mongoDBClient.connect();
       const db = client.db("beats");
   
+      // Fetch latest profile pictures
       const profilePictures = await db
         .collection("profilePic")
-        .find({ userName })
+        .find({ userName: username })
         .sort({ uploadedAt: -1 }) // Ensures newest profile pictures appear first
         .toArray();
   
       return profilePictures as unknown as ProfilePicture[];
     } catch (error: any) {
-      console.error(`Error retrieving profile pictures: ${error.message}`);
+      console.error(`Error retrieving profile pictures for user "${username}": ${error.message}`);
       throw error;
+    } finally {
+      // Ensure the MongoDB connection is closed properly
+      if (client) {
+        await client.close();
+      }
     }
   }
+  
   
   
     
