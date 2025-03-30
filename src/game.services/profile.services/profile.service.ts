@@ -279,7 +279,7 @@ class ProfileService {
     
   public async getDisplayPic(token: string, userNames: string[], origin: string): Promise<ProfilePicture[]> {
     try {
-      if (origin !== "leaderboard" || "social") {
+      if (origin !== "leaderboard") {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
       }
