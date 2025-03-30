@@ -248,7 +248,6 @@ class ProfileService {
   public async getProfilePic(token: string, username: string = "", origin: string = ""): Promise<ProfilePicture[]> {
     let client;
     try {
-      if (!username) {
         // If username is not provided, fetch from token unless it's "social"
         if (origin !== "social") {
           const tokenService: TokenService = new TokenService();
@@ -256,7 +255,7 @@ class ProfileService {
         } else {
           throw new Error("Username is required when origin is 'social'.");
         }
-      }
+      
   
       client = await mongoDBClient.connect();
       const db = client.db("beats");
