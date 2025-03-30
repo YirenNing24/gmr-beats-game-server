@@ -58,9 +58,9 @@ class SocialService {
       if (result.records.length === 0) {
         throw new Error(`User to follow not found`);
       } else {
-        const id: string = await nanoid();
+        const id: string = nanoid();
 
-        const notificationService: NotificationService = new NotificationService();
+        // const notificationService: NotificationService = new NotificationService();
 
         // Properly creating a new Date object for notification
         const notification: NotificationData = {
@@ -72,7 +72,7 @@ class SocialService {
           date: new Date(),
         };
 
-        notificationService.createNotification(notification);
+        // notificationService.createNotification(notification);
         return { status: "Followed" } as FollowResponse;
       }
     } catch (error: any) {
