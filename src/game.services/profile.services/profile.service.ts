@@ -245,17 +245,17 @@ class ProfileService {
   }
   
 
-  public async getProfilePic(token: string, username: string = "", origin: string = ""): Promise<ProfilePicture[]> {
+  public async getProfilePic(token: string, username?: string, origin?: string): Promise<ProfilePicture[]> {
     let client;
     try {
-        // If username is not provided, fetch from token unless it's "social"
-        if (origin !== "social") {
-          const tokenService: TokenService = new TokenService();
-          username = await tokenService.verifyAccessToken(token);
-        } else {
-          throw new Error("Username is required when origin is 'social'.");
-        }
-      
+      // If origin is NOT "social", verify token and extract username if not provided
+      if (origin !== "social") {
+        const tokenService: TokenService = new TokenService();
+        username = await tokenService.verifyAccessToken(token);
+      } else if (!username) {
+        // If origin is "social" but no username is provided, throw an error
+        throw new Error("Username is required when origin is 'social'.");
+      }
   
       client = await mongoDBClient.connect();
       const db = client.db("beats");
@@ -278,6 +278,7 @@ class ProfileService {
       }
     }
   }
+  
   
   
   
