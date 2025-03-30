@@ -245,13 +245,18 @@ class ProfileService {
   }
   
 
-  public async getProfilePic(token: string): Promise<ProfilePicture[]> {
+  public async getProfilePic(token: string, origin: string = ""): Promise<ProfilePicture[]> {
     try {
-      const tokenService: TokenService = new TokenService();
-      const userName: string | Error = await tokenService.verifyAccessToken(token);
+      let userName: string | Error = "";
+  
+      if (origin !== "social") {
+        const tokenService: TokenService = new TokenService();
+        userName = await tokenService.verifyAccessToken(token);
+      }
+  
       const client = await mongoDBClient.connect();
-      
       const db = client.db("beats");
+  
       const profilePictures = await db
         .collection("profilePic")
         .find({ userName })
@@ -265,11 +270,12 @@ class ProfileService {
     }
   }
   
+  
     
     
   public async getDisplayPic(token: string, userNames: string[], origin: string): Promise<ProfilePicture[]> {
     try {
-      if (origin !== "leaderboard") {
+      if (origin !== "leaderboard" || "social") {
         const tokenService: TokenService = new TokenService();
         await tokenService.verifyAccessToken(token);
       }

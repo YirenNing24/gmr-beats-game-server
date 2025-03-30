@@ -36,12 +36,10 @@ const social = (app: Elysia) => {
         }
         const jwtToken: string = authorizationHeader.substring(7);
 
-        const viewUsername: string = params.username;
-
         const driver: Driver = getDriver();
         const followService: SocialService = new SocialService(driver);
 
-        const output: ViewProfileData = await followService.viewProfile(viewUsername, jwtToken);
+        const output: ViewProfileData = await followService.viewProfile(params.username, jwtToken);
 
         return output as ViewProfileData
       } catch (error: any) {

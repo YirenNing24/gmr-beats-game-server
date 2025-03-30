@@ -124,61 +124,51 @@ class SocialService {
   public async viewProfile(viewUsername: string, token: string): Promise<ViewProfileData> {
     const tokenService: TokenService = new TokenService();
     const userName: string = await tokenService.verifyAccessToken(token);
-  
+    const profileService: ProfileService = new ProfileService();
     const session: Session = this.driver.session();
+  
     try {
       const result = await session.executeRead(async (tx: ManagedTransaction) => {
-        const [userQuery, followQuery, followedByQuery, soul] = await Promise.all([
-          tx.run('MATCH (u:User {username: $viewUsername}) RETURN u', { viewUsername }),
-          tx.run(`
-            MATCH (u:User {username: $userName})-[:FOLLOW]->(v:User {username: $viewUsername})
-            OPTIONAL MATCH (u)-[:SOUL]->(s:Soul)
-            RETURN COUNT(v) > 0 AS followsUser, s as Soul`,
-            { userName, viewUsername }
-          ),
-          tx.run(`
-            MATCH (v:User {username: $viewUsername})-[:FOLLOW]->(u:User {username: $userName})
-            RETURN COUNT(u) > 0 AS followedByUser`,
-            { userName, viewUsername }
-          ),
-          tx.run(`
-          MATCH (u:User {username: $viewUsername})-[:SOUL]->(s:Soul)
-          RETURN s as Soul`,
-          { viewUsername }
-        )
-        ]);
+        // Fetch user, follow status, and soul data in one query
+        const profileDataQuery = await tx.run(`
+          MATCH (v:User {username: $viewUsername})
+          OPTIONAL MATCH (u:User {username: $userName})-[:FOLLOW]->(v)
+          OPTIONAL MATCH (v)-[:FOLLOW]->(u)
+          OPTIONAL MATCH (v)-[:SOUL]->(s:Soul)
+          RETURN v AS user, 
+               COUNT(u) > 0 AS followsUser, 
+               COUNT(v) > 0 AS followedByUser,
+               s AS Soul
+        `, { userName, viewUsername });
   
-        if (userQuery.records.length === 0) {
+        // If user not found, throw an error
+        if (profileDataQuery.records.length === 0) {
           throw new ValidationError(`User with username '${viewUsername}' not found.`, "");
-        };
+        }
   
-        const user = userQuery.records[0].get('u');
-        let userSoul = {}
-        if (soul.records.length === 0) {
-          userSoul = {}
-        }
-        else{
-          userSoul = soul.records[0].get('Soul').properties;
-        }
-
+        // Extract query result
+        const record = profileDataQuery.records[0];
+        const user = record.get('user');
+        const followsUser: boolean = record.get('followsUser');
+        const followedByUser: boolean = record.get('followedByUser');
+  
         const { username, playerStats } = user.properties as ViewedUserData;
-
-        const followsUser: boolean = followQuery.records.length > 0 ? followQuery.records[0].get('followsUser') : false;
-        const followedByUser: boolean = followedByQuery.records.length > 0 ? followedByQuery.records[0].get('followedByUser') : false;
   
-        return { username, playerStats, userSoul, followsUser, followedByUser } as ViewProfileData;
+        // Fetch profile picture
+        const profilePics: ProfilePicture[] = await profileService.getProfilePic("", "social");
+  
+        return { username, playerStats, followsUser, followedByUser, profilePics } as ViewProfileData;
       });
   
-      return result as ViewProfileData;
+      return result;
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
       throw error;
     } finally {
-      if (session) {
-        await session.close();
-      }
+      await session.close();
     }
   }
+  
   
 
   //** Retrieves a list of users who are mutual followers with the specified user.
@@ -208,7 +198,7 @@ class SocialService {
       const usernames: string[] = users.map(user => user.username);
   
       const profileService: ProfileService = new ProfileService();
-      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, usernames);
+      const profilePics: ProfilePicture[] = await profileService.getDisplayPic("", usernames);
       const myNotes: MyNote[] = await this.getMutualMyNotes(usernames);
   
       const usersWithProfilePics = users.map(user => {

@@ -1,3 +1,5 @@
+import { ProfilePicture } from "../game.services/profile.services/profile.interface";
+
 export interface FollowResponse {
     status: string;
   }
@@ -12,6 +14,7 @@ export interface ViewProfileData {
   playerStats: string
   followsUser: boolean
   followedByUser: boolean
+  profilePics: ProfilePicture[]
   }
 
 export interface MutualData {
