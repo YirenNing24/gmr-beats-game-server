@@ -14,6 +14,7 @@ export interface ViewProfileData {
   playerStats: string
   followsUser: boolean
   followedByUser: boolean
+  smartWalletAddress: string
   profilePics: ProfilePicture[]
   }
 

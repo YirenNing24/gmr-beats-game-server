@@ -129,17 +129,21 @@ class SocialService {
   
     try {
       const result = await session.executeRead(async (tx: ManagedTransaction) => {
-        // Fetch user, follow status, and soul data in one query
-        const profileDataQuery = await tx.run(`
+        // Fetch user, follow status, soul data, and smartWalletAddress in one query
+        const profileDataQuery = await tx.run(
+          `
           MATCH (v:User {username: $viewUsername})
           OPTIONAL MATCH (u:User {username: $userName})-[:FOLLOW]->(v)
           OPTIONAL MATCH (v)-[:FOLLOW]->(u)
           OPTIONAL MATCH (v)-[:SOUL]->(s:Soul)
           RETURN v AS user, 
+               v.smartWalletAddress AS smartWalletAddress,
                COUNT(u) > 0 AS followsUser, 
                COUNT(v) > 0 AS followedByUser,
                s AS Soul
-        `, { userName, viewUsername });
+          `,
+          { userName, viewUsername }
+        );
   
         // If user not found, throw an error
         if (profileDataQuery.records.length === 0) {
@@ -148,16 +152,17 @@ class SocialService {
   
         // Extract query result
         const record = profileDataQuery.records[0];
-        const user = record.get('user');
-        const followsUser: boolean = record.get('followsUser');
-        const followedByUser: boolean = record.get('followedByUser');
+        const user = record.get("user");
+        const followsUser: boolean = record.get("followsUser");
+        const followedByUser: boolean = record.get("followedByUser");
+        const smartWalletAddress: string = record.get("smartWalletAddress") || "";
   
         const { username, playerStats } = user.properties as ViewedUserData;
   
         // Fetch profile picture
         const profilePics: ProfilePicture[] = await profileService.getProfilePic(token, viewUsername);
   
-        return { username, playerStats, followsUser, followedByUser, profilePics } as ViewProfileData;
+        return { username, playerStats, followsUser, followedByUser, smartWalletAddress, profilePics } as ViewProfileData;
       });
   
       return result;
@@ -168,6 +173,7 @@ class SocialService {
       await session.close();
     }
   }
+  
   
   
 
