@@ -7,6 +7,7 @@ export interface FollowResponse {
 export interface ViewedUserData {
   username: string
   playerStats: string
+  signupDate: number
   }
 
 export interface ViewProfileData {

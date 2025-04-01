@@ -61,7 +61,7 @@ class LeaderboardService {
 			});
 	
 			// Attach profile picture to each user's score
-			const finalLeaderboard = Array.from(bestScoresMap.values()).map(score => ({
+			const finalLeaderboard: savedClassicScoreStats[] = Array.from(bestScoresMap.values()).map(score => ({
 				...score,
 				image: profilePicMap.get(score.username) || "" // Assign default if not found
 			}));

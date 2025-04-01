@@ -151,7 +151,7 @@ class SocialService {
         const followedByUser: boolean = record.get("followedByUser");
         const smartWalletAddress: string = record.get("smartWalletAddress") || "";
   
-        const { username, playerStats } = user.properties as ViewedUserData;
+        const { username, playerStats, signupDate } = user.properties as ViewedUserData;
   
         // Fetch profile picture
         const profilePics: ProfilePicture[] = await profileService.getProfilePic(token, viewUsername);
@@ -167,7 +167,8 @@ class SocialService {
           smartWalletAddress,
           profilePics,
           followerCount,
-          followingCount
+          followingCount,
+          signupDate
         } as ViewProfileData;
       });
   
