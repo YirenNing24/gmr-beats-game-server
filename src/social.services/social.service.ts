@@ -199,38 +199,53 @@ class SocialService {
       // Collection reference
       const stalkerLogs = db.collection("stalker_logs");
   
-      // Check how many stalkers are currently logged for this target
-      const existingStalkers = await stalkerLogs
-        .find({ target: body.username })
-        .sort({ timestamp: 1 }) // Sort by oldest first
-        .toArray();
-  
-      // If 3 or more exist, remove the oldest one before inserting a new stalker
-      if (existingStalkers.length >= 3) {
-        const oldestStalker = existingStalkers[0];
-        await stalkerLogs.deleteOne({ _id: oldestStalker._id });
-      }
-  
-      // Prepare the new stalker log entry
-      const stalkerEntry = {
+      // Check if this visitor is already stalking the target
+      const existingStalker = await stalkerLogs.findOne({
         visitor: visitorUsername,
         target: body.username,
-        timestamp: new Date(),
-      };
+      });
   
-      // Insert new stalker log
-      await stalkerLogs.insertOne(stalkerEntry);
+      const now = new Date();
+  
+      if (existingStalker) {
+        // Update timestamp instead of inserting a duplicate
+        await stalkerLogs.updateOne(
+          { _id: existingStalker._id },
+          { $set: { timestamp: now } }
+        );
+      } else {
+        // Check how many unique stalkers exist for this target
+        const existingStalkers = await stalkerLogs
+          .find({ target: body.username })
+          .sort({ timestamp: 1 }) // Sort by oldest first
+          .toArray();
+  
+        // If 3 or more exist, remove the oldest one before inserting a new stalker
+        if (existingStalkers.length >= 3) {
+          const oldestStalker = existingStalkers[0];
+          await stalkerLogs.deleteOne({ _id: oldestStalker._id });
+        }
+  
+        // Insert the new stalker entry
+        await stalkerLogs.insertOne({
+          visitor: visitorUsername,
+          target: body.username,
+          timestamp: now,
+        });
+      }
   
       // Close MongoDB connection
       await client.close();
   
-      console.log("Stalker log saved:", stalkerEntry);
+      console.log(`Stalker log updated for ${visitorUsername} -> ${body.username}`);
       return { success: true, message: "Stalking activity recorded." };
     } catch (error: any) {
       console.error("Error saving stalker log:", error);
       throw error;
     }
   }
+  
+  
 
 
 
