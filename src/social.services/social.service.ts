@@ -287,7 +287,7 @@ class SocialService {
       await client.close();
   
       console.log("Stalker list retrieved:", stalkerDetails);
-      return { success: true, stalkers: stalkerDetails };
+      return  stalkerDetails;
     } catch (error: any) {
       console.error("Error retrieving stalkers:", error);
       throw error;

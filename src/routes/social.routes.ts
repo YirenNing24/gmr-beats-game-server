@@ -119,7 +119,7 @@ const social = (app: Elysia) => {
         const socialService: SocialService = new SocialService(driver);
         const playerUsername: string = params.username || "";  // Fallback if no username is provided
 
-        const output: SuccessMessage = await socialService.getStalkers(jwtToken, playerUsername);
+        const output = await socialService.getStalkers(jwtToken, playerUsername);
         return output
       } catch (error: any) {
         throw error
