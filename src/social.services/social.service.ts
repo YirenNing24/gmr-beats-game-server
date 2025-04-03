@@ -282,11 +282,8 @@ class SocialService {
           timestamp: stalker.timestamp,
         };
       });
-  
-      // Close MongoDB connection
       await client.close();
-  
-      console.log("Stalker list retrieved:", stalkerDetails);
+      
       return  stalkerDetails;
     } catch (error: any) {
       console.error("Error retrieving stalkers:", error);
