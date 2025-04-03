@@ -18,7 +18,7 @@ import { SuccessMessage } from '../outputs/success.message';
 //** VALIDATION SCHEMA IMPORT
 import { followResponseSchema, getMutualConversationSchema, setOnlineStatusSchema, unFollowResponseSchema, viewProfileSchema } from './route.schema/schema.social';
 import { authorizationBearerSchema } from './route.schema/schema.auth';
-import { cardGiftSchema, commentFanMomentSchema, getBeatsClientStatusSchema, getFanMomentSchema, getFollowersFollowingSchema, likeFanMomentSchema, postFanMomentSchema } from '../social.services/social.schema';
+import { cardGiftSchema, commentFanMomentSchema, getBeatsClientStatusSchema, getFanMomentSchema, getFollowersFollowingSchema, likeFanMomentSchema, postFanMomentSchema, saveStalkerSchema } from '../social.services/social.schema';
 import BeatsService from '../game.services/beats.services/beats.service';
 import { MutualStatus } from '../game.services/beats.services/beats.interface';
 
@@ -90,6 +90,45 @@ const social = (app: Elysia) => {
     )
 
 
+    .post('api/social/save-stalkers', async ({ headers, body }): Promise<SuccessMessage> => {
+      try {
+        const authorizationHeader: string = headers.authorization;
+        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+          throw new Error('Bearer token not found in Authorization header');
+        }
+        const jwtToken: string = authorizationHeader.substring(7);
+        const driver: Driver = getDriver();
+        const socialService: SocialService = new SocialService(driver);
+        const output: SuccessMessage = await socialService.saveStalker(jwtToken, body);
+        return output
+      } catch (error: any) {
+        throw error
+        }
+      }, saveStalkerSchema
+    )
+
+
+    .get('api/social/get-stalkers/:username', async ({ headers, params }) => {
+      try {
+        const authorizationHeader: string = headers.authorization;
+        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+          throw new Error('Bearer token not found in Authorization header');
+        }
+        const jwtToken: string = authorizationHeader.substring(7);
+        const driver: Driver = getDriver();
+        const socialService: SocialService = new SocialService(driver);
+        const playerUsername: string = params.username || "";  // Fallback if no username is provided
+
+        const output: SuccessMessage = await socialService.getStalkers(jwtToken, playerUsername);
+        return output
+      } catch (error: any) {
+        throw error
+        }
+      }, getFollowersFollowingSchema
+    )
+
+
+
     .get('/api/social/list/mutual', async ({ headers }) => {
       try {
         const authorizationHeader: string = headers.authorization;
@@ -100,6 +139,7 @@ const social = (app: Elysia) => {
 
         const driver: Driver = getDriver();
         const socialService: SocialService = new SocialService(driver);
+        
 
         const output: MutualData[] = await socialService.getMutual(jwtToken);
         return output;

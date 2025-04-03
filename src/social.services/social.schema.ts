@@ -90,3 +90,13 @@ export const getBeatsClientStatusSchema = {
 };
 
 
+export const saveStalkerSchema = {
+	headers: t.Object({ authorization: t.String() }),
+	body: t.Object({ 
+		username: t.String(),
+
+	})
+};
+
+
+

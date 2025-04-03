@@ -29,6 +29,8 @@ import { EDITION_ADDRESS } from "../config/constants";
 //**NANOID IMPORT
 import { nanoid } from "nanoid";
 import { followCypher, getFollowersFollowingCountCypher } from "./social.cypher";
+import { mongoDBClient } from "../db/mongodb.client";
+import { Db } from "mongodb";
 
 
 
@@ -182,7 +184,100 @@ class SocialService {
   }
   
   
+  public async saveStalker(token: string, body: { username: string }) {
+    try {
+      const tokenService: TokenService = new TokenService();
+      const visitorUsername: string = await tokenService.verifyAccessToken(token);
+      const client = await mongoDBClient.connect();
+      const db: Db = client.db("beats");
   
+      // Ensure visitor is not stalking themselves
+      if (visitorUsername === body.username) {
+        throw new Error("You cannot stalk yourself.");
+      }
+  
+      // Collection reference
+      const stalkerLogs = db.collection("stalker_logs");
+  
+      // Check how many stalkers are currently logged for this target
+      const existingStalkers = await stalkerLogs
+        .find({ target: body.username })
+        .sort({ timestamp: 1 }) // Sort by oldest first
+        .toArray();
+  
+      // If 3 or more exist, remove the oldest one before inserting a new stalker
+      if (existingStalkers.length >= 3) {
+        const oldestStalker = existingStalkers[0];
+        await stalkerLogs.deleteOne({ _id: oldestStalker._id });
+      }
+  
+      // Prepare the new stalker log entry
+      const stalkerEntry = {
+        visitor: visitorUsername,
+        target: body.username,
+        timestamp: new Date(),
+      };
+  
+      // Insert new stalker log
+      await stalkerLogs.insertOne(stalkerEntry);
+  
+      // Close MongoDB connection
+      await client.close();
+  
+      console.log("Stalker log saved:", stalkerEntry);
+      return { success: true, message: "Stalking activity recorded." };
+    } catch (error: any) {
+      console.error("Error saving stalker log:", error);
+      throw error;
+    }
+  }
+
+
+
+
+
+  public async getStalkers(token: string, username: string ) {
+    try {
+      const profileService: ProfileService = new ProfileService();
+      const client = await mongoDBClient.connect();
+      const db: Db = client.db("beats");
+  
+      // Collection reference
+      const stalkerLogs = db.collection("stalker_logs");
+  
+      // Retrieve the latest 3 stalkers for the given user
+      const stalkers = await stalkerLogs
+        .find({ target: username })
+        .sort({ timestamp: -1 }) // Sort by newest first
+        .limit(3)
+        .toArray();
+  
+      // Extract usernames of stalkers
+      const stalkerUsernames = stalkers.map((s) => s.visitor);
+  
+      // Fetch profile pictures using profileService
+      const profilePics = await profileService.getDisplayPic(token, stalkerUsernames, "social");
+  
+      // Map profile pictures to stalkers
+      const stalkerDetails = stalkers.map((stalker) => {
+        const profilePic = profilePics.find((p) => p.userName === stalker.visitor);
+        return {
+          username: stalker.visitor,
+          displayPic: profilePic ? profilePic.profilePicture : null, // Use profile picture if found, else null
+          timestamp: stalker.timestamp,
+        };
+      });
+  
+      // Close MongoDB connection
+      await client.close();
+  
+      console.log("Stalker list retrieved:", stalkerDetails);
+      return { success: true, stalkers: stalkerDetails };
+    } catch (error: any) {
+      console.error("Error retrieving stalkers:", error);
+      throw error;
+    }
+  }
   
   
   

@@ -272,9 +272,7 @@ class ProfileService {
   }
   
   
-  
-    
-    
+
   public async getDisplayPic(token: string, userNames: string[], origin: string): Promise<ProfilePicture[]> {
     try {
       // Skip token verification if origin is "leaderboard" or "social"
