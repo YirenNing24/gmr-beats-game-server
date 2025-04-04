@@ -269,7 +269,6 @@ class SocialService {
   
       // Extract usernames of stalkers
       const stalkerUsernames = stalkers.map((s) => s.visitor);
-      await client.close();
   
       // Fetch profile pictures using profileService
       const profilePics = await profileService.getDisplayPic(token, stalkerUsernames, "social");
@@ -283,7 +282,7 @@ class SocialService {
           timestamp: stalker.timestamp,
         };
       });
-      
+      await client.close();
 
       return  stalkerDetails;
     } catch (error: any) {
