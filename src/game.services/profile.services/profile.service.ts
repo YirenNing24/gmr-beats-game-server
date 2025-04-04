@@ -299,7 +299,7 @@ class ProfileService {
         ])
         .toArray();
         
-      await mongoDBClient.close();
+      await client.close();
       return profilePictures as unknown as ProfilePicture[];
     } catch (error: any) {
       console.error("Error getting profile pictures:", error);
