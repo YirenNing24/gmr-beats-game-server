@@ -134,6 +134,7 @@ class GoogleService {
             await keydb.SET(`passkey:challenge:${username.username}`, options.challenge);
             await keydb.EXPIRE(`passkey:challenge:${username.username}`, 120);
             console.log(`[PasskeyAuth] New challenge generated for ${username.username}`);
+            
             return options;
     
         } catch (error: any) {
@@ -155,10 +156,17 @@ class GoogleService {
     
         try {
             const expectedChallenge = await keydb.GET(`passkey:challenge:${passkeyAuthVerify.username}`);
+            console.log(`[PasskeyAuth] Expected challenge for ${passkeyAuthVerify.username}:`, expectedChallenge);
+            console.log(`[PasskeyAuth] ClientDataJSON:`, atob(passkeyAuthVerify.response.clientDataJSON));
+
             if (expectedChallenge === null) {
                 throw new ValidationError("Fingerprint login expired", "Fingerprint login expired")
             }
-    
+            
+
+            const clientData = JSON.parse(Buffer.from(passkeyAuthVerify.response.clientDataJSON, 'base64').toString());
+            console.log("Client challenge:", clientData.challenge);
+
             const credentialID = passkeyAuthVerify.id;
             console.log(`[PasskeyAuth] Verifying credential ID: ${credentialID} for user: ${passkeyAuthVerify.username}`);
     
