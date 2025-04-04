@@ -282,7 +282,7 @@ class SocialService {
           timestamp: stalker.timestamp,
         };
       });
-      await client.close();
+
 
       return  stalkerDetails;
     } catch (error: any) {
