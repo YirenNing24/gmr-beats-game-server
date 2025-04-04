@@ -144,91 +144,88 @@ class GoogleService {
         const walletService: WalletService = new WalletService(driver);
         const energyService: EnergyService = new EnergyService(driver);
         const tokenService: TokenService = new TokenService();
+    
         try {
-            
-            // Retrieve the challenge that was previously stored
             const expectedChallenge = await keydb.GET(`passkey:challenge:${passkeyAuthVerify.username}`);
             if (expectedChallenge === null) {
                 throw new ValidationError("Fingerprint login expired", "Fingerprint login expired")
             }
-
-            // Extract the credential id and signature from the response token
+    
             const credentialID = passkeyAuthVerify.id;
-            // const signature = passkeyAuthVerify.response.signature;  // This will be used for verification
-
-            
-            // Retrieve the credential public key and counter for this user from your storage
+            console.log(`[PasskeyAuth] Verifying credential ID: ${credentialID} for user: ${passkeyAuthVerify.username}`);
+    
             const passkeyUser = await authService.getPasskeyUserData(passkeyAuthVerify.username);
-            const { counter, publicKey  } = passkeyUser
-            
-
-            // Create the WebAuthnCredential object
+            console.log("[PasskeyAuth] Retrieved passkey user data:", passkeyUser);
+    
+            const { counter, publicKey } = passkeyUser;
+    
             const credential: WebAuthnCredential = {
-                id: credentialID,  // Use the credential ID from the response
-                publicKey,// Use the stored public key for this user
-                counter// Use the counter value from your storage
-                // transports: expectedTransports || ['usb', 'nfc'],  // Use transports or default to 'usb' and 'nfc'
+                id: credentialID,
+                publicKey,
+                counter
             };
     
-            // Define the verification options
-
-            const { username, ...properties } = passkeyAuthVerify
-            
+            const { username, ...properties } = passkeyAuthVerify;
+    
+            if (!username) {
+                throw new Error("Username is undefined during passkey authentication");
+            }
+    
             const verificationOptions: VerifyAuthenticationResponseOpts = {
                 //@ts-ignore
                 response: properties,
-                expectedChallenge,  // The challenge you stored earlier
-                expectedOrigin: ANDROID_APP_HASH,  // Your registered RP origin (domain)
-                expectedRPID: 'beats.gmetarave.com',  // The RP ID (domain)
-                credential,  // The WebAuthnCredential object
-                requireUserVerification: true, // Optionally enforce user verification
+                expectedChallenge,
+                expectedOrigin: ANDROID_APP_HASH,
+                expectedRPID: 'beats.gmetarave.com',
+                credential,
+                requireUserVerification: true,
             };
-
-
-            // Perform the verification
+    
+            console.log(`[PasskeyAuth] Verifying WebAuthn response for ${username}...`);
             const verificationResult: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(verificationOptions);
-
-            console.log(verificationResult)
-            
-            // Check if the verification was successful
+    
+            console.log("[PasskeyAuth] Verification result:", verificationResult);
+    
             if (verificationResult.verified) {
-                const { playerStats, smartWalletAddress, userId, ...safeProperties  } = passkeyUser.safeProperties
+                const { playerStats, smartWalletAddress, userId, ...safeProperties } = passkeyUser.safeProperties;
+    
+                console.log(`[PasskeyAuth] Generating tokens for ${username}...`);
                 const tokens: TokenScheme = await tokenService.generateTokens(username);
-                const { refreshToken, accessToken } = tokens as TokenScheme
-
+                console.log("[PasskeyAuth] Tokens generated successfully");
+    
                 const energy = await energyService.getPlayerEnergyBeats(username);
-
                 const walletPromise: Promise<WalletData> = walletService.getWalletBalance(smartWalletAddress);
-                const [ wallet ] = await Promise.all([walletPromise ]);
-
-
-
-                console.log(`Passkey sign in complete for ${username}`)
-                return { 
-                    username, 
-                    wallet, 
-                    safeProperties, 
-                    playerStats, 
-                    energy, 
-                    uuid: userId, 
-                    refreshToken, 
-                    accessToken, 
-                    message: "You are now logged in", 
+                const [wallet] = await Promise.all([walletPromise]);
+    
+                console.log(`Passkey sign in complete for ${username}`);
+                return {
+                    username,
+                    wallet,
+                    safeProperties,
+                    playerStats,
+                    energy,
+                    uuid: userId,
+                    refreshToken: tokens.refreshToken,
+                    accessToken: tokens.accessToken,
+                    message: "You are now logged in",
                     success: 'OK',
-                    loginType: 'passkey' } as AuthenticateReturn; 
-
-                // Proceed with post-authentication actions (e.g., logging in the user)
+                    loginType: 'passkey'
+                } as AuthenticateReturn;
             } else {
-                console.log("Authentication failed.");
-                // Handle failure (e.g., reject login attempt)
+                console.warn("[PasskeyAuth] Authentication failed:", verificationResult.authenticationInfo);
+                throw new ValidationError("Authentication failed", "Fingerprint failed verification");
             }
     
         } catch (error: any) {
-            // Handle any errors during the process
-            console.log("Error verifying authentication response:", error);
-            throw error;  // Or handle the error appropriately (e.g., return error message)
+            console.error("Error verifying authentication response:", error);
+            console.error("Context:", {
+                passkeyAuthVerify,
+                username: passkeyAuthVerify?.username,
+            });
+            throw error;
         }
     }
+    
     
 
     public async googleRegisterPassKey(username: { username: string }) {
@@ -339,7 +336,7 @@ class GoogleService {
 
             //@ts-ignore
             const { id, publicKey, counter } = result.registrationInfo?.credential
-
+            //@ts-ignore
             const userData: PasskeyUser = { userName: username, deviceId, id, publicKey, counter }
             await authService.passkeyRegister(userData, ipAddress);
 

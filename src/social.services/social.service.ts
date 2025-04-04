@@ -188,15 +188,17 @@ class SocialService {
     try {
       const tokenService: TokenService = new TokenService();
       const visitorUsername: string = await tokenService.verifyAccessToken(token);
-      const client = await mongoDBClient.connect();
-      const db: Db = client.db("beats");
   
       // Ensure visitor is not stalking themselves
       if (visitorUsername === body.username) {
         throw new Error("You cannot stalk yourself.");
       }
   
-      // Collection reference
+      const now = new Date();
+  
+      // Establish MongoDB connection only when needed
+      const client = await mongoDBClient.connect();
+      const db: Db = client.db("beats");
       const stalkerLogs = db.collection("stalker_logs");
   
       // Check if this visitor is already stalking the target
@@ -205,28 +207,26 @@ class SocialService {
         target: body.username,
       });
   
-      const now = new Date();
-  
       if (existingStalker) {
-        // Update timestamp instead of inserting a duplicate
+        // Update timestamp
         await stalkerLogs.updateOne(
           { _id: existingStalker._id },
           { $set: { timestamp: now } }
         );
       } else {
-        // Check how many unique stalkers exist for this target
+        // Get list of existing stalkers sorted by oldest first
         const existingStalkers = await stalkerLogs
           .find({ target: body.username })
-          .sort({ timestamp: 1 }) // Sort by oldest first
+          .sort({ timestamp: 1 })
           .toArray();
   
-        // If 3 or more exist, remove the oldest one before inserting a new stalker
+        // If 3 or more stalkers exist, remove the oldest
         if (existingStalkers.length >= 3) {
           const oldestStalker = existingStalkers[0];
           await stalkerLogs.deleteOne({ _id: oldestStalker._id });
         }
   
-        // Insert the new stalker entry
+        // Insert new stalker entry
         await stalkerLogs.insertOne({
           visitor: visitorUsername,
           target: body.username,
@@ -234,7 +234,6 @@ class SocialService {
         });
       }
   
-      // Close MongoDB connection
       await client.close();
   
       console.log(`Stalker log updated for ${visitorUsername} -> ${body.username}`);
@@ -244,6 +243,7 @@ class SocialService {
       throw error;
     }
   }
+  
   
   
 
@@ -283,7 +283,7 @@ class SocialService {
         };
       });
       await client.close();
-      
+
       return  stalkerDetails;
     } catch (error: any) {
       console.error("Error retrieving stalkers:", error);
