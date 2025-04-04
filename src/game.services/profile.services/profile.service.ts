@@ -85,16 +85,7 @@ class ProfileService {
       try {
         const tokenService: TokenService = new TokenService();
         const userName: string | Error = await tokenService.verifyAccessToken(token);
-        const client = await mongoDBClient.connect();
-        const db = client.db("beats");
-        const profilePicCollection = db.collection("profilePic");
-  
-        // Check the number of existing profile pictures for the user
-        const existingProfilePicsCount: number = await profilePicCollection.countDocuments({ userName });
-        if (existingProfilePicsCount >= 5) {
-          throw new ValidationError("You already have 5 profile pictures.", "");
-        }
-  
+
         const uploadedAt: number = Date.now();
         const fileFormat: string = "png";
         const fileSize: number = 100;
@@ -107,9 +98,19 @@ class ProfileService {
           fileSize,
           likes: []
         };
+
+        const client = await mongoDBClient.connect();
+        const db = client.db("beats");
+        const profilePicCollection = db.collection("profilePic");
+
+        const existingProfilePicsCount: number = await profilePicCollection.countDocuments({ userName });
+        if (existingProfilePicsCount >= 5) {
+          throw new ValidationError("You already have 5 profile pictures.", "");
+        }
   
         // Insert the profile picture into MongoDB
         await profilePicCollection.insertOne(profilePicture);
+        await client.close();
   
         return new SuccessMessage("Profile picture upload successful");
       } catch (error: any) {
