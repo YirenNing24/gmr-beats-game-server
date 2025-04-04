@@ -424,7 +424,7 @@ class SocialService {
       }
   
       return { following: followingUsers, followers: followerUsers };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching followers and following users with profile pictures:", error);
       throw error;
     }

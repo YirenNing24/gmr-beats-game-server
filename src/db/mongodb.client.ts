@@ -33,6 +33,9 @@ export const mongoDBClient = new MongoClient(uri, {
 	// ✅ Retry Mechanisms for Better Stability
 	retryWrites: true, // Auto-retry failed writes
 	retryReads: true, // Auto-retry failed reads
+	timeoutMS: MONGO_TIMEOUT_MS, // 30 sec for operations
+	waitQueueTimeoutMS: 5000, // 5 sec for waiting for a connection
+	
 
 	// ✅ Automatic Compression (reduces network usage)
 });
