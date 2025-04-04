@@ -111,30 +111,46 @@ class GoogleService {
 
     public async googlePassKeyAuth(username: { username: string }) {
         try {
-            // Generate authentication options with parameters specific to your app
+            const challengeKey = `passkey:challenge:${username.username}`;
+            
+            // Check if a challenge already exists
+            const existingChallenge = await keydb.GET(challengeKey);
+    
+            if (existingChallenge) {
+                console.log(`[PasskeyAuth] Existing challenge found for ${username.username}, returning same options...`);
+    
+                return {
+                    challenge: existingChallenge,
+                    rpID: "beats.gmetarave.com",
+                    userVerification: "required",
+                    timeout: 1800000,
+                    allowCredentials: [], // Optional: Add based on your setup
+                };
+            }
+    
+            // Generate new options
             const options = await generateAuthenticationOptions({
                 challenge: undefined,
-                rpID: "beats.gmetarave.com",  // The domain without "https://"
+                rpID: "beats.gmetarave.com",
                 userVerification: "required",
                 timeout: 1800000,
                 allowCredentials: [],
             });
-
-
-            // Store the expected challenge in keydb temporarily for later verification
-            // In production, use a secure session store or database with TTL if needed
-            await keydb.SET(`passkey:challenge:${username.username}`, options.challenge)
-            await keydb.EXPIRE(`passkey:challenge:${username.username}`, 120);
-
-        
-            // Return options to be sent to the client
+    
+            // Save challenge in keydb
+            await keydb.SET(challengeKey, options.challenge);
+            await keydb.EXPIRE(challengeKey, 120); // TTL for 2 minutes
+    
+            console.log(`[PasskeyAuth] New challenge generated for ${username.username}`);
+    
             return options;
-
+    
         } catch (error: any) {
-            console.log(error)
+            console.error(`[PasskeyAuth] Error generating passkey auth options:`, error);
             throw new Error(`Error generating passkey auth options: ${error.message}`);
         }
     }
+    
 
 
     // Method to handle the passkey authentication response
@@ -187,6 +203,8 @@ class GoogleService {
             console.log("[PasskeyAuth] Verification result:", verificationResult);
     
             if (verificationResult.verified) {
+                // ✅ Delete the challenge after successful verification
+	            await keydb.DEL(`passkey:challenge:${username}`);
                 const { playerStats, smartWalletAddress, userId, ...safeProperties } = passkeyUser.safeProperties;
     
                 console.log(`[PasskeyAuth] Generating tokens for ${username}...`);
