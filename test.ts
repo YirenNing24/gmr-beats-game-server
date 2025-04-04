@@ -35,7 +35,6 @@ function runRaffle(entries: any) {
 			`🏆 ${timeLeft} seconds... last chance to bribe the RNG gods! 👀`
 		];
 		console.log(funnyMessages[10 - timeLeft]);
-
 		timeLeft--;
 	}, 1000);
 
@@ -45,7 +44,7 @@ function runRaffle(entries: any) {
 
 			const winners = new Set<string>();
 
-			while (winners.size < 1 && pool.length > 0) {
+			while (winners.size < 3 && pool.length > 0) {
 				const randomIndex = Math.floor(Math.random() * pool.length);
 				const winner = pool[randomIndex];
 				winners.add(winner);
@@ -54,11 +53,17 @@ function runRaffle(entries: any) {
 				pool = pool.filter(name => name !== winner);
 			}
 
-			console.log(`🎊 And the winner is... 🥁🥁🥁 ${[...winners][0]}! Congratulations! 🎊`);
-			resolve([...winners]);
+			const winnerList = [...winners];
+			console.log(`🎊 And the winners are... 🥁🥁🥁`);
+			winnerList.forEach((name, index) => {
+				console.log(`🏆 Winner #${index + 1}: ${name}`);
+			});
+
+			resolve(winnerList);
 		}, 10000);
 	});
 }
+
 
 // const entries = {
 // 	khaelrocks: 15,
@@ -87,20 +92,20 @@ function runRaffle(entries: any) {
 //   }
 
 const entries = {
-		Able_Haeunie: 16,
-		Goddess: 21,
-		khaelrocks: 15,
-		Nacht18: 16,
-		Gelatine: 1,
-		c2nagreen: 18,
-		bbangyunha: 2,
-		chenry124: 14,
-		Arasqvs: 21,
-		ashlee_beer: 1,
-}
+	Able_Haeunie: 17,
+	Goddess: 19,
+	khaelrocks: 16,
+	Nacht18: 16,
+	"Gelatine ": 5,
+	c2nagreen: 19,
+	bbangyunha: 2,
+	chenry124: 15,
+	Arasqvs: 23,
+	ashlee_beer: 0,
+  }
 
 
-console.log("Winners:", runRaffle(entries));
+
 
 
 interface ClassicScoreStats {
@@ -133,7 +138,7 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 				"Goddess",
 				"khaelrocks",
 				"Nacht18",
-				"Gelatine",
+				"Gelatine ",
 				"c2nagreen",
 				"bbangyunha",
 				"chenry124",
@@ -207,10 +212,24 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 	}
 }
 
+async function cleanUpGelatineUsernames(db: Db): Promise<void> {
+	try {
+		const collection = db.collection("classicScores");
 
+		const result = await collection.updateMany(
+			{ username: "Gelatine " },
+			{ $set: { username: "Gelatine" } }
+		);
 
-// // Usage example
-//   (async () => {
-//   	const db: Db = mongoDBClient.db("beats");
-//   	const raffleEntries = await getRaffleEntries(db);
-//   	console.log(raffleEntries); })();
+		console.log(`✅ Updated ${result.modifiedCount} document(s) with corrected username.`);
+	} catch (err) {
+		console.error("❌ Error while cleaning up usernames:", err);
+	}
+}
+
+await cleanUpGelatineUsernames(mongoDBClient.db("beats"));
+// // // Usage example
+//    (async () => {
+//    	const db: Db = mongoDBClient.db("beats");
+//    	const raffleEntries = await getRaffleEntries(db);
+//    	console.log(raffleEntries); })();
