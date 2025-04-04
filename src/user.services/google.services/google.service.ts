@@ -111,24 +111,18 @@ class GoogleService {
 
     public async googlePassKeyAuth(username: { username: string }) {
         try {
-            const challengeKey = `passkey:challenge:${username.username}`;
-            
-            // Check if a challenge already exists
-            const existingChallenge = await keydb.GET(challengeKey);
-    
+            const existingChallenge = await keydb.GET(`passkey:challenge:${username.username}`);
             if (existingChallenge) {
                 console.log(`[PasskeyAuth] Existing challenge found for ${username.username}, returning same options...`);
-    
                 return {
                     challenge: existingChallenge,
                     rpID: "beats.gmetarave.com",
                     userVerification: "required",
                     timeout: 1800000,
-                    allowCredentials: [], // Optional: Add based on your setup
+                    allowCredentials: [],
                 };
             }
     
-            // Generate new options
             const options = await generateAuthenticationOptions({
                 challenge: undefined,
                 rpID: "beats.gmetarave.com",
@@ -137,19 +131,17 @@ class GoogleService {
                 allowCredentials: [],
             });
     
-            // Save challenge in keydb
-            await keydb.SET(challengeKey, options.challenge);
-            await keydb.EXPIRE(challengeKey, 120); // TTL for 2 minutes
-    
+            await keydb.SET(`passkey:challenge:${username.username}`, options.challenge);
+            await keydb.EXPIRE(`passkey:challenge:${username.username}`, 120);
             console.log(`[PasskeyAuth] New challenge generated for ${username.username}`);
-    
             return options;
     
         } catch (error: any) {
-            console.error(`[PasskeyAuth] Error generating passkey auth options:`, error);
+            console.log(error)
             throw new Error(`Error generating passkey auth options: ${error.message}`);
         }
     }
+    
     
 
 
