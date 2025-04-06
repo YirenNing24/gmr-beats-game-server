@@ -15,3 +15,13 @@ export const getFollowersFollowingCountCypher: string =           `
     OPTIONAL MATCH (follower:User)-[:FOLLOW]->(u)
     RETURN COUNT(DISTINCT following) as followingCount, COUNT(DISTINCT follower) as followerCount
     `
+
+
+export const getFollowersFollowingCypher: string =           `
+MATCH (u:User {username: $username})
+OPTIONAL MATCH (u)-[:FOLLOW]->(following:User)
+OPTIONAL MATCH (follower:User)-[:FOLLOW]->(u)
+RETURN 
+  COLLECT(DISTINCT { username: following.username, level: following.level, playerStats: following.playerStats }) as followingUsers,
+  COLLECT(DISTINCT { username: follower.username, level: follower.level, playerStats: follower.playerStats }) as followerUsers
+`

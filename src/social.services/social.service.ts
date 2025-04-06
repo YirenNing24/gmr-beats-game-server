@@ -28,7 +28,7 @@ import { EDITION_ADDRESS } from "../config/constants";
 
 //**NANOID IMPORT
 import { nanoid } from "nanoid";
-import { followCypher, getFollowersFollowingCountCypher } from "./social.cypher";
+import { followCypher, getFollowersFollowingCountCypher, getFollowersFollowingCypher } from "./social.cypher";
 import { mongoDBClient } from "../db/mongodb.client";
 import { Db } from "mongodb";
 
@@ -379,15 +379,7 @@ class SocialService {
   
       const session: Session = this.driver.session();
       const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-        tx.run(
-          `
-            MATCH (u:User {username: $username})
-            OPTIONAL MATCH (u)-[:FOLLOW]->(following:User)
-            OPTIONAL MATCH (follower:User)-[:FOLLOW]->(u)
-            RETURN 
-              COLLECT(DISTINCT { username: following.username, level: following.level, playerStats: following.playerStats }) as followingUsers,
-              COLLECT(DISTINCT { username: follower.username, level: follower.level, playerStats: follower.playerStats }) as followerUsers
-          `,
+        tx.run(getFollowersFollowingCypher,
           { username: resolvedUsername }
         )
       );

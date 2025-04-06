@@ -4,7 +4,7 @@ services:
     container_name: ann-keydb
     command: keydb-server /etc/keydb/keydb.conf --requirepass ${KEYDB_PASSWORD} --server-threads 1
     ports:
-      - "127.0.0.1:6379:6379"  # Accessible only from the host
+      - "127.0.0.1:6379:6379"
     networks:
       - ann-network
     restart: always
@@ -13,7 +13,18 @@ services:
     image: kaetaro13/beats-game-server
     container_name: backend-server
     ports:
-      - "127.0.0.1:8081:8085"  # Accessible only from the host
+      - "127.0.0.1:8081:8085"  # maps container port 8085 -> host 8081
+    env_file:
+      - ./.env
+    networks:
+      - ann-network
+    restart: always
+
+  backend-server-2:
+    image: kaetaro13/beats-game-server
+    container_name: backend-server-2
+    ports:
+      - "127.0.0.1:8082:8085"  # maps container port 8085 -> host 8082
     env_file:
       - ./.env
     networks:
@@ -24,12 +35,11 @@ services:
     image: kaetaro13/godot-server:latest
     container_name: game-server
     ports:
-      - "127.0.0.1:8090:8087/tcp"  # Accessible only from the host
+      - "127.0.0.1:8090:8087/tcp"
       - "127.0.0.1:8090:8087/udp"
     environment:
       KEYDB_PASSWORD: "${KEYDB_PASSWORD}"
       JWT_SECRET: "${JWT_SECRET}"
-      
     networks:
       - ann-network
     restart: always
@@ -37,5 +47,3 @@ services:
 networks:
   ann-network:
     driver: bridge
-
-    

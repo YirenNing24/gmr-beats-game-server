@@ -44,7 +44,7 @@ function runRaffle(entries: any) {
 
 			const winners = new Set<string>();
 
-			while (winners.size < 3 && pool.length > 0) {
+			while (winners.size < 1 && pool.length > 0) {
 				const randomIndex = Math.floor(Math.random() * pool.length);
 				const winner = pool[randomIndex];
 				winners.add(winner);
@@ -92,20 +92,30 @@ function runRaffle(entries: any) {
 //   }
 
 const entries = {
-	Able_Haeunie: 17,
-	Goddess: 19,
 	khaelrocks: 16,
-	Nacht18: 16,
-	"Gelatine ": 5,
-	c2nagreen: 19,
-	bbangyunha: 2,
-	chenry124: 15,
-	Arasqvs: 23,
-	ashlee_beer: 0,
+	laurence27: 19,
+	mirajane: 36,
+	Chuna: 18,
+	Goddess: 21,
+	CieloQ281993: 10,
+	Raquel_05: 13,
+	chabechabs: 11,
+	Ampot: 10,
+	jjanee: 17,
+	dnicanics05: 23,
+	wena: 31,
+	belen: 26,
+	jenelyn: 21,
+	map02: 1,
+	edz5: 3,
+	ken_ken: 1,
+	kaye: 2,
+	karl: 1,
+	Gabo: 2,
+	rodalyn23: 3,
   }
 
-
-
+runRaffle(entries)
 
 
 interface ClassicScoreStats {
@@ -113,6 +123,8 @@ interface ClassicScoreStats {
 	score: number;
 	combo: number;
 	maxCombo: number;
+	// 	chabechabs: 11,
+	// 	Ampot: 10,
 	accuracy: number;
 	finished: boolean;
 	songName: string;
@@ -134,19 +146,31 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 
 		// List of usernames to check
 		const validUsernames = [
-				"Able_Haeunie",
-				"Goddess",
-				"khaelrocks",
-				"Nacht18",
-				"Gelatine ",
-				"c2nagreen",
-				"bbangyunha",
-				"chenry124",
-				"Arasqvs",
-				"ashlee_beer"
-		
-
+			"khaelrocks",
+			"laurence27",
+			"mirajane",
+			"chenry124",
+			"Chuna",
+			"Goddess",
+			"CieloQ281993",
+			"Raquel_05",
+			"chabechabs",
+			"Ampot",
+			"jjanee",
+			"dnicanics05",
+			"wena",
+			"belen",
+			"jenelyn",
+			"map02",
+			"edz5",
+			"kateyyy",
+			"ken_ken",
+			"kaye",
+			"karl",
+			"Gabo",
+			"rodalyn23"
 		];
+		
 		
 
 		// Aggregate to count scores per username per day
@@ -212,24 +236,9 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 	}
 }
 
-async function cleanUpGelatineUsernames(db: Db): Promise<void> {
-	try {
-		const collection = db.collection("classicScores");
 
-		const result = await collection.updateMany(
-			{ username: "Gelatine " },
-			{ $set: { username: "Gelatine" } }
-		);
-
-		console.log(`✅ Updated ${result.modifiedCount} document(s) with corrected username.`);
-	} catch (err) {
-		console.error("❌ Error while cleaning up usernames:", err);
-	}
-}
-
-await cleanUpGelatineUsernames(mongoDBClient.db("beats"));
 // // // Usage example
-//    (async () => {
-//    	const db: Db = mongoDBClient.db("beats");
-//    	const raffleEntries = await getRaffleEntries(db);
-//    	console.log(raffleEntries); })();
+    // (async () => {
+    // 	const db: Db = mongoDBClient.db("beats");
+    // 	const raffleEntries = await getRaffleEntries(db);
+   	// console.log(raffleEntries); })();
