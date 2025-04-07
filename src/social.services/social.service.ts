@@ -30,7 +30,7 @@ import { EDITION_ADDRESS } from "../config/constants";
 
 //**NANOID IMPORT
 import { nanoid } from "nanoid";
-import { followCypher, getFollowersFollowingCountCypher, getFollowersFollowingCypher } from "./social.cypher";
+import { followCypher, followingCypher, getFollowersFollowingCountCypher, getFollowersFollowingCypher } from "./social.cypher";
 import { mongoDBClient } from "../db/mongodb.client";
 import { Db } from "mongodb";
 
@@ -130,7 +130,7 @@ class SocialService {
     try {
       const result = await session.executeRead(async (tx: ManagedTransaction) => {
         // Execute query to fetch user, follow status, soul data, and smartWalletAddress
-        const profileDataQuery = await tx.run(followCypher, { userName, viewUsername });
+        const profileDataQuery = await tx.run(followingCypher, { userName, viewUsername });
   
         // If user not found, throw an error
         if (profileDataQuery.records.length === 0) {
