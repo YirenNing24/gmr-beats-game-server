@@ -17,6 +17,7 @@ export interface ViewProfileData {
   followedByUser: boolean
   smartWalletAddress: string
   profilePics: ProfilePicture[]
+  stalkers: Stalkers[]
   }
 
 export interface MutualData {
@@ -97,4 +98,17 @@ export interface FanMomentId {
 export interface FanMomentComment {
   id: string;
   comment: string
+}
+
+
+export interface FollowersFollowing {
+  following: { username: string, level: number, playerStats: any } []
+  followers: { username: string, level: number, playerStats: any } []
+}
+
+
+export interface Stalkers {
+  username: string
+  displayPic: string
+  timestamp: number
 }

@@ -12,7 +12,9 @@ import ValidationError from "../outputs/validation.error";
 import { FollowResponse, ViewProfileData, ViewedUserData, 
          MutualData, PlayerStatus, SetPlayerStatus, 
          CardGiftData, CardGiftSending, PostFanMoment, 
-         FanMomentId, FanMomentComment, PostComment } from "./social.services.interface";
+         FanMomentId, FanMomentComment, PostComment, 
+         FollowersFollowing,
+         Stalkers} from "./social.services.interface";
 
 import { MyNote, ProfilePicture } from "../game.services/profile.services/profile.interface";
 import { SuccessMessage } from "../outputs/success.message";
@@ -121,45 +123,34 @@ class SocialService {
   //** Retrieves profile information for a user's view of another user's profile.
   public async viewProfile(viewUsername: string, token: string): Promise<ViewProfileData> {
     const tokenService: TokenService = new TokenService();
-    const userName: string = await tokenService.verifyAccessToken(token);
     const profileService: ProfileService = new ProfileService();
     const session: Session = this.driver.session();
   
+    const userName: string = await tokenService.verifyAccessToken(token);
     try {
       const result = await session.executeRead(async (tx: ManagedTransaction) => {
-        // Fetch user, follow status, soul data, and smartWalletAddress in one query
-        const profileDataQuery = await tx.run(
-          `
-          MATCH (v:User {username: $viewUsername})
-          OPTIONAL MATCH (u:User {username: $userName})-[r1:FOLLOW]->(v)
-          OPTIONAL MATCH (v)-[r2:FOLLOW]->(u)
-          RETURN v AS user, 
-            v.smartWalletAddress AS smartWalletAddress,
-            CASE WHEN r1 IS NOT NULL THEN true ELSE false END AS followsUser, 
-            CASE WHEN r2 IS NOT NULL THEN true ELSE false END AS followedByUser
-          `,
-          { userName, viewUsername }
-        );
+        // Execute query to fetch user, follow status, soul data, and smartWalletAddress
+        const profileDataQuery = await tx.run(followCypher, { userName, viewUsername });
   
         // If user not found, throw an error
         if (profileDataQuery.records.length === 0) {
           throw new ValidationError(`User with username '${viewUsername}' not found.`, "");
         }
   
-        // Extract query result
+        // Extract data from the query result
         const record = profileDataQuery.records[0];
         const user = record.get("user");
         const followsUser: boolean = record.get("followsUser");
         const followedByUser: boolean = record.get("followedByUser");
         const smartWalletAddress: string = record.get("smartWalletAddress") || "";
-  
         const { username, playerStats, signupDate } = user.properties as ViewedUserData;
   
-        // Fetch profile picture
-        const profilePics: ProfilePicture[] = await profileService.getProfilePic(token, viewUsername);
-  
-        // Fetch follower & following counts
-        const { followerCount, followingCount } = await this.getFollowersFollowingCount(token, viewUsername);
+        // Execute independent service calls concurrently
+        const [profilePics, followersFollowing, stalkers] = await Promise.all([
+          profileService.getProfilePic(token, viewUsername),
+          this.getFollowersFollowing(token, viewUsername),
+          this.getStalkers(token, viewUsername)
+        ]);
   
         return {
           username,
@@ -168,9 +159,9 @@ class SocialService {
           followedByUser,
           smartWalletAddress,
           profilePics,
-          followerCount,
-          followingCount,
-          signupDate
+          signupDate,
+          followersFollowing,
+          stalkers
         } as ViewProfileData;
       });
   
@@ -182,6 +173,7 @@ class SocialService {
       await session.close();
     }
   }
+  
   
   
   public async saveStalker(token: string, body: { username: string }) {
@@ -251,7 +243,7 @@ class SocialService {
 
 
 
-  public async getStalkers(token: string, username: string ) {
+  public async getStalkers(token: string, username: string ): Promise<Stalkers[]> {
     try {
       const profileService: ProfileService = new ProfileService();
       const client = await mongoDBClient.connect();
@@ -268,10 +260,10 @@ class SocialService {
         .toArray();
   
       // Extract usernames of stalkers
-      const stalkerUsernames = stalkers.map((s) => s.visitor);
+      const stalkerUsernames: string[] = stalkers.map((s) => s.visitor);
   
       // Fetch profile pictures using profileService
-      const profilePics = await profileService.getDisplayPic(token, stalkerUsernames, "social");
+      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, stalkerUsernames, "social");
   
       // Map profile pictures to stalkers
       const stalkerDetails = stalkers.map((stalker) => {
@@ -280,7 +272,7 @@ class SocialService {
           username: stalker.visitor,
           displayPic: profilePic ? profilePic.profilePicture : null, // Use profile picture if found, else null
           timestamp: stalker.timestamp,
-        };
+        } as Stalkers
       });
 
 
@@ -370,7 +362,7 @@ class SocialService {
   
 
 
-  public async getFollowersFollowing(token: string, username: string = "") {
+  public async getFollowersFollowing(token: string, username: string = ""): Promise<FollowersFollowing> {
     try {
       const tokenService: TokenService = new TokenService();
   

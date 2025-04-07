@@ -361,23 +361,6 @@ class ProfileService {
     }
     
 
-  // private async getProfilePicsCount(userName: string): Promise<number> {
-  //     const connection: rt.Connection = await getRethinkDB();
-  //     try {
-  //       // Count the number of profile pictures for the user using filter
-  //       const countResult: number = await rt
-  //         .db('beats')
-  //         .table('profilePic')
-  //         .filter({ userName })
-  //         .count()
-  //         .run(connection);
-        
-  //       return countResult;
-  //     } catch (error: any) {
-  //       console.error(error);
-  //       throw error;
-  //   }
-  //   }
     
   public async createSoulPreferences(token: string, soulMetadata: SoulMetaData): Promise<SuccessMessage> {
       const session: Session | undefined = this.driver?.session();
