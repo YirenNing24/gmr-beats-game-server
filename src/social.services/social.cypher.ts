@@ -27,12 +27,14 @@ RETURN
 `
 
 export const followingCypher: string =
-          `
-          MATCH (v:User {username: $viewUsername})
-          OPTIONAL MATCH (u:User {username: $userName})-[r1:FOLLOW]->(v)
-          OPTIONAL MATCH (v)-[r2:FOLLOW]->(u)
-          RETURN v AS user, 
-            v.smartWalletAddress AS smartWalletAddress,
-            CASE WHEN r1 IS NOT NULL THEN true ELSE false END AS followsUser, 
-            CASE WHEN r2 IS NOT NULL THEN true ELSE false END AS followedByUser
-          `
+`
+MATCH (u:User {username: $userName})
+MATCH (v:User {username: $viewUsername})
+OPTIONAL MATCH (v:User)-[r1:FOLLOW]->(u)
+OPTIONAL MATCH (u:User)-[r2:FOLLOW]->(v)
+
+RETURN u AS user, 
+  v.smartWalletAddress AS smartWalletAddress,
+  CASE WHEN r2 IS NOT NULL THEN true ELSE false END AS followsUser, 
+  CASE WHEN r1 IS NOT NULL THEN true ELSE false END AS followedByUser
+`
