@@ -33,7 +33,7 @@ MATCH (v:User {username: $viewUsername})
 OPTIONAL MATCH (v:User)-[r1:FOLLOW]->(u)
 OPTIONAL MATCH (u:User)-[r2:FOLLOW]->(v)
 
-RETURN u AS user, 
+RETURN v AS user, 
   v.smartWalletAddress AS smartWalletAddress,
   CASE WHEN r2 IS NOT NULL THEN true ELSE false END AS followsUser, 
   CASE WHEN r1 IS NOT NULL THEN true ELSE false END AS followedByUser
