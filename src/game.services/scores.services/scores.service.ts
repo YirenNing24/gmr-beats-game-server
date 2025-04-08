@@ -124,7 +124,7 @@ class ScoreService {
 	
 				// Update the placeholder document with the actual score data
 				const result = await collection.updateOne(
-					{ _id: gameId },
+					{ _id: new ObjectId(gameId) },
 					{ $set: scoreWithRewards }
 				);
 	
