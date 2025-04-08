@@ -31,6 +31,8 @@ class ScoreService {
 		const songRewardService = new SongRewardService();
 		let username: string | null = null;
 		let beatsReward: number | null = null;
+
+		console.log("Mongol: ", score)
 	
 		try {
 			username = await tokenService.verifyAccessToken(token);
@@ -105,7 +107,7 @@ class ScoreService {
 	 */
 	private async insertScoreToMongo(scoreWithRewards: any, username: string | null): Promise<void> {
 
-		console.log("monggi: ", scoreWithRewards)
+		console.log("monggi ka: ", scoreWithRewards)
 		let retries = 3;
 		while (retries > 0) {
 			let client: MongoClient | null = null;
