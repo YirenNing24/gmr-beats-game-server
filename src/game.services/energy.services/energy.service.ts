@@ -8,6 +8,8 @@ import { Driver, ManagedTransaction, QueryResult, Session } from "neo4j-driver-c
 
 import TokenService from "../../user.services/token.services/token.service";
 import { nanoid } from "nanoid";
+import LeaderboardService from "../leaderboard.services/leaderboard.services";
+import ScoreService from "../scores.services/scores.service";
 
 class EnergyService {
 
@@ -78,10 +80,10 @@ class EnergyService {
 
 	//TODO - IN THE FUTURE RETURN THE generated ID which the playet needs to send back for verification
 	public async usePlayerEnergy(token: string, amount: number = 1): Promise<{ energy: boolean; gameId: string }> {
+		const scoreService: ScoreService = new ScoreService()
 		try {
 			const tokenService: TokenService = new TokenService();
 			const username: string = await tokenService.verifyAccessToken(token);
-			const gameId: string = nanoid();
 	
 			// Fetch current energy
 			const { energy: currentEnergy } = await this.getPlayerEnergyBeats(username);
@@ -93,17 +95,9 @@ class EnergyService {
 					lastEnergyUpdate: Date.now()
 				});
 	
-				// Store the generated ID in KeyDB
-				await keydb.HSET(`energy_usage:${gameId}`, {
-					username,
-					amountUsed: amount,
-					timestamp: Date.now()
-				});
-	
-				// Set TTL for 5 minutes (300 seconds)
-				await keydb.EXPIRE(`energy_usage:${gameId}`, 300);
-	
-				return { energy: true, gameId };
+
+				const submitClassicGame = await scoreService.submitClassicGame();
+				return { energy: true, gameId: submitClassicGame._id };
 			}
 	
 			return { energy: false, gameId: "" };

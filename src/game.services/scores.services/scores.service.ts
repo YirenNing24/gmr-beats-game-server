@@ -4,7 +4,7 @@ import { ClassicScoreStats, ScorePeerId } from "../leaderboard.services/leaderbo
 
 //** MONGODB IMPORT
 import { mongoDBClient } from "../../db/mongodb.client";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 
 //** IMPORTED SERVICES
 import TokenService from "../../user.services/token.services/token.service";
@@ -80,7 +80,27 @@ class ScoreService {
 			throw error;
 		}
 	}
-	
+
+
+
+	public async submitClassicGame(): Promise<{ _id: string }> {
+		const sessionId = new ObjectId();
+		try {
+			let client: MongoClient | null = null;
+			client = await mongoDBClient.connect();
+			const db = client.db("beats");
+			const collection = db.collection("classicScores");
+			// Insert a placeholder document with only _id and timestamp
+			await collection.insertOne({
+				_id: sessionId,
+				createdAt: new Date(),
+			});
+			return { _id: sessionId.toHexString() };
+		} catch (error: any) {
+			console.error("Error creating classic game session:", error);
+			throw error;
+		}
+	}
 	/**
 	 * Inserts the score into MongoDB with retry logic.
 	 */
@@ -92,16 +112,32 @@ class ScoreService {
 				client = await mongoDBClient.connect();
 				const db = client.db("beats");
 				const collection = db.collection("classicScores");
+				
+				// Assume scoreWithRewards.gameId is the placeholder _id (as a string)
+				const gameId = scoreWithRewards.gameId;
+				if (!gameId) {
+					throw new Error("Missing gameId in score data.");
+				}
 	
-				await collection.insertOne(scoreWithRewards);
-				console.log(`✅ Score inserted successfully for user: ${username}`);
-				break; // ✅ Success, exit loop
+				// Update the placeholder document with the actual score data
+				const result = await collection.updateOne(
+					{ _id: gameId },
+					{ $set: scoreWithRewards }
+				);
+	
+				// If no document was updated, throw an error
+				if (result.matchedCount === 0) {
+					throw new Error(`No game session found with _id: ${gameId}`);
+				}
+	
+				console.log(`✅ Score updated successfully for user: ${username}`);
+				break; // Success, exit loop
 			} catch (insertError) {
-				console.error(`Error inserting score for user: ${username}. Retrying...`, insertError);
+				console.error(`Error updating score for user: ${username}. Retrying...`, insertError);
 				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
 				retries--;
 			} finally {
-				// ✅ Ensure MongoDB connection is closed
+				// Ensure MongoDB connection is closed
 				if (client) {
 					try {
 						await client.close();
@@ -113,9 +149,11 @@ class ScoreService {
 		}
 	
 		if (retries === 0) {
-			throw new Error(`Failed to insert score after multiple retries for user: ${username}`);
+			throw new Error(`Failed to update score after multiple retries for user: ${username}`);
 		}
 	}
+	
+	
 	
 	
 	
