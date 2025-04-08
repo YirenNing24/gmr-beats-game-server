@@ -157,13 +157,13 @@ class ScoreService {
 	}
 
 
-	public async retrieveHistory(token: string): Promise<ClassicScoreStats[]> {
-		const tokenService = new TokenService();
+	public async retrieveHistory(token: string, username: string): Promise<ClassicScoreStats[]> {
+		const tokenService: TokenService = new TokenService();
 		let client: MongoClient | null = null;
-		let username: string | null = null;
+
 	
 		try {
-			username = await tokenService.verifyAccessToken(token);
+			await tokenService.verifyAccessToken(token);
 	
 			client = await mongoDBClient.connect();
 			const db = client.db("beats");
