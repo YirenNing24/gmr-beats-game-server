@@ -107,7 +107,7 @@ class ScoreService {
 	 */
 	private async insertScoreToMongo(scoreWithRewards: any, username: string | null): Promise<void> {
 
-		console.log("monggis: ", scoreWithRewards)
+		console.log("monggis 1: ", scoreWithRewards)
 		let retries = 3;
 		while (retries > 0) {
 			let client: MongoClient | null = null;
