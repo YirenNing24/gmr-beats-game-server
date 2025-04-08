@@ -155,6 +155,41 @@ class ScoreService {
 			throw new Error(`Failed to update score after multiple retries for user: ${username}`);
 		}
 	}
+
+
+	public async retrieveHistory(token: string): Promise<ClassicScoreStats[]> {
+		const tokenService = new TokenService();
+		let client: MongoClient | null = null;
+		let username: string | null = null;
+	
+		try {
+			username = await tokenService.verifyAccessToken(token);
+	
+			client = await mongoDBClient.connect();
+			const db = client.db("beats");
+			const collection = db.collection("classicScores");
+	
+			const scores = await collection
+				.find({ username })
+				.sort({ createdAt: -1 }) // descending
+				.limit(10)
+				.toArray();
+	
+			return scores as unknown as ClassicScoreStats[];
+		} catch (error: any) {
+			console.error(`Error retrieving score history for user: ${username}`, error);
+			throw error;
+		} finally {
+			if (client) {
+				try {
+					await client.close();
+				} catch (closeError: any) {
+					console.error(`Error closing MongoDB client while retrieving history for user: ${username}`, closeError);
+				}
+			}
+		}
+	}
+	
 	
 	
 	

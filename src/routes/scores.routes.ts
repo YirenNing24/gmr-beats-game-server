@@ -39,6 +39,25 @@ const scores = (app: Elysia): void => {
       }, classicScoreStatsSchema
     )
 
+    .get('api/open/history/classic', async ({ headers }): Promise<ClassicScoreStats[]> => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            const driver: Driver = getDriver();
+            const scoreService: ScoreService = new ScoreService(driver);
+            const output: ClassicScoreStats[] = await scoreService.retrieveHistory(jwtToken);
+            return output;
+        } catch (error: any) {
+            throw error
+        }
+      }, authorizationBearerSchema
+    )
+
+
+
     .get('/api/open/highscore/classic/per-song/player', async ({ headers } ): Promise<ClassicScoreStats[]> => {
         try {
             const authorizationHeader: string = headers.authorization;

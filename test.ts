@@ -1,5 +1,5 @@
 import { mongoDBClient } from "./src/db/mongodb.client";
-import { Db } from "mongodb";
+import { Db, MongoClient } from "mongodb";
 
 function runRaffle(entries: any) {
 	// Remove users with 0 entries
@@ -115,7 +115,6 @@ const entries = {
 	rodalyn23: 3,
   }
 
-runRaffle(entries)
 
 
 interface ClassicScoreStats {
@@ -242,3 +241,57 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
     // 	const db: Db = mongoDBClient.db("beats");
     // 	const raffleEntries = await getRaffleEntries(db);
    	// console.log(raffleEntries); })();
+
+	   async function countGamesPerUsername(): Promise<any> {
+		const validUsernames = [
+		  "Able_Haeunie",
+		  "Goddess",
+		  "khaelrocks",
+		  "Nacht18",
+		  "Gelatine",
+		  "c2nagreen",
+		  "bbangyunha",
+		  "chenry124",
+		  "Arasqvs",
+		  "ashlee_beer",
+		];
+	  
+		let client: MongoClient | null = null;
+		const gameCounts: { [key: string]: number } = {};
+	  
+		try {
+		  client = await mongoDBClient.connect();
+		  const db = client.db("beats");
+		  const collection = db.collection<ClassicScoreStats>("classicScores");
+	  
+		  // Loop through the valid usernames and count the number of games/scores for each user
+		  for (const username of validUsernames) {
+			const userScores = await collection
+			  .find({ username })
+			  .toArray();
+	  
+			// The count of the games is the length of the found documents
+			gameCounts[username] = userScores.length;
+		  }
+	  
+		  return gameCounts;
+		} catch (error: any) {
+		  console.error("Error counting games for usernames", error);
+		  throw error;
+		} finally {
+		  if (client) {
+			try {
+			  await client.close();
+			} catch (closeError) {
+			  console.error("Error closing MongoDB client", closeError);
+			}
+		  }
+		}
+	  }
+	  
+	  // Call the function to test
+	  countGamesPerUsername().then((result) => {
+		console.log(result);
+	  }).catch((error) => {
+		console.error(error);
+	  });
