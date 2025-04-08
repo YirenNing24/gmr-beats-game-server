@@ -40,7 +40,7 @@ const scores = (app: Elysia): void => {
       }, classicScoreStatsSchema
     )
 
-    .get('api/open/history/retrieve:username', async ({ headers, params }): Promise<ClassicScoreStats[]> => {
+    .get('api/open/history/retrieve/:username', async ({ headers, params }): Promise<ClassicScoreStats[]> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
