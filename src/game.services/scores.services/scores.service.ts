@@ -274,7 +274,7 @@ class ScoreService {
 			const highScores = await collection
 				.aggregate([
 					{ $match: { username } },
-					{ $sort: { score: -1, timestamp: -1 } }, // Sort first so $first picks best score
+					{ $sort: { score: -1, timestamp: -1 } }, // Sort first 
 					{
 						$group: {
 							_id: {
