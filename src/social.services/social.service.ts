@@ -226,8 +226,7 @@ class SocialService {
         });
       }
   
-      await client.close();
-  
+
       console.log(`Stalker log updated for ${visitorUsername} -> ${body.username}`);
       return { success: true, message: "Stalking activity recorded." };
     } catch (error: any) {

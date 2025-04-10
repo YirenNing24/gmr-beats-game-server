@@ -131,7 +131,7 @@ class LeaderboardService {
 			const scores = await collection
 				.find({ songName: songName, difficulty: difficulty })
 				.toArray();
-			await mongoDBClient.close();
+
 			return scores as unknown as savedClassicScoreStats[];
 		} catch (error) {
 			console.error("Error fetching scores:", error);

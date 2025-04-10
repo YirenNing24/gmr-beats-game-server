@@ -143,7 +143,7 @@ class ScoreService {
 				// Ensure MongoDB connection is closed
 				if (client) {
 					try {
-						await client.close();
+
 					} catch (closeError) {
 						console.error(`Error closing MongoDB client for user: ${username}`, closeError);
 					}
@@ -182,7 +182,7 @@ class ScoreService {
 		} finally {
 			if (client) {
 				try {
-					await client.close();
+
 				} catch (closeError: any) {
 					console.error(`Error closing MongoDB client while retrieving history for user: ${username}`, closeError);
 				}
@@ -221,7 +221,7 @@ class ScoreService {
 			console.error("Error fetching high scores:", error);
 			throw error;
 		} finally {
-			await mongoDBClient.close();
+
 		}
 	}
 
@@ -250,7 +250,7 @@ class ScoreService {
 			// ✅ Ensure the MongoDB connection is closed
 			if (client) {
 				try {
-					await client.close();
+
 				} catch (closeError) {
 					console.error("Error closing MongoDB client:", closeError);
 				}
@@ -304,7 +304,7 @@ class ScoreService {
 	
 			const formattedScores = highScores.map(({ _id, ...rest }) => rest) as ClassicScoreStats[];
 	
-			await client.close();
+	
 			
 			return formattedScores;
 		} catch (error: any) {

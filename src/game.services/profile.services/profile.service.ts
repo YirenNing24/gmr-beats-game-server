@@ -110,8 +110,7 @@ class ProfileService {
   
         // Insert the profile picture into MongoDB
         await profilePicCollection.insertOne(profilePicture);
-        await client.close();
-  
+
         return new SuccessMessage("Profile picture upload successful");
       } catch (error: any) {
         console.error("Error updating profile picture:", error);
@@ -163,7 +162,7 @@ class ProfileService {
         );
     
         // Close the DB connection
-        await client.close();
+
     
         return new SuccessMessage("Profile picture liked successfully");
       } catch (error: any) {
@@ -213,7 +212,7 @@ class ProfileService {
         );
     
         // Close the DB connection
-        await client.close();
+
     
         return new SuccessMessage("Profile picture unliked successfully");
       } catch (error: any) {
