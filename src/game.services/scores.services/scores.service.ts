@@ -267,22 +267,23 @@ class ScoreService {
 			const tokenService: TokenService = new TokenService();
 			const username: string = await tokenService.verifyAccessToken(token);
 	
-			// Establish MongoDB connection
 			const client: MongoClient = await mongoDBClient.connect();
 			const db = client.db("beats");
 			const collection = db.collection<ClassicScoreStats>("classicScores");
 	
-			// Aggregate query to get highest score per song for the user
 			const highScores = await collection
 				.aggregate([
-					{ $match: { username } }, // Filter by username
-					{ $sort: { score: -1, timestamp: -1 } }, // Sort by highest score first, then latest timestamp
+					{ $match: { username } },
+					{ $sort: { score: -1, timestamp: -1 } }, // Sort first so $first picks best score
 					{
 						$group: {
-							_id: "$songName", // Group by songName
-							songName: { $first: "$songName" }, // Take from highest score document
+							_id: {
+								songName: "$songName",
+								difficulty: "$difficulty"
+							},
+							songName: { $first: "$songName" },
 							difficulty: { $first: "$difficulty" },
-							score: { $first: "$score" }, // Ensure we take the highest score
+							score: { $first: "$score" },
 							combo: { $first: "$combo" },
 							maxCombo: { $first: "$maxCombo" },
 							accuracy: { $first: "$accuracy" },
@@ -294,25 +295,24 @@ class ScoreService {
 							bad: { $first: "$bad" },
 							miss: { $first: "$miss" },
 							username: { $first: "$username" },
-							gameId: { $first: "$gameId"}
+							gameId: { $first: "$gameId" }
 						}
 					},
-					{ $sort: { score: -1 } } // Final sort to return highest scores first
+					{ $sort: { score: -1 } }
 				])
 				.toArray();
 	
-			// Remove `_id` and ensure `songName` is present
 			const formattedScores = highScores.map(({ _id, ...rest }) => rest) as ClassicScoreStats[];
 	
-			// Close the database connection
 			await client.close();
-	
+			
 			return formattedScores;
 		} catch (error: any) {
 			console.error("Error fetching high scores:", error);
 			throw error;
 		}
 	}
+	
 	
 	
 	
