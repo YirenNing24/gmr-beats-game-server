@@ -15,6 +15,7 @@ import SongRewardService from "../rewards.services/song.rewards.service";
 import { LevelUpResult } from "../experience.services/experience.interface";
 import EnergyService from "../energy.services/energy.service";
 import keydb from "../../db/keydb.client";
+import { nanoid } from "nanoid";
 
 
 
@@ -64,6 +65,11 @@ class ScoreService {
 				beatsReward,
 				previousHighscore
 			};
+
+
+			
+
+
 	
 			// ✅ Open MongoDB **only when ready to insert**
 			await this.insertScoreToMongo(scoreWithRewards, username);
@@ -106,55 +112,67 @@ class ScoreService {
 	 * Inserts the score into MongoDB with retry logic.
 	 */
 	private async insertScoreToMongo(scoreWithRewards: any, username: string | null): Promise<void> {
-
-		console.log("monggis 3: ", scoreWithRewards)
+		console.log("monggis 3: ", scoreWithRewards);
 		let retries = 3;
+	
 		while (retries > 0) {
 			let client: MongoClient | null = null;
 			try {
 				client = await mongoDBClient.connect();
 				const db = client.db("beats");
-				const collection = db.collection("classicScores");
-				
-				// Assume scoreWithRewards.gameId is the placeholder _id (as a string)
-				const gameId = scoreWithRewards.gameId;
-				if (!gameId) {
-					throw new Error("Missing gameId in score data.");
+				const collection = db.collection("classic_scores");
+	
+				let gameId: string = scoreWithRewards.gameId;
+	
+				// Validate or convert gameId to ObjectId
+				let objectId: ObjectId;
+				try {
+					objectId = new ObjectId(gameId);
+				} catch {
+					console.warn(`Invalid gameId format from client (${gameId}), generating new ObjectId`);
+					objectId = new ObjectId();
+					scoreWithRewards.gameId = objectId.toHexString();
 				}
 	
-				// Update the placeholder document with the actual score data
-				const result = await collection.updateOne(
-					{ _id: new ObjectId(gameId) },
-					{ $set: scoreWithRewards }
+				// Check for an existing document
+				const existingScore = await collection.findOne({ _id: objectId });
+	
+				// If it exists and songName is different => new ObjectId (new game session)
+				if (existingScore && existingScore.songName !== scoreWithRewards.songName) {
+					console.warn(`⚠️ gameId collision with different songName for ${username}. Old: ${existingScore.songName}, New: ${scoreWithRewards.songName}`);
+					objectId = new ObjectId();
+					scoreWithRewards.gameId = objectId.toHexString();
+				}
+	
+				// Upsert the document (overwrite if same _id and songName, else new)
+				await collection.updateOne(
+					{ _id: objectId },
+					{ $set: { ...scoreWithRewards, username } },
+					{ upsert: true }
 				);
 	
-				// If no document was updated, throw an error
-				if (result.matchedCount === 0) {
-					throw new Error(`No game session found with _id: ${gameId}`);
-				}
-	
-				console.log(`✅ Score updated successfully for user: ${username}`);
-				break; // Success, exit loop
+				console.log(`✅ Score saved for ${username} with _id / gameId: ${objectId}`);
+				break;
 			} catch (insertError) {
-				console.error(`Error updating score for user: ${username}. Retrying...`, insertError);
-				await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 sec before retry
+				console.error(`❌ Error inserting score for ${username}. Retrying...`, insertError);
+				await new Promise((resolve) => setTimeout(resolve, 2000));
 				retries--;
 			} finally {
-				// Ensure MongoDB connection is closed
 				if (client) {
 					try {
-
+						await client.close();
 					} catch (closeError) {
-						console.error(`Error closing MongoDB client for user: ${username}`, closeError);
+						console.error(`Error closing MongoDB client for ${username}`, closeError);
 					}
 				}
 			}
 		}
 	
 		if (retries === 0) {
-			throw new Error(`Failed to update score after multiple retries for user: ${username}`);
+			throw new Error(`🚨 Failed to save score after retries for ${username}`);
 		}
 	}
+	
 
 
 	public async retrieveHistory(token: string, username: string): Promise<ClassicScoreStats[]> {
