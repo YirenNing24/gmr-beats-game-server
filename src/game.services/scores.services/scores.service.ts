@@ -144,11 +144,10 @@ class ScoreService {
 					scoreWithRewards.gameId = objectId.toHexString();
 				}
 	
-				// Upsert the document (overwrite if same _id and songName, else new)
-				await collection.updateOne(
-					{ _id: objectId },
-					{ $set: { ...scoreWithRewards, username } },
-					{ upsert: true }
+
+				const result = await collection.updateOne(
+					{ _id: new ObjectId(gameId) },
+					{ $set: scoreWithRewards }
 				);
 	
 				console.log(`✅ Score saved for ${username} with _id / gameId: ${objectId}`);
