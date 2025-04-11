@@ -112,7 +112,6 @@ class ScoreService {
 	 * Inserts the score into MongoDB with retry logic.
 	 */
 	private async insertScoreToMongo(scoreWithRewards: any, username: string | null): Promise<void> {
-		console.log("monggis 3: ", scoreWithRewards);
 		let retries = 3;
 	
 		while (retries > 0) {
@@ -146,9 +145,12 @@ class ScoreService {
 	
 
 				const result = await collection.updateOne(
-					{ _id: new ObjectId(gameId) },
-					{ $set: scoreWithRewards }
+					{ _id: objectId },
+					{ $set: { ...scoreWithRewards, username } },
+					{ upsert: true }
 				);
+
+				console.log("monggis 4: ", result);
 	
 				console.log(`✅ Score saved for ${username} with _id / gameId: ${objectId}`);
 				break;
