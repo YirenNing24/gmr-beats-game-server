@@ -136,12 +136,13 @@ class ScoreService {
 				// Check for an existing document
 				const existingScore = await collection.findOne({ _id: objectId });
 	
-				// If it exists and songName is different => new ObjectId (new game session)
-				if (existingScore && existingScore.songName !== scoreWithRewards.songName) {
+				// If it exists and has a songName, and it's different => new ObjectId (new game session)
+				if (existingScore && existingScore.songName && existingScore.songName !== scoreWithRewards.songName) {
 					console.warn(`⚠️ gameId collision with different songName for ${username}. Old: ${existingScore.songName}, New: ${scoreWithRewards.songName}`);
 					objectId = new ObjectId();
 					scoreWithRewards.gameId = objectId.toHexString();
 				}
+
 	
 
 				const result = await collection.updateOne(
