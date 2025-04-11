@@ -119,7 +119,7 @@ class ScoreService {
 			try {
 				client = await mongoDBClient.connect();
 				const db = client.db("beats");
-				const collection = db.collection("classic_scores");
+				const collection = db.collection("classicScores");
 	
 				let gameId: string = scoreWithRewards.gameId;
 	
