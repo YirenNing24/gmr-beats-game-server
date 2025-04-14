@@ -129,7 +129,7 @@ const social = (app: Elysia) => {
 
 
 
-    .get('/api/social/list/mutual', async ({ headers }) => {
+    .get('/api/social/list/mutual', async ({ headers, params }) => {
       try {
         const authorizationHeader: string = headers.authorization;
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -141,12 +141,12 @@ const social = (app: Elysia) => {
         const socialService: SocialService = new SocialService(driver);
         
 
-        const output: MutualData[] = await socialService.getMutual(jwtToken);
+        const output: MutualData[] = await socialService.getMutual(jwtToken, params.username);
         return output;
       } catch (error: any) {
         throw error
         }
-      }, authorizationBearerSchema
+      }, getFollowersFollowingSchema
     )
 
 

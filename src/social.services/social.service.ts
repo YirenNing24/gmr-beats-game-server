@@ -334,35 +334,46 @@ class SocialService {
 
 
   public async getMutual(token: string, username: string) {
+    const tokenService: TokenService = new TokenService();
+    const profileService: ProfileService = new ProfileService();
+  
     try {
-      const tokenService: TokenService = new TokenService();
-      const userName: string = await tokenService.verifyAccessToken(token);
-
+      // Only verify token, don't use the returned username
+      await tokenService.verifyAccessToken(token);
+  
       const session: Session = this.driver.session();
       const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
         tx.run(
           `
-          MATCH (u1:User {username: $userName})-[:FOLLOW]->(u2 {username: $username}),
-                (u2)-[:FOLLOW]->(u1)
-          RETURN u2.username as username, u2.playerStats as playerStats
+          MATCH (u:User {username: $username})-[:FOLLOW]->(m:User)-[:FOLLOW]->(u)
+          RETURN m.username as username, m.playerStats as playerStats
           `,
-          { userName, username }
+          { username }
         )
       );
       await session.close();
-
-      const users: MutualData[] = result.records.map(record => ({
-        username: record.get("username") || "",
-        playerStats: record.get("playerStats") || ""
-      })) as MutualData[];
-
+  
+      const mutualUsernames: string[] = result.records.map(record => record.get("username"));
+  
+      const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, mutualUsernames, "social");
+  
+      const users: MutualData[] = result.records.map(record => {
+        const uname: string = record.get("username") || "";
+        return {
+          username: uname,
+          playerStats: record.get("playerStats") || "",
+          profilePics: profilePics.filter(pic => pic.userName === uname)
+        };
+      });
+  
       return users;
-      
-
-    } catch(error: any) {
-      console.log(error)
+  
+    } catch (error: any) {
+      console.error("getMutual error:", error);
+      return [];
     }
   }
+  
 
 
   public async getFollowersFollowingCount(token: string, username: string = "") {

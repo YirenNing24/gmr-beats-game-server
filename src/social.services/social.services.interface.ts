@@ -23,6 +23,7 @@ export interface ViewProfileData {
 export interface MutualData {
     username: string;
     playerStats: string;
+    profilePics: ProfilePicture[]
   }
 
 export interface PlayerStatus {
