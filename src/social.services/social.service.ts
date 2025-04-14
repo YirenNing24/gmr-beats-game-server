@@ -333,6 +333,38 @@ class SocialService {
   // }
 
 
+  public async getMutual(token: string, username: string) {
+    try {
+      const tokenService: TokenService = new TokenService();
+      const userName: string = await tokenService.verifyAccessToken(token);
+
+      const session: Session = this.driver.session();
+      const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+        tx.run(
+          `
+          MATCH (u1:User {username: $userName})-[:FOLLOW]->(u2 {username: $username}),
+                (u2)-[:FOLLOW]->(u1)
+          RETURN u2.username as username, u2.playerStats as playerStats
+          `,
+          { userName, username }
+        )
+      );
+      await session.close();
+
+      const users: MutualData[] = result.records.map(record => ({
+        username: record.get("username") || "",
+        playerStats: record.get("playerStats") || ""
+      })) as MutualData[];
+
+      return users;
+      
+
+    } catch(error: any) {
+      console.log(error)
+    }
+  }
+
+
   public async getFollowersFollowingCount(token: string, username: string = "") {
     try {
       const tokenService: TokenService = new TokenService();

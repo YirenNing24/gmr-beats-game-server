@@ -65,55 +65,45 @@ function runRaffle(entries: any) {
 }
 
 
-// const entries = {
-// 	khaelrocks: 15,
-// 	laurence27: 16,
-// 	mirajane: 29,
-// 	chenry124: 13,
-// 	Chuna: 14,
-// 	Goddess: 13,
-// 	CieloQ281993: 5,
-// 	Raquel_05: 9,
-// 	chabechabs: 11,
-// 	Ampot: 10,
-// 	jjanee: 15,
-// 	dnicanics05: 17,
-// 	wena: 26,
-// 	belen: 21,
-// 	jenelyn: 15,
-// 	map02: 1,
-// 	edz5: 3,
-// 	kateyyy: 0,
-// 	ken_ken: 1,
-// 	kaye: 2,
-// 	karl: 1,
-// 	Gabo: 2,
-// 	rodalyn23: 3,
-//   }
-
 const entries = {
-	khaelrocks: 16,
+	khaelrocks: 17,
 	laurence27: 19,
-	mirajane: 36,
-	Chuna: 18,
-	Goddess: 21,
+	mirajane: 43,
+	Chuna: 22,
+	Goddess: 25,
 	CieloQ281993: 10,
 	Raquel_05: 13,
 	chabechabs: 11,
 	Ampot: 10,
 	jjanee: 17,
-	dnicanics05: 23,
-	wena: 31,
-	belen: 26,
+	dnicanics05: 29,
+	wena: 36,
+	belen: 30,
 	jenelyn: 21,
 	map02: 1,
 	edz5: 3,
+	kateyyy: 0,
 	ken_ken: 1,
 	kaye: 2,
 	karl: 1,
 	Gabo: 2,
 	rodalyn23: 3,
   }
+
+// const entries = {
+	
+// 		Able_Haeunie: 42,
+// 		Goddess: 63,
+// 		khaelrocks: 48,
+// 		Nacht18: 71,
+// 		Gelatine: 18,
+// 		c2nagreen: 61,
+// 		bbangyunha: 2,
+// 		chenry124: 43,
+// 		Arasqvs: 89,
+// 		ashlee_beer: 0,
+	  
+//   }
 
 
 
@@ -148,7 +138,6 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 			"khaelrocks",
 			"laurence27",
 			"mirajane",
-			"chenry124",
 			"Chuna",
 			"Goddess",
 			"CieloQ281993",
@@ -174,52 +163,57 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 
 		// Aggregate to count scores per username per day
 		const scoresPerUser = await collection
-			.aggregate([
-				{
-					$match: {
-						username: { $in: validUsernames } // Filter only selected usernames
-					}
-				},
-				{
-					$project: {
-						username: 1,
-						date: {
-							// Convert timestamp to YYYY-MM-DD format
-							$toDate: "$timestamp"
-						}
-					}
-				},
-				{
-					$group: {
-						_id: {
-							username: "$username",
-							day: {
-								$dateToString: { format: "%Y-%m-%d", date: "$date" } // Group by day
-							}
-						},
-						scoreCount: { $sum: 1 }
-					}
-				},
-				{
-					$match: {
-						scoreCount: { $gte: 3 } // Only count if at least 3 scores in a day
-					}
-				},
-				{
-					$group: {
-						_id: "$_id.username",
-						entries: { $sum: 1 } // Count unique days where 3+ scores exist
-					}
-				},
-				{
-					$project: {
-						_id: 0,
-						username: "$_id",
-						entries: 1
+		.aggregate([
+			{
+				$match: {
+					username: { $in: validUsernames }
+				}
+			},
+			{
+				$project: {
+					username: 1,
+					date: {
+						$toDate: "$timestamp"
 					}
 				}
-			])
-			.toArray();
+			},
+			{
+				$group: {
+					_id: {
+						username: "$username",
+						day: {
+							$dateToString: { format: "%Y-%m-%d", date: "$date" }
+						}
+					},
+					scoreCount: { $sum: 1 }
+				}
+			},
+			{
+				$project: {
+					username: "$_id.username",
+					entriesForDay: {
+						$min: [
+							{ $floor: { $divide: ["$scoreCount", 3] } }, // 1 entry per 3 scores
+							1 // cap at 5 per day
+						]
+					}
+				}
+			},
+			{
+				$group: {
+					_id: "$username",
+					entries: { $sum: "$entriesForDay" }
+				}
+			},
+			{
+				$project: {
+					_id: 0,
+					username: "$_id",
+					entries: 1
+				}
+			}
+		])
+		.toArray();
 
 		// Convert to a record format { username: entries }, default to 0 if user has no scores
 		const raffleEntries: Record<string, number> = {};
@@ -237,61 +231,72 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 
 //test
 // // // Usage example
-    // (async () => {
-    // 	const db: Db = mongoDBClient.db("beats");
-    // 	const raffleEntries = await getRaffleEntries(db);
-   	// console.log(raffleEntries); })();
+    //  (async () => {
+ 	// const db: Db = mongoDBClient.db("beats");
+    //  	const raffleEntries = await getRaffleEntries(db);
+   	//  console.log(raffleEntries); })();
 
-	   async function countGamesPerUsername(): Promise<any> {
-		const validUsernames = [
-		  "Able_Haeunie",
-		  "Goddess",
-		  "khaelrocks",
-		  "Nacht18",
-		  "Gelatine",
-		  "c2nagreen",
-		  "bbangyunha",
-		  "chenry124",
-		  "Arasqvs",
-		  "ashlee_beer",
-		];
+	//    async function countGamesPerUsername(): Promise<any> {
+	// 	const validUsernames = [
+	// 	  "Able_Haeunie",
+	// 	  "Goddess",
+	// 	  "khaelrocks",
+	// 	  "Nacht18",
+	// 	  "Gelatine",
+	// 	  "c2nagreen",
+	// 	  "bbangyunha",
+	// 	  "chenry124",
+	// 	  "Arasqvs",
+	// 	  "ashlee_beer",
+	// 	];
 	  
-		let client: MongoClient | null = null;
-		const gameCounts: { [key: string]: number } = {};
+	// 	let 
+
+
+	// 	const gameCounts: { [key: string]: number } = {};
 	  
-		try {
-		  client = await mongoDBClient.connect();
-		  const db = client.db("beats");
-		  const collection = db.collection<ClassicScoreStats>("classicScores");
+	// 	try {
+	// 	  client = await mongoDBClient.connect();
+	// 	  const db = client.db("beats");
+	// 	  const collection = db.collection<ClassicScoreStats>("classicScores");
 	  
-		  // Loop through the valid usernames and count the number of games/scores for each user
-		  for (const username of validUsernames) {
-			const userScores = await collection
-			  .find({ username })
-			  .toArray();
+	// 	  // Loop through the valid usernames and count the number of games/scores for each user
+	// 	  for (const username of validUsernames) {
+	// 		const userScores = await collection
+	// 		  .find({ username })
+	// 		  .toArray();
 	  
-			// The count of the games is the length of the found documents
-			gameCounts[username] = userScores.length;
-		  }
+	// 		// The count of the games is the length of the found documents
+	// 		gameCounts[username] = userScores.length;
+	// 	  }
 	  
-		  return gameCounts;
-		} catch (error: any) {
-		  console.error("Error counting games for usernames", error);
-		  throw error;
-		} finally {
-		  if (client) {
-			try {
-			  await client.close();
-			} catch (closeError) {
-			  console.error("Error closing MongoDB client", closeError);
-			}
-		  }
-		}
-	  }
+	// 	  return gameCounts;
+	// 	} catch (error: any) {
+	// 	  console.error("Error counting games for usernames", error);
+	// 	  throw error;
+	// 	} finally {
+	// 	  if (client) {
+	// 		try {
+	// 		  await client.close();
+	// 		} catch (closeError) {
+	// 		  console.error("Error closing MongoDB client", closeError);
+	// 		}
+	// 	  }
+	// 	}
+	//   }
 	  
 	  // Call the function to test
-	  countGamesPerUsername().then((result) => {
-		console.log(result);
-	  }).catch((error) => {
-		console.error(error);
-	  });
+	//   countGamesPerUsername().then((result) => {
+	// 	console.log(result);
+	//   }).catch((error) => {
+	// 	console.error(error);
+	//   });
+
+
+	 runRaffle(entries).then((winners) => {	
+	 	console.log("Winners:", winners);
+	 }
+	 ).catch((error) => {
+	 	console.error("Error during raffle:", error);
+	 }
+	 );
