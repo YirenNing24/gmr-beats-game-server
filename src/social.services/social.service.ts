@@ -365,6 +365,8 @@ class SocialService {
           profilePics: profilePics.filter(pic => pic.userName === uname)
         };
       });
+
+      console.log(mutualUsernames)
   
       return users;
   
