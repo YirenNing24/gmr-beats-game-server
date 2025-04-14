@@ -129,7 +129,7 @@ const social = (app: Elysia) => {
 
 
 
-    .get('/api/social/list/mutual/:usernmae', async ({ headers, params }) => {
+    .get('/api/social/list/mutual/:username', async ({ headers, params }) => {
       try {
         const authorizationHeader: string = headers.authorization;
         if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
