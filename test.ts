@@ -44,7 +44,7 @@ function runRaffle(entries: any) {
 
 			const winners = new Set<string>();
 
-			while (winners.size < 1 && pool.length > 0) {
+			while (winners.size < 3 && pool.length > 0) {
 				const randomIndex = Math.floor(Math.random() * pool.length);
 				const winner = pool[randomIndex];
 				winners.add(winner);
@@ -65,45 +65,41 @@ function runRaffle(entries: any) {
 }
 
 
-const entries = {
-	khaelrocks: 17,
-	laurence27: 19,
-	mirajane: 43,
-	Chuna: 22,
-	Goddess: 25,
-	CieloQ281993: 10,
-	Raquel_05: 13,
-	chabechabs: 11,
-	Ampot: 10,
-	jjanee: 17,
-	dnicanics05: 29,
-	wena: 36,
-	belen: 30,
-	jenelyn: 21,
-	map02: 1,
-	edz5: 3,
-	kateyyy: 0,
-	ken_ken: 1,
-	kaye: 2,
-	karl: 1,
-	Gabo: 2,
-	rodalyn23: 3,
-  }
-
 // const entries = {
-	
-// 		Able_Haeunie: 42,
-// 		Goddess: 63,
-// 		khaelrocks: 48,
-// 		Nacht18: 71,
-// 		Gelatine: 18,
-// 		c2nagreen: 61,
-// 		bbangyunha: 2,
-// 		chenry124: 43,
-// 		Arasqvs: 89,
-// 		ashlee_beer: 0,
-	  
+// 	khaelrocks: 17,
+// 	laurence27: 19,
+// 	mirajane: 43,
+// 	Chuna: 22,
+// 	Goddess: 25,
+// 	CieloQ281993: 10,
+// 	Raquel_05: 13,
+// 	chabechabs: 11,
+// 	Ampot: 10,
+// 	jjanee: 17,
+// 	dnicanics05: 29,
+// 	wena: 36,
+// 	belen: 30,
+// 	jenelyn: 21,
+// 	map02: 1,
+// 	edz5: 3,
+// 	kateyyy: 0,
+// 	ken_ken: 1,
+// 	kaye: 2,
+// 	karl: 1,
+// 	Gabo: 2,
+// 	rodalyn23: 3,
 //   }
+
+const entries = {
+	
+		Able_Haeunie: 42,
+		khaelrocks: 48,
+		Nacht18: 71,
+		Gelatine: 18,
+
+		bbangyunha: 2,
+
+  }
 
 
 
@@ -135,28 +131,13 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 
 		// List of usernames to check
 		const validUsernames = [
+			"Able_Haeunie",
 			"khaelrocks",
-			"laurence27",
-			"mirajane",
-			"Chuna",
-			"Goddess",
-			"CieloQ281993",
-			"Raquel_05",
-			"chabechabs",
-			"Ampot",
-			"jjanee",
-			"dnicanics05",
-			"wena",
-			"belen",
-			"jenelyn",
-			"map02",
-			"edz5",
-			"kateyyy",
-			"ken_ken",
-			"kaye",
-			"karl",
-			"Gabo",
-			"rodalyn23"
+			"Nacht18",
+			"Gelatine",
+			"c2nagreen",
+			"bbangyunha",
+			"Arasqvs"
 		];
 		
 		
@@ -194,7 +175,7 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 					entriesForDay: {
 						$min: [
 							{ $floor: { $divide: ["$scoreCount", 3] } }, // 1 entry per 3 scores
-							1 // cap at 5 per day
+							5 // cap at 5 per day
 						]
 					}
 				}
@@ -238,17 +219,15 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 
 	//    async function countGamesPerUsername(): Promise<any> {
 	// 	const validUsernames = [
-	// 	  "Able_Haeunie",
-	// 	  "Goddess",
-	// 	  "khaelrocks",
-	// 	  "Nacht18",
-	// 	  "Gelatine",
-	// 	  "c2nagreen",
-	// 	  "bbangyunha",
-	// 	  "chenry124",
-	// 	  "Arasqvs",
-	// 	  "ashlee_beer",
+	// 		"Able_Haeunie",
+	// 		"khaelrocks",
+	// 		"Nacht18",
+	// 		"Gelatine",
+	// 		"c2nagreen",
+	// 		"bbangyunha",
+	// 		"Arasqvs"
 	// 	];
+	// }
 	  
 	// 	let 
 
@@ -299,4 +278,4 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 	 ).catch((error) => {
 	 	console.error("Error during raffle:", error);
 	 }
-	 );
+	 )

@@ -352,9 +352,8 @@ class SocialService {
         )
       );
       await session.close();
-  
+      
       const mutualUsernames: string[] = result.records.map(record => record.get("username"));
-  
       const profilePics: ProfilePicture[] = await profileService.getDisplayPic(token, mutualUsernames, "social");
   
       const users: MutualData[] = result.records.map(record => {
