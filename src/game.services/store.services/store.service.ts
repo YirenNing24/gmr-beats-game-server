@@ -255,11 +255,11 @@ export default class StoreService {
         const scaledPrice = Number(BigInt(listing.pricePerToken) / BigInt(10 ** 18));
       
         return {
+          supply: listing.quantity, 
           ...asset, // Spread metadata from asset (name, image, etc.)
           tokenId: asset?.id,
           owner: asset?.uploader || "",
           type: asset?.tier || "",
-          supply: listing.quantity, // ✅ THIS is the actual listed supply (50)
           quantityOwned: "", // Placeholder
           pricePerToken: scaledPrice,
           currencyName: listing.currencyValuePerToken?.name || "",
