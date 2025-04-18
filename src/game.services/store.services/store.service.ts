@@ -1,5 +1,5 @@
 //** MEMGRAPH IMPORTS
-import { BEATS_TOKEN, CARD_MARKETPLACE, PACK_MARKETPLACE } from "../../config/constants";
+import { BEATS_TOKEN, CARD_MARKETPLACE, CARD_UPGRADE_MARKETPLACE, PACK_MARKETPLACE } from "../../config/constants";
 import { Driver, Session, ManagedTransaction, QueryResult, RecordShape } from "neo4j-driver-core";
 
 //** CONFIG IMPORTs
@@ -36,11 +36,12 @@ export default class StoreService {
   public async getValidCards(token: string): Promise<StoreCardData[]> {
     try {
       const tokenService = new TokenService();
-      const username = await tokenService.verifyAccessToken(token);
+      await tokenService.verifyAccessToken(token);
   
       const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_MARKETPLACE)).result;
   
       // Transform listings into StoreCardData format
+      //@ts-ignore
       const finalCardData: StoreCardData[] = listed.map((listing) => {
         const asset = listing.asset as StoreCardData;
         const scaledPrice = Number(BigInt(listing.pricePerToken) / BigInt(10 ** 18));
@@ -239,18 +240,35 @@ export default class StoreService {
 
   public async getvalidCardUpgrade(token: string): Promise<StoreCardUpgradeData[]> {
     try {
-      const tokenService: TokenService = new TokenService();
+      const tokenService = new TokenService();
       await tokenService.verifyAccessToken(token);
+  
+      const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_UPGRADE_MARKETPLACE)).result;
+  
+      // Transform listings into StoreCardData format
+      //@ts-ignore
+      const finalCardUpgradeData: StoreCardUpgradeData[] = listed.map((listing) => {
+        const asset = listing.asset as StoreCardUpgradeData;
+        const scaledPrice = Number(BigInt(listing.pricePerToken) / BigInt(10 ** 18));
+  
+        return {
+          ...asset, // Spread metadata key-value pairs from asset
+          tokenId: asset.id, // Map asset.id to tokenId
+          owner: asset.uploader || "", // Assuming uploader is the owner
+          type: asset.tier || "", // Assuming tier is the type
+          supply: asset.supply || 0, // Ensure supply is set
+          quantityOwned: "", // Placeholder (if needed later)
+          pricePerToken: scaledPrice,
+          currencyName: listing.currencyValuePerToken?.name || "",
+          startTime: listing.startTimeInSeconds?.toString() || "",
+          endTime: listing.endTimeInSeconds?.toString() || "",
+          // imageByte: asset.image || "", // Assuming image is the imageByte equivalent
+          listingId: listing.id, // Map listing.id correctly
+          lister: "beats", // Default lister value
+        };
+      });
 
-      const session: Session = this.driver.session();
-      const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-          tx.run(getValidCardUpgrades)
-      );
-      await session.close();
-
-      const cardUpgrade: StoreCardUpgradeData[] = result.records.map(record => record.get("c").properties);
-
-      return cardUpgrade as StoreCardUpgradeData[];
+      return finalCardUpgradeData  as StoreCardUpgradeData[];
     } catch (error: any) {
         console.error("Error fetching items:", error);
         throw error
