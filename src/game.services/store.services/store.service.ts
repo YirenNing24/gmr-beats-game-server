@@ -252,15 +252,23 @@ export default class StoreService {
       const finalCardUpgradeData: StoreCardUpgradeData[] = listed.map((listing) => {
         const asset = listing.asset as StoreCardUpgradeData;
         const scaledPrice = Number(BigInt(listing.pricePerToken) / BigInt(10 ** 18));
-      
+  
         return {
-// ✅ Correct source of quantity
-          ...asset, // Spread asset **after** so it won't override custom values
-          quantityOwned: "", // Placeholder
+          ...asset, // Spread metadata key-value pairs from asset
+          tokenId: asset.id, // Map asset.id to tokenId
+          owner: asset.uploader || "", // Assuming uploader is the owner
+          type: asset.tier || "", // Assuming tier is the type
+          supply: listing.quantity || 0, // Ensure supply is set
+          quantityOwned: "", // Placeholder (if needed later)
           pricePerToken: scaledPrice,
+          currencyName: listing.currencyValuePerToken?.name || "",
+          startTime: listing.startTimeInSeconds?.toString() || "",
+          endTime: listing.endTimeInSeconds?.toString() || "",
+          // imageByte: asset.image || "", // Assuming image is the imageByte equivalent
+          listingId: listing.id, // Map listing.id correctly
+          lister: "beats", // Default lister value
         };
       });
-      
 
       return finalCardUpgradeData  as StoreCardUpgradeData[];
     } catch (error: any) {
