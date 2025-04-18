@@ -13,7 +13,7 @@ import TokenService from "../../user.services/token.services/token.service";
 import { engine } from "../../user.services/wallet.services/wallet.service";
 
 //** TYPE INTERFACE IMPORTs
-import { BuyCardData, CardUpgradeAsset, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
+import { BuyCardData, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
 import { UserData } from "../../user.services/user.service.interface";
 
 
@@ -245,32 +245,32 @@ export default class StoreService {
   
       const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_UPGRADE_MARKETPLACE)).result;
 
-      console.log(listed)
+
   
       // Transform listings into StoreCardData format
       //@ts-ignore
       const finalCardUpgradeData: StoreCardUpgradeData[] = listed.map((listing) => {
-        const {  id, uploader, tier, quantity,  ...assetMetadata } = listing.asset as CardUpgradeAsset
-      
+        const asset = listing.asset as StoreCardUpgradeData;
         const scaledPrice = Number(BigInt(listing.pricePerToken) / BigInt(10 ** 18));
-      
+
+        console.log(listing)
+  
         return {
-          
-          ...assetMetadata, // Spread metadata from asset (name, image, etc.)
-          tokenId: id,
-          owner: uploader || "",
-          type: tier || "",
-          quantityOwned: "", // Placeholder
-          supply: listing.quantity, 
+          ...asset, // Spread metadata key-value pairs from asset
+          tokenId: asset.id, // Map asset.id to tokenId
+          owner: asset.uploader || "", // Assuming uploader is the owner
+          type: asset.tier || "", // Assuming tier is the type
+          supply: listing.quantity || 0, // Ensure supply is set
+          quantityOwned: "", // Placeholder (if needed later)
           pricePerToken: scaledPrice,
           currencyName: listing.currencyValuePerToken?.name || "",
           startTime: listing.startTimeInSeconds?.toString() || "",
           endTime: listing.endTimeInSeconds?.toString() || "",
-          listingId: listing.id,
-          lister: "beats",
+          // imageByte: asset.image || "", // Assuming image is the imageByte equivalent
+          listingId: listing.id, // Map listing.id correctly
+          lister: "beats", // Default lister value
         };
       });
-      
 
       return finalCardUpgradeData  as StoreCardUpgradeData[];
     } catch (error: any) {
