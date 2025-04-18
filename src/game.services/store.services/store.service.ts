@@ -244,6 +244,8 @@ export default class StoreService {
       await tokenService.verifyAccessToken(token);
   
       const listed = (await engine.marketplaceDirectListings.getAllValid(CHAIN, CARD_UPGRADE_MARKETPLACE)).result;
+
+      console.log(listed)
   
       // Transform listings into StoreCardData format
       //@ts-ignore
