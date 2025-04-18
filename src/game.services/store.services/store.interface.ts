@@ -159,6 +159,21 @@ export interface StoreCardUpgradeData {
 }
 
 
+export interface CardUpgradeAsset {
+	id: string;
+	uri: string;
+	name: string;
+	image: string;
+	experience: number;
+	itemType: string;
+	minted: boolean;
+	quantity: number;
+	tier: string;
+	uploader: string;
+}
+
+
+
 
 export interface StorePackData {
     currencyName: string;

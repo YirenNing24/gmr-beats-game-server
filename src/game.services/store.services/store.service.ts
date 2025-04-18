@@ -13,7 +13,7 @@ import TokenService from "../../user.services/token.services/token.service";
 import { engine } from "../../user.services/wallet.services/wallet.service";
 
 //** TYPE INTERFACE IMPORTs
-import { BuyCardData, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
+import { BuyCardData, CardUpgradeAsset, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
 import { UserData } from "../../user.services/user.service.interface";
 
 
@@ -250,17 +250,18 @@ export default class StoreService {
       // Transform listings into StoreCardData format
       //@ts-ignore
       const finalCardUpgradeData: StoreCardUpgradeData[] = listed.map((listing) => {
-        const asset = listing.asset;
+        const {  id, uploader, tier, quantity,  ...assetMetadata } = listing.asset as CardUpgradeAsset
       
         const scaledPrice = Number(BigInt(listing.pricePerToken) / BigInt(10 ** 18));
       
         return {
-          supply: listing.quantity, 
-          ...asset, // Spread metadata from asset (name, image, etc.)
-          tokenId: asset?.id,
-          owner: asset?.uploader || "",
-          type: asset?.tier || "",
+          
+          ...assetMetadata, // Spread metadata from asset (name, image, etc.)
+          tokenId: id,
+          owner: uploader || "",
+          type: tier || "",
           quantityOwned: "", // Placeholder
+          supply: listing.quantity, 
           pricePerToken: scaledPrice,
           currencyName: listing.currencyValuePerToken?.name || "",
           startTime: listing.startTimeInSeconds?.toString() || "",
