@@ -258,7 +258,7 @@ export default class StoreService {
           tokenId: asset.id, // Map asset.id to tokenId
           owner: asset.uploader || "", // Assuming uploader is the owner
           type: asset.tier || "", // Assuming tier is the type
-          supply: asset.supply || 0, // Ensure supply is set
+          supply: listing.quantity || 0, // Ensure supply is set
           quantityOwned: "", // Placeholder (if needed later)
           pricePerToken: scaledPrice,
           currencyName: listing.currencyValuePerToken?.name || "",
