@@ -335,9 +335,9 @@ class InventoryService {
     
         const userName: string = await tokenService.verifyAccessToken(token);
         const { smartWalletAddress } = await this.getInventoryData(userName);
-        const cardUpgrades = await this.getOwnedCardUpgrades(smartWalletAddress)
+        const cardUpgrades: StoreCardUpgradeData[] = await this.getOwnedCardUpgrades(smartWalletAddress)
 
-        return cardUpgrades as StoreCardUpgradeData[];
+        return cardUpgrades
       } catch (error: any) {
         console.error("Error opening user inventory:", error);
         throw error;
