@@ -23,8 +23,8 @@ export const buyCardUpgradeSchema = {
     headers: t.Object({ 
         authorization: t.String() }), 
     body: t.Object({ 
-        listingId: t.Number(), 
         uri: t.String(),
+        listingId: t.Number(), 
         quantity: t.String(),
         price: t.String()
     }),
@@ -38,7 +38,7 @@ export const buyCardPackSchema = {
     body: t.Object({ 
         listingId: t.Number(), 
         uri: t.String(),
-        price: t.String(),
+        price: t.String()
     }),
         
 }
