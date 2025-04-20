@@ -14,7 +14,7 @@ import { StoreCardUpgradeData } from "../store.services/store.interface";
 import { SuccessMessage } from "../../outputs/success.message";
 
 //** CONFIG IMPORTS
-import { CHAIN, EDITION_ADDRESS } from "../../config/constants";
+import { CARD_UPGRADE, CHAIN, EDITION_ADDRESS } from "../../config/constants";
 
 
 //** INVENTORY SERVICE CLASS
@@ -332,31 +332,29 @@ class InventoryService {
     public async upgradeInventoryOpen(token: string): Promise<StoreCardUpgradeData[]> {
       try {
         const tokenService: TokenService = new TokenService();
+    
         const userName: string = await tokenService.verifyAccessToken(token);
-    
-        const session: Session | undefined = this.driver?.session();
-    
-        // Use a Read Transaction and only return the necessary properties
-        const result: QueryResult<RecordShape> | undefined = await session?.executeRead(
-          (tx: ManagedTransaction) =>
-            tx.run(openCardUpgradeCypher, { userName })
-        );
-    
-        await session?.close();
-    
-        // If no records found, return an empty array
-        if (!result || result.records.length === 0) {
-          return [];
-        }
-    
-        // Extract card upgrade nodes from the result and return them in an array
-        const cardUpgrades: StoreCardUpgradeData[]  = result.records.map((record: RecordShape) => record.get("cardUpgrade").properties);
+        const { smartWalletAddress } = await this.getInventoryData(userName);
+        const cardUpgrades = await this.getOwnedCardUpgrades(smartWalletAddress)
 
         return cardUpgrades as StoreCardUpgradeData[];
       } catch (error: any) {
         console.error("Error opening user inventory:", error);
         throw error;
       }
+    }
+
+
+    private async getOwnedCardUpgrades(smartWalletAddress: string): Promise<StoreCardUpgradeData[]> {
+        const ownedCardUpgrades = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, CARD_UPGRADE))
+            .result as unknown as StoreCardUpgradeData[];
+    
+        // Add contractAddress to each card
+        ownedCardUpgrades.forEach(cardUpgrade => {
+            cardUpgrade.editionAddress = CARD_UPGRADE;
+        });
+    
+        return ownedCardUpgrades;
     }
     
 
