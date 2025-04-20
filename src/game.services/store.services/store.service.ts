@@ -139,7 +139,7 @@ export default class StoreService {
       try {
         console.log(`🔄 Attempt ${attempt}/${maxRetries} - Setting Allowance`);
         const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
-          spenderAddress: CARD_MARKETPLACE,
+          spenderAddress: CARD_UPGRADE_MARKETPLACE,
           amount: price,
         });
   
