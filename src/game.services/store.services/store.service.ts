@@ -131,7 +131,7 @@ export default class StoreService {
 
 
   //Initiates a card upgrade purchase using the provided wallet information and listing ID.
-  private async cardUpgradePurchase(buyerWalletAddress: string, listingId: number, price: string, quantity: string) {
+  private async cardUpgradePurchase(buyerWalletAddress: string, listingId: string, price: string, quantity: string) {
     const maxRetries = 3;
     const retryDelay = 3000; // 3 seconds delay before retry
   

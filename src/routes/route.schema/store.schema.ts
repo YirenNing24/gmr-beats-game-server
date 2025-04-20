@@ -24,11 +24,10 @@ export const buyCardUpgradeSchema = {
         authorization: t.String() }), 
     body: t.Object({ 
         uri: t.String(),
-        listingId: t.Number(), 
+        listingId: t.String(), 
         quantity: t.String(),
         price: t.String()
-    }),
-        
+    }),   
 }
 
 
