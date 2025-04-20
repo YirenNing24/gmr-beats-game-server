@@ -13,7 +13,7 @@ import TokenService from "../../user.services/token.services/token.service";
 import { engine } from "../../user.services/wallet.services/wallet.service";
 
 //** TYPE INTERFACE IMPORTs
-import { BuyCardData, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
+import { BuyCardData, BuyCardUpgradeData, StoreCardData, StoreCardUpgradeData, StorePackData } from "./store.interface";
 import { UserData } from "../../user.services/user.service.interface";
 
 
@@ -102,6 +102,86 @@ export default class StoreService {
 
 
   // 
+  public async buyCardUpgrade(buycardUpgradeData: BuyCardUpgradeData, token: string) {
+    try {
+      const tokenService: TokenService = new TokenService();
+      const username: string = await tokenService.verifyAccessToken(token);
+
+      const { listingId, price, quantity } = buycardUpgradeData as BuyCardUpgradeData
+
+      const session: Session = this.driver.session();
+      const result: QueryResult<RecordShape> = await session.executeRead((tx: ManagedTransaction) =>
+        tx.run(buyCardCypher, { username }) 
+      );
+      await session.close();
+      if (result.records.length === 0) {
+        throw new ValidationError(`User with username '${username}' not found.`, '');
+      }
+      const userData: UserData = result.records[0].get("u");
+      const { smartWalletAddress } = userData.properties;
+
+      await this.cardUpgradePurchase(smartWalletAddress, listingId, price, quantity);
+
+      return new SuccessMessage("Purchase was successful");
+    } catch (error: any) {
+      console.log(error)
+      throw error
+    }
+  }
+
+
+  //Initiates a card upgrade purchase using the provided wallet information and listing ID.
+  private async cardUpgradePurchase(buyerWalletAddress: string, listingId: number, price: string, quantity: string) {
+    const maxRetries = 3;
+    const retryDelay = 3000; // 3 seconds delay before retry
+  
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} - Setting Allowance`);
+        const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, buyerWalletAddress, {
+          spenderAddress: CARD_MARKETPLACE,
+          amount: price,
+        });
+  
+        // ✅ Ensure the allowance transaction is mined
+        await this.ensureTransactionMined(allowanceTransaction.result.queueId);
+  
+        console.log(`✅ Allowance successfully set. Proceeding with purchase.`);
+  
+        const requestBody = {
+          listingId: listingId.toString(),
+          quantity,
+          buyer: buyerWalletAddress,
+        };
+  
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} - Buying From Listing`);
+        const transaction = (
+          await engine.marketplaceDirectListings.buyFromListing(CHAIN, CARD_UPGRADE_MARKETPLACE, buyerWalletAddress, requestBody)
+        ).result;
+  
+        // ✅ Ensure the purchase transaction is mined
+        await this.ensureTransactionMined(transaction.queueId);
+  
+        console.log(`✅ Card upgrade purchased successfully on attempt ${attempt}`);
+        return transaction; // Success, return transaction details
+      } catch (error: any) {
+        console.error(`❌ Attempt ${attempt} failed:`, error);
+  
+        if (attempt === maxRetries) {
+          throw new Error("🚨 Card upgrade purchase failed after all retry attempts.");
+        }
+  
+        console.log(`⏳ Retrying in ${retryDelay / 1000} seconds...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
+  }
+
+
+
+
+
+
   public async buyCard(buycardData: BuyCardData, token: string) {
     try {
       const tokenService: TokenService = new TokenService();
@@ -202,6 +282,10 @@ export default class StoreService {
     }
     
   }
+
+
+
+  
 
 
   

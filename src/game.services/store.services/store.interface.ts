@@ -93,6 +93,9 @@ export interface BuyCardData {
     price: string;
 }
 
+
+
+
 /**
  * Interface for buying card upgrade data.
  * @interface BuyCardUpgradeData
@@ -104,6 +107,7 @@ export interface BuyCardUpgradeData {
     uri: string;
     listingId: number
     quantity: string
+    price: string
 }
 
 

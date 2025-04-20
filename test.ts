@@ -44,7 +44,7 @@ function runRaffle(entries: any) {
 
 			const winners = new Set<string>();
 
-			while (winners.size < 3 && pool.length > 0) {
+			while (winners.size < 1 && pool.length > 0) {
 				const randomIndex = Math.floor(Math.random() * pool.length);
 				const winner = pool[randomIndex];
 				winners.add(winner);
@@ -92,12 +92,12 @@ function runRaffle(entries: any) {
 
 const entries = {
 	
-		Able_Haeunie: 42,
-		khaelrocks: 48,
-		Nacht18: 71,
-		Gelatine: 18,
-
-		bbangyunha: 2,
+	Able_Haeunie: 42,
+	khaelrocks: 48,
+	Nacht18: 78,
+	Gelatine: 18,
+	c2nagreen: 71,
+	bbangyunha: 2,
 
   }
 
@@ -137,7 +137,6 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 			"Gelatine",
 			"c2nagreen",
 			"bbangyunha",
-			"Arasqvs"
 		];
 		
 		
@@ -212,22 +211,21 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 
 //test
 // // // Usage example
-    //  (async () => {
- 	// const db: Db = mongoDBClient.db("beats");
-    //  	const raffleEntries = await getRaffleEntries(db);
-   	//  console.log(raffleEntries); })();
+     (async () => {
+ 	const db: Db = mongoDBClient.db("beats");
+     	const raffleEntries = await getRaffleEntries(db);
+   	 console.log(raffleEntries); })();
 
-	//    async function countGamesPerUsername(): Promise<any> {
-	// 	const validUsernames = [
-	// 		"Able_Haeunie",
-	// 		"khaelrocks",
-	// 		"Nacht18",
-	// 		"Gelatine",
-	// 		"c2nagreen",
-	// 		"bbangyunha",
-	// 		"Arasqvs"
-	// 	];
-	// }
+	   async function countGamesPerUsername(): Promise<any> {
+		const validUsernames = [
+			"Able_Haeunie",
+			"khaelrocks",
+			"Nacht18",
+			"Gelatine",
+			"c2nagreen",
+			"bbangyunha",
+		];
+	}
 	  
 	// 	let 
 
