@@ -25,7 +25,8 @@ export const buyCardUpgradeSchema = {
     body: t.Object({ 
         listingId: t.Number(), 
         uri: t.String(),
-        quantity: t.String() 
+        quantity: t.String(),
+        price: t.String()
     }),
         
 }
