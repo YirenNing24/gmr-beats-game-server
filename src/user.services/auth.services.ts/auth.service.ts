@@ -19,6 +19,7 @@ import { playerStats } from '../../noobs/noobs.js'
 //**  IMPORTED SERVICES
 import WalletService from '../wallet.services/wallet.service.js'
 import TokenService from '../token.services/token.service.js'
+import EnergyService from '../../game.services/energy.services/energy.service.js'
 
 //** UUID GENERATOR
 import { nanoid } from "nanoid"
@@ -31,7 +32,7 @@ import { WalletData, UserData, ValidateSessionReturn, AuthenticateReturn, TokenS
 
 //** GEO IP IMPORT
 import geoip from 'geoip-lite2'
-import EnergyService from '../../game.services/energy.services/energy.service.js'
+
 import { inventoryCypher } from './auth.cypher.js'
 
 

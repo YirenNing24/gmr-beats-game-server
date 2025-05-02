@@ -1,68 +1,72 @@
 import { mongoDBClient } from "./src/db/mongodb.client";
 import { Db, MongoClient } from "mongodb";
+import { engine } from "./src/user.services/wallet.services/wallet.service";
+import { driver } from "neo4j-driver";
+import { CHAIN, EDITION_ADDRESS } from "./src/config/constants";
+import { getDriver } from "./src/db/memgraph";
 
-function runRaffle(entries: any) {
-	// Remove users with 0 entries
-	const validEntries = Object.entries(entries).filter(([_, count]) => count > 0);
+// function runRaffle(entries: any) {
+// 	// Remove users with 0 entries
+// 	const validEntries = Object.entries(entries).filter(([_, count]) => count > 0);
 
-	// Create a weighted pool of names
-	let pool: string[] = [];
-	for (const [name, count] of validEntries) {
-		for (let i = 0; i < count; i++) {
-			pool.push(name);
-		}
-	}
+// 	// Create a weighted pool of names
+// 	let pool: string[] = [];
+// 	for (const [name, count] of validEntries) {
+// 		for (let i = 0; i < count; i++) {
+// 			pool.push(name);
+// 		}
+// 	}
 
-	if (pool.length === 0) {
-		console.log("Uh-oh... nobody entered the raffle! Guess I'll keep the prize. 😏");
-		return [];
-	}
+// 	if (pool.length === 0) {
+// 		console.log("Uh-oh... nobody entered the raffle! Guess I'll keep the prize. 😏");
+// 		return [];
+// 	}
 
-	console.log("🎉 The raffle is starting! Get ready! 🎉");
+// 	console.log("🎉 The raffle is starting! Get ready! 🎉");
 
-	let timeLeft = 10;
-	const interval = setInterval(() => {
-		const funnyMessages = [
-			`⏳ ${timeLeft} seconds left... someone's sweating already! 😅`,
-			`💀 ${timeLeft} seconds... someone's praying right now. 🙏`,
-			`🎶 ${timeLeft} seconds... cue the dramatic drumroll! 🥁`,
-			`🤡 ${timeLeft} seconds... rigged? No, just ✨random✨`,
-			`🔥 ${timeLeft} seconds... someone's luck is about to explode! 💥`,
-			`💸 ${timeLeft} seconds... better start writing your victory speech! 📝`,
-			`🚀 ${timeLeft} seconds... tension rising, palms sweating! 😰`,
-			`🎰 ${timeLeft} seconds... jackpot or heartbreak? Let's see! 🎲`,
-			`🎭 ${timeLeft} seconds... Will you win? Will you cry? Stay tuned! 📢`,
-			`🏆 ${timeLeft} seconds... last chance to bribe the RNG gods! 👀`
-		];
-		console.log(funnyMessages[10 - timeLeft]);
-		timeLeft--;
-	}, 1000);
+// 	let timeLeft = 10;
+// 	const interval = setInterval(() => {
+// 		const funnyMessages = [
+// 			`⏳ ${timeLeft} seconds left... someone's sweating already! 😅`,
+// 			`💀 ${timeLeft} seconds... someone's praying right now. 🙏`,
+// 			`🎶 ${timeLeft} seconds... cue the dramatic drumroll! 🥁`,
+// 			`🤡 ${timeLeft} seconds... rigged? No, just ✨random✨`,
+// 			`🔥 ${timeLeft} seconds... someone's luck is about to explode! 💥`,
+// 			`💸 ${timeLeft} seconds... better start writing your victory speech! 📝`,
+// 			`🚀 ${timeLeft} seconds... tension rising, palms sweating! 😰`,
+// 			`🎰 ${timeLeft} seconds... jackpot or heartbreak? Let's see! 🎲`,
+// 			`🎭 ${timeLeft} seconds... Will you win? Will you cry? Stay tuned! 📢`,
+// 			`🏆 ${timeLeft} seconds... last chance to bribe the RNG gods! 👀`
+// 		];
+// 		console.log(funnyMessages[10 - timeLeft]);
+// 		timeLeft--;
+// 	}, 1000);
 
-	return new Promise<string[]>((resolve) => {
-		setTimeout(() => {
-			clearInterval(interval);
+// 	return new Promise<string[]>((resolve) => {
+// 		setTimeout(() => {
+// 			clearInterval(interval);
 
-			const winners = new Set<string>();
+// 			const winners = new Set<string>();
 
-			while (winners.size < 1 && pool.length > 0) {
-				const randomIndex = Math.floor(Math.random() * pool.length);
-				const winner = pool[randomIndex];
-				winners.add(winner);
+// 			while (winners.size < 1 && pool.length > 0) {
+// 				const randomIndex = Math.floor(Math.random() * pool.length);
+// 				const winner = pool[randomIndex];
+// 				winners.add(winner);
 
-				// Remove all instances of the winner from the pool
-				pool = pool.filter(name => name !== winner);
-			}
+// 				// Remove all instances of the winner from the pool
+// 				pool = pool.filter(name => name !== winner);
+// 			}
 
-			const winnerList = [...winners];
-			console.log(`🎊 And the winners are... 🥁🥁🥁`);
-			winnerList.forEach((name, index) => {
-				console.log(`🏆 Winner #${index + 1}: ${name}`);
-			});
+// 			const winnerList = [...winners];
+// 			console.log(`🎊 And the winners are... 🥁🥁🥁`);
+// 			winnerList.forEach((name, index) => {
+// 				console.log(`🏆 Winner #${index + 1}: ${name}`);
+// 			});
 
-			resolve(winnerList);
-		}, 10000);
-	});
-}
+// 			resolve(winnerList);
+// 		}, 10000);
+// 	});
+// }
 
 
 // const entries = {
@@ -90,16 +94,20 @@ function runRaffle(entries: any) {
 // 	rodalyn23: 3,
 //   }
 
-const entries = {
-	
-	Able_Haeunie: 42,
-	khaelrocks: 48,
-	Nacht18: 78,
-	Gelatine: 18,
-	c2nagreen: 71,
-	bbangyunha: 2,
+// const entries = {
 
-  }
+// 	Able_Haeunie: 42,
+// 	khaelrocks: 48,
+// 	Nacht18: 78,
+// 	Gelatine: 18,
+// 	c2nagreen: 71,
+// 	bbangyunha: 2,
+// 	Arasqvs,
+// 	chenry124,
+// 	Goddess
+
+//   }
+
 
 
 
@@ -124,129 +132,135 @@ interface ClassicScoreStats {
 	timestamp: number; // UNIX timestamp in milliseconds
 }
 
-async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
-	try {
-		
-		const collection = db.collection<ClassicScoreStats>("classicScores");
+// async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
+// 	try {
 
-		// List of usernames to check
-		const validUsernames = [
-			"Able_Haeunie",
-			"khaelrocks",
-			"Nacht18",
-			"Gelatine",
-			"c2nagreen",
-			"bbangyunha",
-		];
-		
-		
+// 		const collection = db.collection<ClassicScoreStats>("classicScores");
 
-		// Aggregate to count scores per username per day
-		const scoresPerUser = await collection
-		.aggregate([
-			{
-				$match: {
-					username: { $in: validUsernames }
-				}
-			},
-			{
-				$project: {
-					username: 1,
-					date: {
-						$toDate: "$timestamp"
-					}
-				}
-			},
-			{
-				$group: {
-					_id: {
-						username: "$username",
-						day: {
-							$dateToString: { format: "%Y-%m-%d", date: "$date" }
-						}
-					},
-					scoreCount: { $sum: 1 }
-				}
-			},
-			{
-				$project: {
-					username: "$_id.username",
-					entriesForDay: {
-						$min: [
-							{ $floor: { $divide: ["$scoreCount", 3] } }, // 1 entry per 3 scores
-							5 // cap at 5 per day
-						]
-					}
-				}
-			},
-			{
-				$group: {
-					_id: "$username",
-					entries: { $sum: "$entriesForDay" }
-				}
-			},
-			{
-				$project: {
-					_id: 0,
-					username: "$_id",
-					entries: 1
-				}
-			}
-		])
-		.toArray();
+// 		// List of usernames to check
+// 		const validUsernames = [
+// 			"Able_Haeunie",
+// 			"khaelrocks",
+// 			"Nacht18",
+// 			"Gelatine",
+// 			"c2nagreen",
+// 			"bbangyunha",
+// 		];
 
-		// Convert to a record format { username: entries }, default to 0 if user has no scores
-		const raffleEntries: Record<string, number> = {};
-		for (const username of validUsernames) {
-			const userEntry = scoresPerUser.find(user => user.username === username);
-			raffleEntries[username] = userEntry ? userEntry.entries : 0;
-		}
 
-		return raffleEntries;
-	} catch (error) {
-		console.error("Error fetching raffle entries:", error);
-		throw error;
-	}
-}
+
+// 		// Aggregate to count scores per username per day
+// 		const scoresPerUser = await collection
+// 		.aggregate([
+// 			{
+// 				$match: {
+// 					username: { $in: validUsernames }
+// 				}
+// 			},
+// 			{
+// 				$project: {
+// 					username: 1,
+// 					date: {
+// 						$toDate: "$timestamp"
+// 					}
+// 				}
+// 			},
+// 			{
+// 				$group: {
+// 					_id: {
+// 						username: "$username",
+// 						day: {
+// 							$dateToString: { format: "%Y-%m-%d", date: "$date" }
+// 						}
+// 					},
+// 					scoreCount: { $sum: 1 }
+// 				}
+// 			},
+// 			{
+// 				$project: {
+// 					username: "$_id.username",
+// 					entriesForDay: {
+// 						$min: [
+// 							{ $floor: { $divide: ["$scoreCount", 3] } }, // 1 entry per 3 scores
+// 							5 // cap at 5 per day
+// 						]
+// 					}
+// 				}
+// 			},
+// 			{
+// 				$group: {
+// 					_id: "$username",
+// 					entries: { $sum: "$entriesForDay" }
+// 				}
+// 			},
+// 			{
+// 				$project: {
+// 					_id: 0,
+// 					username: "$_id",
+// 					entries: 1
+// 				}
+// 			}
+// 		])
+// 		.toArray();
+
+// 		// Convert to a record format { username: entries }, default to 0 if user has no scores
+// 		const raffleEntries: Record<string, number> = {};
+// 		for (const username of validUsernames) {
+// 			const userEntry = scoresPerUser.find(user => user.username === username);
+// 			raffleEntries[username] = userEntry ? userEntry.entries : 0;
+// 		}
+
+// 		return raffleEntries;
+// 	} catch (error) {
+// 		console.error("Error fetching raffle entries:", error);
+// 		throw error;
+// 	}
+// }
 
 //test
 // // // Usage example
-     (async () => {
- 	const db: Db = mongoDBClient.db("beats");
-     	const raffleEntries = await getRaffleEntries(db);
-   	 console.log(raffleEntries); })();
+//      (async () => {
+//  	const db: Db = mongoDBClient.db("beats");
+//      	const raffleEntries = await getRaffleEntries(db);
+//    	 console.log(raffleEntries); })();
 
-	   async function countGamesPerUsername(): Promise<any> {
-		const validUsernames = [
-			"Able_Haeunie",
-			"khaelrocks",
-			"Nacht18",
-			"Gelatine",
-			"c2nagreen",
-			"bbangyunha",
-		];
-	}
-	  
-	// 	let 
+// 	   async function countGamesPerUsername(): Promise<any> {
+// 		const validUsernames = [
+// 			"Able_Haeunie",
+// 			"khaelrocks",
+// 			"Nacht18",
+// 			"Gelatine",
+// 			"c2nagreen",
+// 			"bbangyunha",
+// 		];
+// 	}
+
+// 	// 	let
 
 
-	// 	const gameCounts: { [key: string]: number } = {};
-	  
-	// 	try {
-	// 	  client = await mongoDBClient.connect();
-	// 	  const db = client.db("beats");
-	// 	  const collection = db.collection<ClassicScoreStats>("classicScores");
-	  
-	// 	  // Loop through the valid usernames and count the number of games/scores for each user
+// 	// 	const gameCounts: { [key: string]: number } = {};
+
+// 	// 	try {
+// 	// 	  client = await mongoDBClient.connect();
+// 	// 	  const db = client.db("beats");
+// 	// 	  const collection = db.collection<ClassicScoreStats>("classicScores");
+
+// 	// 	  // Loop through the valid usernames and count the number oconst getOwnedCardCount = async (smartWalletAddress: string): Promise<number> => {
+// 	const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS))
+// 	.result as unknown as InventoryCardData[];
+
+// return ownedCards.length;
+// };
+// f games/scores for each user
 	// 	  for (const username of validUsernames) {
 	// 		const userScores = await collection
 	// 		  .find({ username })
 	// 		  .toArray();
-	  
+
 	// 		// The count of the games is the length of the found documents
 	// 		gameCounts[username] = userScores.length;
 	// 	  }
-	  
+
 	// 	  return gameCounts;
 	// 	} catch (error: any) {
 	// 	  console.error("Error counting games for usernames", error);
@@ -261,7 +275,7 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 	// 	  }
 	// 	}
 	//   }
-	  
+
 	  // Call the function to test
 	//   countGamesPerUsername().then((result) => {
 	// 	console.log(result);
@@ -270,10 +284,20 @@ async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
 	//   });
 
 
-	 runRaffle(entries).then((winners) => {	
-	 	console.log("Winners:", winners);
-	 }
-	 ).catch((error) => {
-	 	console.error("Error during raffle:", error);
-	 }
-	 )
+	//  runRaffle(entries).then((winners) => {
+	//  	console.log("Winners:", winners);
+	//  }
+	//  ).catch((error) => {
+	//  	console.error("Error during raffle:", error);
+	//  }
+	//  )
+
+	// const getOwnedCardCount = async (smartWalletAddress: string = "0x5E6b6222c1b816a5695495a651693da7c831A5Eb"): Promise<number> => {
+	// 	const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS))
+	// 		.result as unknown as InventoryCardData[];
+
+	// 	console.log( ownedCards.length);
+	// };
+
+
+	// getOwnedCardCount();
