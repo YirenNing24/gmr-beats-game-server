@@ -20,18 +20,6 @@ services:
       - ann-network
     restart: always
 
-  backend-server-2:
-    image: kaetaro13/beats-game-server
-    container_name: backend-server-2
-    ports:
-      - "127.0.0.1:8082:8085"  # maps container port 8085 -> host 8082
-    env_file:
-      - ./.env
-    networks:
-      - ann-network
-    restart: always
-
-
 
 networks:
   ann-network:
