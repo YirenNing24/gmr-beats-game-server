@@ -31,18 +31,7 @@ services:
       - ann-network
     restart: always
 
-  game-server:
-    image: kaetaro13/godot-server:latest
-    container_name: game-server
-    ports:
-      - "127.0.0.1:8090:8087/tcp"
-      - "127.0.0.1:8090:8087/udp"
-    environment:
-      KEYDB_PASSWORD: "${KEYDB_PASSWORD}"
-      JWT_SECRET: "${JWT_SECRET}"
-    networks:
-      - ann-network
-    restart: always
+
 
 networks:
   ann-network:

@@ -36,18 +36,18 @@ const app = new Elysia({
 
   async function initMongoDB(): Promise<void> {
     try {
-      console.log("🔄 Connecting to MongoDB...");
+      console.log("Connecting to MongoDB...");
       await mongoDBClient.connect();
-      console.log("✅ MongoDB connected successfully.");
+      console.log("MongoDB connected successfully.");
     } catch (error) {
-      console.error("❌ Failed to connect to MongoDB:", error);
-      process.exit(1); // Exit process if MongoDB is unreachable
+      console.error("Failed to connect to MongoDB:", error);
+      process.exit(1); 
     }
   }
 
 
   async function startServer() {
-    await initMongoDB(); // Ensure MongoDB is connected first
+    await initMongoDB(); 
   }
 
 
