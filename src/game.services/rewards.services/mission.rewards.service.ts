@@ -444,7 +444,7 @@ class RewardService {
 		const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
 		try {
 			if (rewardType === "BEATS") {
-				await this.sendBeatsReward(smartWalletAddress, rewardData.amount.toString());
+				await this.sendSolReward(smartWalletAddress, rewardData.amount.toString());
 			}
 		
 		} catch (error: any) {
@@ -455,48 +455,23 @@ class RewardService {
 	}
 
 
-	public async sendBeatsReward(smartWalletAddress: string, beatsAmount: string): Promise<void> {
-		const maxRetries = 3;
-		const retryDelay = 3000; // 3 seconds delay before retry
-	
-		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+	public async sendSolReward(smartWalletAddress: string, solAmount: string): Promise<void> {
 			try {
-				console.log(`🔄 Attempt ${attempt}/${maxRetries} - Setting Allowance`);
-				const setAllowanceBody = { spenderAddress: ENGINE_ADMIN_WALLET_ADDRESS, amount: beatsAmount };
-				const allowanceTransaction = await engine.erc20.setAllowance(CHAIN, BEATS_TOKEN, TREASURY_WALLET, setAllowanceBody);
-				
-				// ✅ Ensure the allowance transaction is mined before proceeding
-				await this.ensureTransactionMined(allowanceTransaction.result.queueId);
-		
-				console.log(`✅ Allowance set successfully. Proceeding with transfer...`);
-		
-				// ✅ Proceed with transfer after successful allowance transaction
-				console.log(`🔄 Attempt ${attempt}/${maxRetries} - Transferring Beats`);
-				const transferBody = { toAddress: smartWalletAddress, fromAddress: TREASURY_WALLET, amount: beatsAmount };
-				const transferTransaction = await engine.erc20.transferFrom(CHAIN, BEATS_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, transferBody);
-		
-				// ✅ Ensure the transfer transaction is mined
-				await this.ensureTransactionMined(transferTransaction.result.queueId);
-	
-				console.log(`✅ Beats successfully sent on attempt ${attempt}`);
-				return; // Success, exit function
-			} catch (error: any) {
-				console.error(`❌ Attempt ${attempt} failed:`, error);
-	
-				if (attempt === maxRetries) {
-					throw new Error("🚨 Beats transfer failed after all retry attempts.");
+				// Proceed with transfer after successful allowance transaction
+				const params: SendSolanaParams = {
+					from: "Ca6iXuBexw6t87mZMpCGGCwRJZk2Go9rZk4BV6u7EW5r",
+					to: smartWalletAddress,
+					amount: Number(solAmount)
 				}
-	
-				console.log(`⏳ Retrying in ${retryDelay / 1000} seconds...`);
-				await new Promise((resolve) => setTimeout(resolve, retryDelay));
-			}
+
+				await sendSolanaToken(params);
+			} catch (error: any) {
+				console.log(error)
+				throw error
 		}
 	}
 	
 	
-	/**
-	 * Ensures a Thirdweb transaction is mined, with retry logic if it's "errored".
-	 */
 	public async ensureTransactionMined(queueId: string): Promise<void> {
 		const maxRetries = 3; // Number of immediate retries before background retry
 		const maxErrorRetries = 3; // Max retries for errored transactions
@@ -558,9 +533,7 @@ class RewardService {
 		this.retryInBackground(queueId);
 	}
 	
-	/**
-	 * Retries a transaction in the background without blocking execution.
-	 */
+
 	private retryInBackground(queueId: string) {
 		const retryInterval = 5000; // Retry every 5 seconds
 		const maxBackgroundRetries = 100; // Give up after 100 background retries
@@ -605,18 +578,66 @@ class RewardService {
 	}
 	
 	
-	
-
-	
-	
-
-
-	
-	
-	
 
 }
 
 export default RewardService;
 
 
+export interface SendSolanaParams {
+	from: string,
+	to: string
+	amount: number
+	
+}
+
+
+const sendSolanaToken = async (params: SendSolanaParams) => {
+	// Convert SOL → lamports and make sure it's an integer
+	const amountLamports = BigInt(Math.floor(params.amount * 1_000_000_000));
+
+	// Convert lamports (amount) to 8-byte little-endian buffer
+	const lamportsBuffer = Buffer.alloc(8);
+	lamportsBuffer.writeBigUInt64LE(amountLamports);
+
+	// Instruction discriminator for "Transfer" (2) as u32 little-endian
+	const discriminator = Buffer.alloc(4);
+	discriminator.writeUInt32LE(2);
+
+	const data = Buffer.concat([discriminator, lamportsBuffer]).toString("base64");
+
+	const body = {
+		executionOptions: {
+			chainId: "solana:devnet",
+			signerAddress: params.from,
+			commitment: "confirmed"
+		},
+		instructions: [
+			{
+				programId: "11111111111111111111111111111111",
+				accounts: [
+					{ pubkey: params.from, isSigner: true, isWritable: true },
+					{ pubkey: params.to, isSigner: false, isWritable: true }
+				],
+				data,
+				encoding: "base64"
+			}
+		]
+	};
+
+	const headers = {
+		"Content-Type": "application/json",
+		"x-client-id": process.env.X_CLIENT_ID || "",
+		"x-vault-access-token": process.env.VAULT_ACCESS_TOKEN || ""
+	};
+
+	const res = await fetch("https://engine.thirdweb.com/v1/solana/transaction", {
+		method: "POST",
+		headers,
+		body: JSON.stringify(body)
+	});
+
+	const dataRes = await res.json();
+	if (!res.ok) throw new Error(dataRes.error || "Transaction failed");
+	return dataRes;
+};

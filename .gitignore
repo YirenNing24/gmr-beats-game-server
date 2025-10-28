@@ -181,3 +181,15 @@ game-server.bash
 .env.me
 .env*
 !.env.vault
+
+
+
+# test
+test.ts 
+send.ts
+test2.ts 
+test4.ts
+dummy.ts
+.gitignore
+bun.lockb
+.vscode/settings.json

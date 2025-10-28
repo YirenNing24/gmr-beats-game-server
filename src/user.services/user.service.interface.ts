@@ -1,7 +1,4 @@
 //**  TYPE INTERFACE
-
-import { StringLike } from "bun";
-
 /**
  * Represents the return data structure for validating a user session.
  *
@@ -187,6 +184,7 @@ export interface UserData {
       deviceId: string;
       inventorySize: any;
       smartWalletAddress: string;
+      encryptedAccessKey: string;
       preferredServer: string;
     };
   }

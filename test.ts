@@ -1,303 +1,189 @@
-import { mongoDBClient } from "./src/db/mongodb.client";
-import { Db, MongoClient } from "mongodb";
-import { engine } from "./src/user.services/wallet.services/wallet.service";
-import { driver } from "neo4j-driver";
-import { CHAIN, EDITION_ADDRESS } from "./src/config/constants";
-import { getDriver } from "./src/db/memgraph";
+import { PublicKey } from "@solana/web3.js";
 
-// function runRaffle(entries: any) {
-// 	// Remove users with 0 entries
-// 	const validEntries = Object.entries(entries).filter(([_, count]) => count > 0);
-
-// 	// Create a weighted pool of names
-// 	let pool: string[] = [];
-// 	for (const [name, count] of validEntries) {
-// 		for (let i = 0; i < count; i++) {
-// 			pool.push(name);
-// 		}
-// 	}
-
-// 	if (pool.length === 0) {
-// 		console.log("Uh-oh... nobody entered the raffle! Guess I'll keep the prize. 😏");
-// 		return [];
-// 	}
-
-// 	console.log("🎉 The raffle is starting! Get ready! 🎉");
-
-// 	let timeLeft = 10;
-// 	const interval = setInterval(() => {
-// 		const funnyMessages = [
-// 			`⏳ ${timeLeft} seconds left... someone's sweating already! 😅`,
-// 			`💀 ${timeLeft} seconds... someone's praying right now. 🙏`,
-// 			`🎶 ${timeLeft} seconds... cue the dramatic drumroll! 🥁`,
-// 			`🤡 ${timeLeft} seconds... rigged? No, just ✨random✨`,
-// 			`🔥 ${timeLeft} seconds... someone's luck is about to explode! 💥`,
-// 			`💸 ${timeLeft} seconds... better start writing your victory speech! 📝`,
-// 			`🚀 ${timeLeft} seconds... tension rising, palms sweating! 😰`,
-// 			`🎰 ${timeLeft} seconds... jackpot or heartbreak? Let's see! 🎲`,
-// 			`🎭 ${timeLeft} seconds... Will you win? Will you cry? Stay tuned! 📢`,
-// 			`🏆 ${timeLeft} seconds... last chance to bribe the RNG gods! 👀`
-// 		];
-// 		console.log(funnyMessages[10 - timeLeft]);
-// 		timeLeft--;
-// 	}, 1000);
-
-// 	return new Promise<string[]>((resolve) => {
-// 		setTimeout(() => {
-// 			clearInterval(interval);
-
-// 			const winners = new Set<string>();
-
-// 			while (winners.size < 1 && pool.length > 0) {
-// 				const randomIndex = Math.floor(Math.random() * pool.length);
-// 				const winner = pool[randomIndex];
-// 				winners.add(winner);
-
-// 				// Remove all instances of the winner from the pool
-// 				pool = pool.filter(name => name !== winner);
-// 			}
-
-// 			const winnerList = [...winners];
-// 			console.log(`🎊 And the winners are... 🥁🥁🥁`);
-// 			winnerList.forEach((name, index) => {
-// 				console.log(`🏆 Winner #${index + 1}: ${name}`);
-// 			});
-
-// 			resolve(winnerList);
-// 		}, 10000);
-// 	});
-// }
-
-
-// const entries = {
-// 	khaelrocks: 17,
-// 	laurence27: 19,
-// 	mirajane: 43,
-// 	Chuna: 22,
-// 	Goddess: 25,
-// 	CieloQ281993: 10,
-// 	Raquel_05: 13,
-// 	chabechabs: 11,
-// 	Ampot: 10,
-// 	jjanee: 17,
-// 	dnicanics05: 29,
-// 	wena: 36,
-// 	belen: 30,
-// 	jenelyn: 21,
-// 	map02: 1,
-// 	edz5: 3,
-// 	kateyyy: 0,
-// 	ken_ken: 1,
-// 	kaye: 2,
-// 	karl: 1,
-// 	Gabo: 2,
-// 	rodalyn23: 3,
-//   }
-
-// const entries = {
-
-// 	Able_Haeunie: 42,
-// 	khaelrocks: 48,
-// 	Nacht18: 78,
-// 	Gelatine: 18,
-// 	c2nagreen: 71,
-// 	bbangyunha: 2,
-// 	Arasqvs,
-// 	chenry124,
-// 	Goddess
-
-//   }
-
-
-
-
-interface ClassicScoreStats {
-	difficulty: string;
-	score: number;
-	combo: number;
-	maxCombo: number;
-	// 	chabechabs: 11,
-	// 	Ampot: 10,
-	accuracy: number;
-	finished: boolean;
-	songName: string;
-	artist: string;
-	perfect: number;
-	veryGood: number;
-	good: number;
-	bad: number;
-	miss: number;
-	username: string;
-	gameId: string;
-	timestamp: number; // UNIX timestamp in milliseconds
+export interface SendSolanaParams {
+	from: string,
+	to: string
+	amount: number
+	
 }
 
-// async function getRaffleEntries(db: Db): Promise<Record<string, number>> {
-// 	try {
-
-// 		const collection = db.collection<ClassicScoreStats>("classicScores");
-
-// 		// List of usernames to check
-// 		const validUsernames = [
-// 			"Able_Haeunie",
-// 			"khaelrocks",
-// 			"Nacht18",
-// 			"Gelatine",
-// 			"c2nagreen",
-// 			"bbangyunha",
-// 		];
+export interface SendSPLParams {
+	from: string,
+	to: string,
+	contractAddress: string
+	amount: number
+}
 
 
+const createSolanaWallet = async () => {
+	try {
 
-// 		// Aggregate to count scores per username per day
-// 		const scoresPerUser = await collection
-// 		.aggregate([
-// 			{
-// 				$match: {
-// 					username: { $in: validUsernames }
-// 				}
-// 			},
-// 			{
-// 				$project: {
-// 					username: 1,
-// 					date: {
-// 						$toDate: "$timestamp"
-// 					}
-// 				}
-// 			},
-// 			{
-// 				$group: {
-// 					_id: {
-// 						username: "$username",
-// 						day: {
-// 							$dateToString: { format: "%Y-%m-%d", date: "$date" }
-// 						}
-// 					},
-// 					scoreCount: { $sum: 1 }
-// 				}
-// 			},
-// 			{
-// 				$project: {
-// 					username: "$_id.username",
-// 					entriesForDay: {
-// 						$min: [
-// 							{ $floor: { $divide: ["$scoreCount", 3] } }, // 1 entry per 3 scores
-// 							5 // cap at 5 per day
-// 						]
-// 					}
-// 				}
-// 			},
-// 			{
-// 				$group: {
-// 					_id: "$username",
-// 					entries: { $sum: "$entriesForDay" }
-// 				}
-// 			},
-// 			{
-// 				$project: {
-// 					_id: 0,
-// 					username: "$_id",
-// 					entries: 1
-// 				}
-// 			}
-// 		])
-// 		.toArray();
+		const response = await fetch('https://api.thirdweb.com/v1/solana/wallets', {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               'x-secret-key': process.env.PROJECT_KEY_THIRDWEB || '',
+            },
+            body: JSON.stringify({
+               label: "tamod",
+            })
+         });
 
-// 		// Convert to a record format { username: entries }, default to 0 if user has no scores
-// 		const raffleEntries: Record<string, number> = {};
-// 		for (const username of validUsernames) {
-// 			const userEntry = scoresPerUser.find(user => user.username === username);
-// 			raffleEntries[username] = userEntry ? userEntry.entries : 0;
-// 		}
+         const data = await response.json();
+         if (!response.ok) {
+            throw new Error(data.message || 'Failed to create Solana wallet');
+         }
 
-// 		return raffleEntries;
-// 	} catch (error) {
-// 		console.error("Error fetching raffle entries:", error);
-// 		throw error;
-// 	}
-// }
+		 console.log("✅ Solana wallet created:", data.result);
 
-//test
-// // // Usage example
-//      (async () => {
-//  	const db: Db = mongoDBClient.db("beats");
-//      	const raffleEntries = await getRaffleEntries(db);
-//    	 console.log(raffleEntries); })();
+	} catch (error: any) {
+		console.error("❌ createSolanaWallet error:", error);
 
-// 	   async function countGamesPerUsername(): Promise<any> {
-// 		const validUsernames = [
-// 			"Able_Haeunie",
-// 			"khaelrocks",
-// 			"Nacht18",
-// 			"Gelatine",
-// 			"c2nagreen",
-// 			"bbangyunha",
-// 		];
-// 	}
-
-// 	// 	let
+	}
+}
 
 
-// 	// 	const gameCounts: { [key: string]: number } = {};
+const listWallets = async () => {
+   try {
+      const response = await fetch('https://api.thirdweb.com/v1/solana/wallets?page=1&limit=10', {
+         method: 'GET',
+         headers: {
+            'x-secret-key': process.env.PROJECT_KEY_THIRDWEB || '',
 
-// 	// 	try {
-// 	// 	  client = await mongoDBClient.connect();
-// 	// 	  const db = client.db("beats");
-// 	// 	  const collection = db.collection<ClassicScoreStats>("classicScores");
+         }
+      });
 
-// 	// 	  // Loop through the valid usernames and count the number oconst getOwnedCardCount = async (smartWalletAddress: string): Promise<number> => {
-// 	const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS))
-// 	.result as unknown as InventoryCardData[];
+      const data = await response.json();
+      if (!response.ok) {
+         throw new Error(data.message || 'Failed to list wallets');
+      }
 
-// return ownedCards.length;
-// };
-// f games/scores for each user
-	// 	  for (const username of validUsernames) {
-	// 		const userScores = await collection
-	// 		  .find({ username })
-	// 		  .toArray();
+      console.log("✅ Wallets listed successfully:", data.result);
 
-	// 		// The count of the games is the length of the found documents
-	// 		gameCounts[username] = userScores.length;
-	// 	  }
-
-	// 	  return gameCounts;
-	// 	} catch (error: any) {
-	// 	  console.error("Error counting games for usernames", error);
-	// 	  throw error;
-	// 	} finally {
-	// 	  if (client) {
-	// 		try {
-	// 		  await client.close();
-	// 		} catch (closeError) {
-	// 		  console.error("Error closing MongoDB client", closeError);
-	// 		}
-	// 	  }
-	// 	}
-	//   }
-
-	  // Call the function to test
-	//   countGamesPerUsername().then((result) => {
-	// 	console.log(result);
-	//   }).catch((error) => {
-	// 	console.error(error);
-	//   });
+   } catch (error: any) {
+      console.error("❌ listWallets error:", error);
+   }
+}
 
 
-	//  runRaffle(entries).then((winners) => {
-	//  	console.log("Winners:", winners);
-	//  }
-	//  ).catch((error) => {
-	//  	console.error("Error during raffle:", error);
-	//  }
-	//  )
+const sendSolanaToken = async (params: SendSolanaParams) => {
+	// Convert SOL → lamports and make sure it's an integer
+	const amountLamports = BigInt(Math.floor(params.amount * 1_000_000_000));
 
-	// const getOwnedCardCount = async (smartWalletAddress: string = "0x5E6b6222c1b816a5695495a651693da7c831A5Eb"): Promise<number> => {
-	// 	const ownedCards = (await engine.erc1155.getOwned(smartWalletAddress, CHAIN, EDITION_ADDRESS))
-	// 		.result as unknown as InventoryCardData[];
+	// Convert lamports (amount) to 8-byte little-endian buffer
+	const lamportsBuffer = Buffer.alloc(8);
+	lamportsBuffer.writeBigUInt64LE(amountLamports);
 
-	// 	console.log( ownedCards.length);
-	// };
+	// Instruction discriminator for "Transfer" (2) as u32 little-endian
+	const discriminator = Buffer.alloc(4);
+	discriminator.writeUInt32LE(2);
+
+	const data = Buffer.concat([discriminator, lamportsBuffer]).toString("base64");
+
+	const body = {
+		executionOptions: {
+			chainId: "solana:devnet",
+			signerAddress: params.from,
+			commitment: "confirmed"
+		},
+		instructions: [
+			{
+				programId: "11111111111111111111111111111111",
+				accounts: [
+					{ pubkey: params.from, isSigner: true, isWritable: true },
+					{ pubkey: params.to, isSigner: false, isWritable: true }
+				],
+				data,
+				encoding: "base64"
+			}
+		]
+	};
+
+	const headers = {
+		"Content-Type": "application/json",
+		"x-client-id": process.env.X_CLIENT_ID || "",
+		"x-vault-access-token": process.env.VAULT_ACCESS_TOKEN || ""
+	};
+
+	const res = await fetch("https://engine.thirdweb.com/v1/solana/transaction", {
+		method: "POST",
+		headers,
+		body: JSON.stringify(body)
+	});
+
+	const dataRes = await res.json();
+	if (!res.ok) throw new Error(dataRes.error || "Transaction failed");
+	return dataRes;
+};
 
 
-	// getOwnedCardCount();
+const sendSplTokenTx = async (params: SendSPLParams, decimals: number = 9) => {
+	const TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+
+	// Calculate raw amount based on decimals
+	const amount = BigInt(Math.floor(params.amount * 10 ** decimals));
+
+	// Instruction discriminator for SPL transfer = 3 (u8)
+	// See: https://docs.rs/spl-token/latest/spl_token/instruction/enum.TokenInstruction.html
+	const discriminator = Buffer.from([3]);
+
+	// Data layout: u8 (3) + u64 (amount)
+	const amountBuf = Buffer.alloc(8);
+	amountBuf.writeBigUInt64LE(amount);
+	const data = Buffer.concat([discriminator, amountBuf]).toString("base64");
+
+	const body = {
+		executionOptions: {
+			chainId: "solana:devnet",
+			signerAddress: params.from,
+			commitment: "confirmed"
+		},
+		instructions: [
+			{
+				programId: TOKEN_PROGRAM_ID,
+				accounts: [
+					// Sender's token account (ATA)
+					{ pubkey: await getAta(params.from, params.contractAddress), isSigner: false, isWritable: true },
+					// Receiver's token account (ATA)
+					{ pubkey: await getAta(params.to, params.contractAddress), isSigner: false, isWritable: true },
+					// Owner of source account (sender wallet)
+					{ pubkey: params.from, isSigner: true, isWritable: false }
+				],
+				data,
+				encoding: "base64"
+			}
+		]
+	};
+
+	const headers = {
+		"Content-Type": "application/json",
+		"x-client-id": process.env.X_CLIENT_ID || "",
+		"x-vault-access-token": process.env.VAULT_ACCESS_TOKEN || ""
+	};
+
+	const res = await fetch("https://engine.thirdweb.com/v1/solana/transaction", {
+		method: "POST",
+		headers,
+		body: JSON.stringify(body)
+	});
+
+	const dataRes = await res.json();
+	if (!res.ok) throw new Error(dataRes.error || "SPL Token Transaction failed");
+	return dataRes;
+};
+
+
+async function getAta(owner: string, mint: string): Promise<string> {
+	const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+	const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvR93E6X3ez8gn5e4zWqVZxDC5uDPLWQmFE1");
+
+	const [ata] = PublicKey.findProgramAddressSync(
+		[
+			new PublicKey(owner).toBuffer(),
+			TOKEN_PROGRAM_ID.toBuffer(),
+			new PublicKey(mint).toBuffer()
+		],
+		ASSOCIATED_TOKEN_PROGRAM_ID
+	);
+	return ata.toBase58();
+}

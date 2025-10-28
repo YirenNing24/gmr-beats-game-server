@@ -15,6 +15,14 @@ import { Driver, Session } from "neo4j-driver-core";
 //** ERROR CODES
 import ValidationError from '../../outputs/validation.error.js'
 
+import { AlchemyServerSigner, generateAccessKey, SolanaSigner } from "@account-kit/signer";
+import { Connection, SystemProgram, PublicKey } from "@solana/web3.js";
+import { createServerSigner } from "@account-kit/signer";
+
+
+
+
+
 export const engine: Engine = new Engine({
   url: ENGINE_URI,
   accessToken: ENGINE_ACCESS_TOKEN,
@@ -29,47 +37,34 @@ class WalletService {
 
 
   //** Creates a wallet and returns the wallet address.
-  // public async createWallet(username: string): Promise<string> {
-  //    try {
-  //        // Create a new backend wallet with the player's username as the label
-  //        const wallet = await engine.backendWallet.create({ label: username, type: "smart:local" });
-         
-  //        // Extract the wallet address from the response
-  //        const { walletAddress } = wallet.result;
+    public async createWallet(): Promise<{ walletAddress: string, accessKey: string }> {
+        try {
+            const alchemyApiKey = process.env.ALCHEMY_API_KEY;
+            const accessKey: string = generateAccessKey();
 
-  //        return walletAddress;
-  //    } catch (error: any) {
-  //        console.error("Error creating player wallet:", error);
-  //        throw error;
-  //    }
-  //  }
+            if (!alchemyApiKey || !accessKey) {
+                throw new ValidationError(
+                    "Missing configuration",
+                    "ACCESS_KEY or ALCHEMY_API_KEY is not set in environment"
+                );
+            }
+
+            const signer: AlchemyServerSigner = await createServerSigner({
+                auth: { accessKey },
+                connection: { apiKey: alchemyApiKey },
+            });
 
 
-   public async createWallet(username: string): Promise<string> {
-      try {
-         const response = await fetch('https://api.thirdweb.com/v1/solana/wallets', {
-            method: 'POST',
-            headers: {
-               'Content-Type': 'application/json',
-               'x-secret-key': process.env.PROJECT_KEY_THIRDWEB || '',
-            },
-            body: JSON.stringify({
-               label: username,
-            })
-         });
+            const solanaSigner: SolanaSigner = signer.toSolanaSigner();
+            const walletAddress: string = solanaSigner.address;
+            console.log("Created Solana Smart Wallet:", walletAddress);
 
-         const data = await response.json();
-         if (!response.ok) {
-            throw new Error(data.message || 'Failed to create Solana wallet');
-         }
-
-         return data.result.walletAddress;
-      } catch (error: any) {
-         console.error("Error creating Solana wallet:", error);
-         throw error;
-      }
-   }
-
+            return { walletAddress, accessKey };
+        } catch (error: any) {
+            console.error("createWallet error:", error);
+            throw new ValidationError("Wallet creation failed", error.message);
+        }
+    }
 
   public async getWalletBalance(walletAddress: string) {
     try {
