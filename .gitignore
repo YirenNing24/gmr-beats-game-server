@@ -193,3 +193,4 @@ dummy.ts
 .gitignore
 bun.lockb
 .vscode/settings.json
+createToken.ts
