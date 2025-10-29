@@ -59,15 +59,6 @@ class SongRewardService {
 		 
 		}
 	}
-
-
-
-
-            
-
-
-
-
     }
 
 
