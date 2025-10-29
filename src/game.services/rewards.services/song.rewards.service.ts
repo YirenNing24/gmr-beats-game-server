@@ -11,7 +11,7 @@ class SongRewardService {
     public async classicSongReward(score: ClassicScoreStats): Promise<number> {
 		try {
 			// Calculate reward based on accuracy and difficulty
-			const baseReward = 0.0005; // Base token reward
+			const baseReward = 0.005; // Base token reward
 			let multiplier = 1; // Default multiplier for difficulty
 
 			switch (score.difficulty.toLowerCase()) {
@@ -50,6 +50,7 @@ class SongRewardService {
 		const rewardService: RewardService = new RewardService(driver);
 		try {
 
+			console.log(username, `" receives ${beatsAmount} reward`)
 			const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
 			await rewardService.sendSolReward(smartWalletAddress, beatsAmount.toString());
 

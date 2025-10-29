@@ -596,6 +596,8 @@ const sendSolanaToken = async (params: SendSolanaParams) => {
 	// Convert SOL → lamports and make sure it's an integer
 	const amountLamports = BigInt(Math.floor(params.amount * 1_000_000_000));
 
+	console.log("amount lamports: ", amountLamports)
+
 	// Convert lamports (amount) to 8-byte little-endian buffer
 	const lamportsBuffer = Buffer.alloc(8);
 	lamportsBuffer.writeBigUInt64LE(amountLamports);
