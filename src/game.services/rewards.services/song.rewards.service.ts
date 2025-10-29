@@ -33,10 +33,10 @@ class SongRewardService {
 
 			// Calculate total reward based on accuracy
 			const reward = baseReward * score.accuracy * multiplier;
-			var beatsRewardAmount: number = Math.round(reward)
-			await this.sendBeatsReward(score.username, beatsRewardAmount)
+			// var solRewardAmount: number = Math.round(reward)
+			await this.sendSolReward(score.username, reward)
 
-			return beatsRewardAmount;
+			return reward;
 		} catch (error: any) {
 		  console.error("Error calculating song reward:", error);
 		  throw error;
@@ -44,7 +44,7 @@ class SongRewardService {
 	}
 
 
-	public async sendBeatsReward(username: string, beatsAmount: number) {
+	public async sendSolReward(username: string, beatsAmount: number) {
 		const driver = getDriver();
 		const walletService: WalletService = new WalletService(driver);
 		const rewardService: RewardService = new RewardService(driver);
