@@ -121,7 +121,8 @@ class AuthService {
           hash(userName, 8),
           walletService.createWallet(userName)
       ]);
-  
+      
+      console.log("smartWalletAddress:", smartWalletAddress);
       const session = this.driver?.session();
       if (!session) throw new Error("Database session not available");
   

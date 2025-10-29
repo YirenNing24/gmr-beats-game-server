@@ -15,6 +15,14 @@ import { Driver, Session } from "neo4j-driver-core";
 //** ERROR CODES
 import ValidationError from '../../outputs/validation.error.js'
 
+
+export interface CreatedWalletResponse {
+  address: string;
+  label: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const engine: Engine = new Engine({
   url: ENGINE_URI,
   accessToken: ENGINE_ACCESS_TOKEN,
@@ -63,7 +71,9 @@ class WalletService {
             throw new Error(data.message || 'Failed to create Solana wallet');
          }
 
-         return data.result.walletAddress;
+          const { address, label, createdAt, updatedAt } =  data.result as CreatedWalletResponse;
+
+         return address;
       } catch (error: any) {
          console.error("Error creating Solana wallet:", error);
          throw error;

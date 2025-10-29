@@ -10,16 +10,17 @@ services:
     restart: always
 
   backend-server:
-    image: kaetaro13/beats-game-server
+    build:
+      context: ./  # path to your local folder (where Dockerfile is)
+      dockerfile: Dockerfile  # optional if named 'Dockerfile'
     container_name: backend-server
     ports:
-      - "127.0.0.1:8081:8085"  # maps container port 8085 -> host 8081
+      - "127.0.0.1:8081:8085"
     env_file:
       - ./.env
     networks:
       - ann-network
     restart: always
-
 
 networks:
   ann-network:
