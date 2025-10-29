@@ -16,6 +16,7 @@
         "HSET",
         "kdfparams",
         "keydb",
+        "Lamports",
         "leaderboard",
         "leaderboards",
         "logysia",

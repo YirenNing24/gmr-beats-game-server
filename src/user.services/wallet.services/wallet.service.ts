@@ -81,40 +81,60 @@ class WalletService {
       }
    }
 
-     public async getWalletBalance (walletAddress: string) {
+
+  public async getWalletBalance(walletAddress: string) {
     try {
-      	const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-        const publicKey = new PublicKey(walletAddress);
+      const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+      const publicKey = new PublicKey(walletAddress);
 
-        const balanceLamports = await connection.getBalance(publicKey);
-        const balanceSol = balanceLamports / 1_000_000_000;
+      // Native SOL balance
+      const balanceLamports = await connection.getBalance(publicKey);
+      const balanceSol = balanceLamports / 1_000_000_000;
 
-
-        const walletPubkey = new PublicKey(walletAddress);
-        const mintPubkey = new PublicKey("C1MHyoTJpRTeS9AQCyspNVu2EWAYCZwmJ1jNkEArFP1f"); //ape coin
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPubkey, {
+      // SPL token (APE) balance for mint
+      const mintPubkey = new PublicKey("C1MHyoTJpRTeS9AQCyspNVu2EWAYCZwmJ1jNkEArFP1f"); // ape coin
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
         mint: mintPubkey
-        });
+      });
 
+      // Default values if no token accounts found
+      let apeUiAmount = 0;
+      let apeDecimals = 0;
 
-        const accountInfo = tokenAccounts.value[0].account.data.parsed.info.tokenAmount;
-        const { uiAmount } = accountInfo;
-
-        return {
-          smartWalletAddress: walletAddress,
-          beatsBalance: "0",
-          nativeBalance: balanceSol.toString(),
-          apeBalance: uiAmount
+      if (tokenAccounts.value.length > 0) {
+        // Sum all token accounts for this mint (safer when there are >1)
+        let rawSum = BigInt(0);
+        for (const ta of tokenAccounts.value) {
+          const tokenAmount = ta.account.data.parsed.info.tokenAmount;
+          const amountStr: string = tokenAmount.amount; // raw integer as string
+          rawSum += BigInt(amountStr);
+          apeDecimals = tokenAmount.decimals; // same across accounts for same mint
         }
+        // Convert rawSum -> ui amount using decimals
+        const divisor = 10 ** apeDecimals;
+        // Convert to number for UI; be careful with very large amounts
+        apeUiAmount = Number(rawSum) / divisor;
+      }
 
-
-    } catch (error: any) {
-        console.error("Error fetching wallet balance:", error);
-        throw error;
+      return {
+        smartWalletAddress: walletAddress,
+        beatsBalance: "0",
+        nativeBalance: balanceSol.toString(),
+        apeBalance: apeUiAmount.toString()
+      };
+    } catch (err) {
+      console.error("getWalletBalance error:", err);
+      // Return a consistent shape even on error
+      return {
+        smartWalletAddress: walletAddress,
+        beatsBalance: "0",
+        nativeBalance: "0",
+        apeBalance: "0",
+        error: (err as Error).message
+      };
     }
-
-
   }
+
 
 
   // public async getWalletBalance(walletAddress: string) {
