@@ -8,11 +8,11 @@ import RewardService from "./mission.rewards.service";
 
 class SongRewardService {
 
-    public async classicSongReward(score: ClassicScoreStats): Promise<number> {
+	public async classicSongReward(score: ClassicScoreStats): Promise<number> {
 		try {
-			// Calculate reward based on accuracy and difficulty
-			const baseReward = 0.005; // Base token reward
-			let multiplier = 1; // Default multiplier for difficulty
+			// Base reward and difficulty multiplier
+			const baseReward = 0.005;
+			let multiplier = 1;
 
 			switch (score.difficulty.toLowerCase()) {
 				case "easy":
@@ -28,20 +28,25 @@ class SongRewardService {
 					multiplier = 3;
 					break;
 				default:
-					multiplier = 1; // Default multiplier if difficulty is unknown
+					multiplier = 1;
 			}
 
-			// Calculate total reward based on accuracy
+			// Compute reward
 			const reward = baseReward * score.accuracy * multiplier;
-			// var solRewardAmount: number = Math.round(reward)
-			await this.sendSolReward(score.username, reward)
 
-			return reward;
+			// Round to 4 decimal places
+			const roundedReward = parseFloat(reward.toFixed(4));
+
+			// Send reward
+			await this.sendSolReward(score.username, roundedReward);
+
+			return roundedReward;
 		} catch (error: any) {
-		  console.error("Error calculating song reward:", error);
-		  throw error;
+			console.error("Error calculating song reward:", error);
+			throw error;
 		}
 	}
+
 
 
 	public async sendSolReward(username: string, beatsAmount: number) {

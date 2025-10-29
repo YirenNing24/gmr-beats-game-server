@@ -87,50 +87,62 @@ class WalletService {
       const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
       const publicKey = new PublicKey(walletAddress);
 
-      // Native SOL balance
+      // Native SOL balance (preserve immediately)
       const balanceLamports = await connection.getBalance(publicKey);
-      const balanceSol = balanceLamports / 1_000_000_000;
+      const balanceSol = Number(balanceLamports) / 1_000_000_000;
 
-      // SPL token (APE) balance for mint
-      const mintPubkey = new PublicKey("C1MHyoTJpRTeS9AQCyspNVu2EWAYCZwmJ1jNkEArFP1f"); // ape coin
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        mint: mintPubkey
-      });
+      // Format native balance: up to 9 decimals, trim trailing zeros
+      let nativeBalanceStr = balanceSol.toFixed(9).replace(/\.?0+$/, "");
 
-      // Default values if no token accounts found
+      // Default SPL APE values
       let apeUiAmount = 0;
       let apeDecimals = 0;
 
-      if (tokenAccounts.value.length > 0) {
-        // Sum all token accounts for this mint (safer when there are >1)
-        let rawSum = BigInt(0);
-        for (const ta of tokenAccounts.value) {
-          const tokenAmount = ta.account.data.parsed.info.tokenAmount;
-          const amountStr: string = tokenAmount.amount; // raw integer as string
-          rawSum += BigInt(amountStr);
-          apeDecimals = tokenAmount.decimals; // same across accounts for same mint
+      // Try to fetch token accounts but don't throw to the outer catch.
+      try {
+        const mintPubkey = new PublicKey("C1MHyoTJpRTeS9AQCyspNVu2EWAYCZwmJ1jNkEArFP1f"); // ape coin
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+          mint: mintPubkey
+        });
+
+        if (tokenAccounts.value.length > 0) {
+          let rawSum = BigInt(0);
+          for (const ta of tokenAccounts.value) {
+            const tokenAmount = ta.account.data.parsed.info.tokenAmount;
+            const amountStr: string = tokenAmount.amount; // raw integer as string
+            rawSum += BigInt(amountStr);
+            apeDecimals = tokenAmount.decimals;
+          }
+
+          // Convert rawSum -> ui amount using decimals
+          if (apeDecimals >= 0) {
+            const divisor = 10 ** apeDecimals;
+            apeUiAmount = Number(rawSum) / divisor;
+          }
         }
-        // Convert rawSum -> ui amount using decimals
-        const divisor = 10 ** apeDecimals;
-        // Convert to number for UI; be careful with very large amounts
-        apeUiAmount = Number(rawSum) / divisor;
+      } catch (innerErr) {
+        // Token account lookup failed — log but continue, native balance still preserved
+        console.error("Error fetching SPL token accounts:", innerErr);
+        apeUiAmount = 0;
+        apeDecimals = 0;
       }
 
       return {
         smartWalletAddress: walletAddress,
         beatsBalance: "0",
-        nativeBalance: balanceSol.toString(),
+        nativeBalance: nativeBalanceStr,
         apeBalance: apeUiAmount.toString()
       };
-    } catch (err) {
-      console.error("getWalletBalance error:", err);
-      // Return a consistent shape even on error
+    } catch (error: any) {
+      console.error("getWalletBalance error:", error);
+
+      // If we fail before fetching native balance we return 0; otherwise outer try would have returned
       return {
         smartWalletAddress: walletAddress,
         beatsBalance: "0",
         nativeBalance: "0",
         apeBalance: "0",
-        error: (err as Error).message
+        error: error.message
       };
     }
   }
