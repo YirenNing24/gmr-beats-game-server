@@ -208,8 +208,8 @@ export interface UserData {
 export interface WalletData {
     smartWalletAddress: string;
     beatsBalance: string;
-    gmrBalance: string;
     nativeBalance: string;
+    apeBalance: string;
   }
   
 export interface LocalWallet {

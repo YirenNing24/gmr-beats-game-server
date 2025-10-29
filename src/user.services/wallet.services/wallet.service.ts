@@ -10,10 +10,11 @@ import { WalletData } from "../user.service.interface";
 //** MEMGRAPH IMPORTS
 import { QueryResult } from "neo4j-driver";
 import { Driver, Session } from "neo4j-driver-core";
-
+import { Metaplex, keypairIdentity, irysStorage, toBigNumber, SplTokenAmount, Pda } from "@metaplex-foundation/js";
 
 //** ERROR CODES
 import ValidationError from '../../outputs/validation.error.js'
+import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js";
 
 
 export interface CreatedWalletResponse {
@@ -80,24 +81,62 @@ class WalletService {
       }
    }
 
-
-  public async getWalletBalance(walletAddress: string) {
+     public async getWalletBalance (walletAddress: string) {
     try {
-      const [arbitrumToken, beatsToken] = await Promise.all([
-        engine.backendWallet.getBalance(CHAIN, walletAddress),
-        engine.erc20.balanceOf(walletAddress, CHAIN, BEATS_TOKEN)
-      ]);
+      	const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+        const publicKey = new PublicKey(walletAddress);
 
-      return {
-        smartWalletAddress: walletAddress,
-        beatsBalance: beatsToken.result.displayValue,
-        gmrBalance: "0",
-        nativeBalance: arbitrumToken.result.displayValue,
-      } as WalletData;
+        const balanceLamports = await connection.getBalance(publicKey);
+        const balanceSol = balanceLamports / 1_000_000_000;
+
+
+        const walletPubkey = new PublicKey(walletAddress);
+        const mintPubkey = new PublicKey("C1MHyoTJpRTeS9AQCyspNVu2EWAYCZwmJ1jNkEArFP1f"); //ape coin
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPubkey, {
+        mint: mintPubkey
+        });
+
+
+        const accountInfo = tokenAccounts.value[0].account.data.parsed.info.tokenAmount;
+        const { uiAmount } = accountInfo;
+
+        return {
+          smartWalletAddress: walletAddress,
+          beatsBalance: "0",
+          nativeBalance: balanceSol.toString(),
+          apeBalance: uiAmount
+        }
+
+
     } catch (error: any) {
-      throw error;
+        console.error("Error fetching wallet balance:", error);
+        throw error;
     }
+
+
   }
+
+
+  // public async getWalletBalance(walletAddress: string) {
+  //   try {
+  //     const [arbitrumToken, beatsToken] = await Promise.all([
+  //       engine.backendWallet.getBalance(CHAIN, walletAddress),
+  //       engine.erc20.balanceOf(walletAddress, CHAIN, BEATS_TOKEN)
+  //     ]);
+
+  //     return {
+  //       smartWalletAddress: walletAddress,
+  //       beatsBalance: beatsToken.result.displayValue,
+  //       gmrBalance: "0",
+  //       nativeBalance: arbitrumToken.result.displayValue,
+  //     } as WalletData;
+  //   } catch (error: any) {
+  //     throw error;
+  //   }
+  // }
+
+
+
 
 
   public async getSmartWalletAddress(userName: string): Promise<string> {
